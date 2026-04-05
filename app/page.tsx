@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform,Variants  } from "framer-motion";
 import Image1 from "../images/ArtisanalM.jpg";
 import story from "../images/story.jpg";
 
@@ -117,14 +117,31 @@ function Ornament() {
 }
 
 // ─── Motion presets ───────────────────────────────────────────────────────────
-const fadeUp = {
-  hidden: { opacity: 0, y: 40 },
-  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.75, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] } }),
+
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i?: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      delay: i ? i * 0.1 : 0,
+      ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] as [number, number, number, number],
+    },
+  }),
 };
 
-const scaleIn = {
-  hidden: { opacity: 0, scale: 0.94 },
-  visible: (i = 0) => ({ opacity: 1, scale: 1, transition: { duration: 0.65, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] } }),
+const scaleIn: Variants = {
+  hidden: { opacity: 0, scale: 0.9 },
+  visible: (i?: number) => ({
+    opacity: 1,
+    scale: 1,
+    transition: {
+      duration: 0.6,
+      delay: i ? i * 0.1 : 0,
+      ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] as [number, number, number, number],
+    },
+  }),
 };
 
 // ─── Sections ─────────────────────────────────────────────────────────────────
@@ -271,7 +288,7 @@ function Products() {
                 alt={p.name}
                 className="pg-prod-card__img"
                 whileHover={{ scale: 1.07 }}
-                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
               />
               <div className="pg-prod-card__shade" />
               <span className="pg-prod-card__cat">{p.cat}</span>
@@ -302,7 +319,7 @@ function Story() {
         initial={{ opacity: 0, x: -50 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true, amount: 0.2 }}
-        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
       >
         <img src={story.src} alt="Artisane tissant" />
         {/* floating badge */}
@@ -317,7 +334,7 @@ function Story() {
         initial={{ opacity: 0, x: 50 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true, amount: 0.2 }}
-        transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
       >
         <p className="pg-label pg-label--amber">Notre histoire</p>
         <h2 className="pg-h2">Préserver un<br /><em>héritage millénaire</em></h2>

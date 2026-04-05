@@ -154,7 +154,7 @@ function Gallery({ images }: { images: string[] }) {
               initial={{ opacity: 0, scale: 1.04 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.97 }}
-              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
             />
           </AnimatePresence>
           <div className="pd-gallery__zoom-hint">
@@ -196,7 +196,7 @@ function Gallery({ images }: { images: string[] }) {
               initial={{ scale: 0.88, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.92, opacity: 0 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
               onClick={(e) => e.stopPropagation()}
             />
             <button className="pd-lightbox__close" onClick={() => setLightbox(false)}>✕</button>
@@ -216,12 +216,12 @@ function RelatedCard({ p, index }: { p: typeof RELATED[0]; index: number }) {
       initial={{ opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.6, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.6, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
       whileHover={{ y: -6 }}
     >
       <div className="pd-rel-card__media">
         <motion.img src={p.img} alt={p.title}
-          whileHover={{ scale: 1.07 }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }} />
+          whileHover={{ scale: 1.07 }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }} />
         <div className="pd-rel-card__shade" />
         <span className="pd-rel-card__cat">{p.cat}</span>
         <motion.button className={`pd-rel-card__wish${wish ? " pd-rel-card__wish--on" : ""}`}
@@ -293,7 +293,7 @@ export default function ProductPage() {
           className="pd-main__gallery"
           initial={{ opacity: 0, x: -40 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
         >
           <Gallery images={product.images} />
         </motion.div>
@@ -303,7 +303,7 @@ export default function ProductPage() {
           className="pd-main__info"
           initial={{ opacity: 0, x: 40 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
         >
           {/* Category + badges */}
           <div className="pd-info__top">
@@ -434,7 +434,7 @@ export default function ProductPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
           >
             {activeTab === "desc" && (
               <p className="pd-tab-text">{product.description}</p>
@@ -514,7 +514,7 @@ export default function ProductPage() {
             initial={{ opacity: 0, y: 24, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.95 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}>
             <span className="pd-toast__icon">✓</span>
             <div>
               <strong>{product.title}</strong>

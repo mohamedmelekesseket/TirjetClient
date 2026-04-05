@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion,Variants  } from "framer-motion";
 
 const artisans = [
   {
@@ -45,12 +45,15 @@ const artisans = [
   },
 ];
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 32 },
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 30 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as const },
+    transition: {
+      duration: 0.7,
+      ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
+    },
   },
 };
 
@@ -59,7 +62,7 @@ const fadeLeft = {
   visible: {
     opacity: 1,
     x: 0,
-    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const },
+    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
   },
 };
 
@@ -68,7 +71,7 @@ const fadeRight = {
   visible: {
     opacity: 1,
     x: 0,
-    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const },
+    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as [number, number, number, number]  },
   },
 };
 export default function ArtisansPage() {

@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import UploadImage from '../../components/UploadImage';
+import UploadImage from '@/app/dashboard/components/UploadImage';
 
 export default function CreateProductPage() {
   const [form, setForm] = useState({ name: '', category: '', price: '', stock: '', description: '', status: 'Actif' });

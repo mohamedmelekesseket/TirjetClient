@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion,Variants  } from "framer-motion";
 import { signIn } from "next-auth/react";
 
 function GoogleIcon() {
@@ -30,14 +30,19 @@ function TifinaughStar() {
   );
 }
 
-const floatingVariants = {
+const floatingVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: 0.3 + i * 0.12, duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+    transition: {
+      delay: i * 0.1,
+      duration: 0.6,
+      ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] as [number, number, number, number],  // ✅ typed as tuple
+    },
   }),
 };
+
 
 export default function LoginPage() {
   return (
@@ -126,7 +131,7 @@ export default function LoginPage() {
           className="lp-card"
           initial={{ opacity: 0, y: 28, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
         >
           {/* Logo */}
           <motion.div

@@ -1,8 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import UploadImage from '../../../components/UploadImage';
-
+import UploadImage from '@/app/dashboard/components/UploadImage';
 export default function EditProductPage({ params }: { params: { id: string } }) {
   const [form, setForm] = useState({
     name: 'Tajine en céramique berbère',
