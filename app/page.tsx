@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform,Variants  } from "framer-motion";
-import Image1 from "../images/ArtisanalM.jpg";
+import Image1 from "../images/hero-artisan.jpg";
 import story from "../images/story.jpg";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────

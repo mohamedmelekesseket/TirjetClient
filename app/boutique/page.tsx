@@ -31,33 +31,6 @@ const products = [
     price: "290 TND",
     img: "https://images.unsplash.com/photo-1600166898405-da9535204843?auto=format&fit=crop&q=80&w=800",
   },
-  {
-    id: 1,
-    cat: "Tissage",
-    title: "Tapis Kairouan Horizon",
-    desc: "Grand format lumineux tissé en laine naturelle avec tracés libres — idéal pour un salon contemporain.",
-    loc: "KAIROUAN",
-    price: "1 200 TND",
-    img: "https://images.unsplash.com/photo-1600166898405-da9535204843?auto=format&fit=crop&q=80&w=800",
-  },
-  {
-    id: 2,
-    cat: "Poterie",
-    title: "Vase Nabeul Ruban",
-    desc: "Céramique peinte à la main, pensée comme pièce centrale sur une table ou une console.",
-    loc: "NABEUL",
-    price: "120 TND",
-    img: "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&q=80&w=800",
-  },
-  {
-    id: 3,
-    cat: "Bijoux",
-    title: "Parure Djerba Atlas",
-    desc: "Argent ciselé à la main, silhouette contemporaine pour un rendu premium unique.",
-    loc: "DJERBA",
-    price: "290 TND",
-    img: "https://images.unsplash.com/photo-1600166898405-da9535204843?auto=format&fit=crop&q=80&w=800",
-  },
 ];
 
 const filters = ["Tout", "Tissage", "Poterie", "Bijoux", "Maison"];
