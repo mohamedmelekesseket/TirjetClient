@@ -532,18 +532,18 @@ body {
    PROFILE PAGE
 ═══════════════════════════════════════════ */
 .profile-page {
-  min-height: 100vh;
   margin: 0;
+  padding-top: 30px;
+  min-height: 100vh;
   background: linear-gradient(135deg, #faf6f1 0%, #f5ede3 50%, #faf6f1 100%);
   font-family: 'Cormorant Garamond', 'Georgia', serif;
   color: #2c1810;
-  padding-top: 30px;
 }
 
 /* ── ERROR BANNER ── */
 .profile-error-wrap {
   max-width: 980px;
-  margin:0;
+  margin: 100px auto 0;
   padding: 0 24px;
 }
 .profile-error-box {
@@ -712,7 +712,8 @@ body {
 
 /* ── GRID ── */
 .profile-grid {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   grid-template-columns: repeat(3, 1fr);
   gap: 18px;
 }
@@ -6904,8 +6905,8 @@ tbody td {
    PROFILE PAGE
 ============================================================ */
 .profile-grid {
-  display: grid;
-  grid-template-columns: 320px 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 24px;
   align-items: start;
 }
@@ -6913,6 +6914,7 @@ tbody td {
 .profile-card {
   background: white;
   border-radius: 20px;
+  width: 40%;
   border: 1px solid rgba(2,52,171,0.07);
   overflow: hidden;
   animation: fadeInLeft 0.5s ease both;
