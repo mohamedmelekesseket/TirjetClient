@@ -1,16 +1,14 @@
-import { Cormorant, Plus_Jakarta_Sans } from "next/font/google";
+// NOTE:
+// We intentionally avoid `next/font/google` here because it downloads fonts at build time.
+// In some environments (offline builds, restricted CI), that fails and breaks `next build`.
+// Use CSS variables + system font stacks instead; you can swap to local fonts later if desired.
 
-/** UI, body, navigation */
-export const fontSans = Plus_Jakarta_Sans({
-  subsets: ["latin", "latin-ext"],
+export const fontSans = {
+  className: "",
   variable: "--font-sans",
-  display: "swap",
-});
+} as const;
 
-/** Headings and display text */
-export const fontDisplay = Cormorant({
-  subsets: ["latin", "latin-ext"],
+export const fontDisplay = {
+  className: "",
   variable: "--font-display",
-  display: "swap",
-  weight: ["400", "500", "600", "700"],
-});
+} as const;

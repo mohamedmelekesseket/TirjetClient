@@ -4,6 +4,7 @@ import { motion,Variants  } from "framer-motion";
 import { signIn } from "next-auth/react";
 import { Badge, Leaf, Languages, Zap } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 const PILL_TAGS = [
   { Icon: Zap, text: "Droits" },
@@ -54,6 +55,28 @@ const floatingVariants: Variants = {
 
 
 export default function LoginPage() {
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isFacebookLoading, setIsFacebookLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const err = new URLSearchParams(window.location.search).get("error");
+    if (!err) return;
+    if (err === "OAuthCallback") {
+      setErrorMessage(
+        "Erreur OAuth. Vérifiez que l’URL Vercel est bien ajoutée dans Google Console (Authorized redirect URIs)."
+      );
+      return;
+    }
+    if (err === "OAuthAccountNotLinked") {
+      setErrorMessage(
+        "Ce compte est déjà lié à un autre mode de connexion. Utilisez la méthode utilisée lors de la première connexion."
+      );
+      return;
+    }
+    setErrorMessage(`Connexion impossible (${err}).`);
+  }, []);
+
   return (
     <div className="lp-root">
       {/* ── LEFT PANEL ── */}
@@ -186,24 +209,56 @@ export default function LoginPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35, duration: 0.5 }}
           >
+            {errorMessage && (
+              <div
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: 12,
+                  background: "rgba(239,68,68,0.10)",
+                  border: "1px solid rgba(239,68,68,0.25)",
+                  color: "#7f1d1d",
+                  fontSize: 13,
+                  marginBottom: 10,
+                }}
+              >
+                {errorMessage}
+              </div>
+            )}
+
             <motion.button
               className="lp-oauth-btn lp-oauth-btn--google"
-              onClick={() => signIn("google", { callbackUrl: "/" })}
+              onClick={async () => {
+                try {
+                  setIsGoogleLoading(true);
+                  await signIn("google", { callbackUrl: "/profile" });
+                } finally {
+                  setIsGoogleLoading(false);
+                }
+              }}
               whileHover={{ scale: 1.015, y: -1 }}
               whileTap={{ scale: 0.985 }}
+              disabled={isGoogleLoading || isFacebookLoading}
             >
               <GoogleIcon />
-              <span>Continuer avec Google</span>
+              <span>{isGoogleLoading ? "Connexion..." : "Continuer avec Google"}</span>
             </motion.button>
 
             <motion.button
               className="lp-oauth-btn lp-oauth-btn--facebook"
-              onClick={() => signIn("facebook", { callbackUrl: "/" })}
+              onClick={async () => {
+                try {
+                  setIsFacebookLoading(true);
+                  await signIn("facebook", { callbackUrl: "/profile" });
+                } finally {
+                  setIsFacebookLoading(false);
+                }
+              }}
               whileHover={{ scale: 1.015, y: -1 }}
               whileTap={{ scale: 0.985 }}
+              disabled={isGoogleLoading || isFacebookLoading}
             >
               <FacebookIcon />
-              <span>Continuer avec Facebook</span>
+              <span>{isFacebookLoading ? "Connexion..." : "Continuer avec Facebook"}</span>
             </motion.button>
           </motion.div>
 

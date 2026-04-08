@@ -2,6 +2,8 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 
+const getApiUrl = () => process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 const handler = NextAuth({
   providers: [
     GoogleProvider({
@@ -21,7 +23,7 @@ const handler = NextAuth({
     async jwt({ token, account }) {
       // After OAuth login, exchange provider token for our API JWT (Mongo-backed user)
       if (account?.provider === "google" && account.id_token) {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const apiUrl = getApiUrl();
         const resp = await fetch(`${apiUrl}/api/auth/oauth`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -38,7 +40,7 @@ const handler = NextAuth({
       }
 
       if (account?.provider === "facebook" && account.access_token) {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const apiUrl = getApiUrl();
         const resp = await fetch(`${apiUrl}/api/auth/oauth`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
