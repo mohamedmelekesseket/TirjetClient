@@ -469,7 +469,7 @@ function FavCard({ item, index }: { item: FavouriteItem; index: number }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function UserProfile() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const [activeTab, setActiveTab] = useState("favoris");
   const [user, setUser] = useState<ApiUser | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
@@ -479,10 +479,46 @@ export default function UserProfile() {
 
   useEffect(() => {
     if (status === "loading") return;
-    if (!apiToken) {
+    if (status === "unauthenticated") {
       router.replace("/connexion");
-      return;
     }
+  }, [status, router]);
+
+  // Si NextAuth est OK mais le JWT API (Railway) manque, on le récupère via route serveur sécurisée
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    if (apiToken) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadingUser(true);
+        setLoadError(null);
+        const r = await fetch("/api/auth/sync-token", { method: "POST" });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || "sync-token failed");
+        await update({
+          apiToken: data.token,
+          apiUser: data.user,
+        } as any);
+      } catch (e) {
+        if (!cancelled) {
+          setLoadError(
+            "Impossible de lier votre session au serveur. Vérifiez INTERNAL_API_KEY (Vercel + Railway) et API_URL."
+          );
+        }
+      } finally {
+        if (!cancelled) setLoadingUser(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status, apiToken, update]);
+
+  useEffect(() => {
+    if (!apiToken) return;
 
     let cancelled = false;
     (async () => {
@@ -510,7 +546,7 @@ export default function UserProfile() {
     return () => {
       cancelled = true;
     };
-  }, [apiToken, router, status]);
+  }, [apiToken]);
 
   const memberSince = formatDate(user?.createdAt);
 

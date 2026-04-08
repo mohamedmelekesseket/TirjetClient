@@ -125,7 +125,7 @@ export default function AboutPage() {
             <span>À PROPOS</span>
           </div>
           <h1 className="ap-hero__title">
-            Association <span style={{color:"#E2C98A"}}>Tirjet</span> 
+            Association <span style={{color:"#E2C98A"}}>Tamaguit </span> 
           </h1>
           <p className="ap-hero__subtitle">
             Pour les droits, les libertés et la culture des Amazighs
