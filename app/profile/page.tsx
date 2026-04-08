@@ -473,6 +473,7 @@ export default function UserProfile() {
   const [activeTab, setActiveTab] = useState("favoris");
   const [user, setUser] = useState<ApiUser | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const apiToken = (session as any)?.apiToken as string | undefined;
 
@@ -487,6 +488,7 @@ export default function UserProfile() {
     (async () => {
       try {
         setLoadingUser(true);
+        setLoadError(null);
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
         const resp = await fetch(`${apiUrl}/api/auth/me`, {
           headers: { Authorization: `Bearer ${apiToken}` },
@@ -495,7 +497,11 @@ export default function UserProfile() {
         const me = (await resp.json()) as ApiUser;
         if (!cancelled) setUser(me);
       } catch {
-        if (!cancelled) router.replace("/connexion");
+        if (!cancelled) {
+          setLoadError(
+            "Impossible de charger votre profil. Vérifiez la configuration API/CORS (Railway) puis réessayez."
+          );
+        }
       } finally {
         if (!cancelled) setLoadingUser(false);
       }
@@ -510,6 +516,42 @@ export default function UserProfile() {
 
   return (
     <div style={s.page}>
+      {loadError ? (
+        <div
+          style={{
+            maxWidth: 980,
+            margin: "100px auto 0",
+            padding: "0 24px",
+          }}
+        >
+          <div
+            style={{
+              background: "rgba(239,68,68,0.10)",
+              border: "1px solid rgba(239,68,68,0.25)",
+              color: "#7f1d1d",
+              borderRadius: 16,
+              padding: "14px 16px",
+              fontSize: 14,
+            }}
+          >
+            {loadError}{" "}
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                marginLeft: 8,
+                border: "none",
+                background: "transparent",
+                textDecoration: "underline",
+                cursor: "pointer",
+                color: "inherit",
+                fontWeight: 700,
+              }}
+            >
+              Réessayer
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {/* ── NAV ── */}
       <motion.nav style={s.nav} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
