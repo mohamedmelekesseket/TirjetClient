@@ -2,6 +2,15 @@
 
 import { motion,Variants  } from "framer-motion";
 import { signIn } from "next-auth/react";
+import { Badge, Leaf, Languages, Zap } from "lucide-react";
+import Link from "next/link";
+
+const PILL_TAGS = [
+  { Icon: Zap, text: "Droits" },
+  { Icon: Leaf, text: "Culture" },
+  { Icon: Languages, text: "Langue" },
+  { Icon: Badge, text: "Identité" },
+] as const;
 
 function GoogleIcon() {
   return (
@@ -110,8 +119,11 @@ export default function LoginPage() {
             initial="hidden"
             animate="visible"
           >
-            {["⚡ Droits", "🌿 Culture", "🔤 Langue", "ⵣ Identité"].map((tag) => (
-              <span key={tag} className="lp-left__pill">{tag}</span>
+            {PILL_TAGS.map(({ Icon, text }) => (
+              <span key={text} className="lp-left__pill">
+                <Icon size={14} style={{ marginRight: 8 }} aria-hidden="true" />
+                {text}
+              </span>
             ))}
           </motion.div>
         </div>
@@ -213,8 +225,8 @@ export default function LoginPage() {
             transition={{ delay: 0.52, duration: 0.5 }}
           >
             En vous connectant, vous acceptez nos{" "}
-            <a href="#">conditions d&apos;utilisation</a> et notre{" "}
-            <a href="#">politique de confidentialité</a>.
+            <Link href="/apropos">conditions d&apos;utilisation</Link> et notre{" "}
+            <Link href="/apropos">politique de confidentialité</Link>.
           </motion.p>
         </motion.div>
       </div>

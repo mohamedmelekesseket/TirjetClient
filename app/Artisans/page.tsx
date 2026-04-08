@@ -1,6 +1,7 @@
 "use client";
 
 import { motion,Variants  } from "framer-motion";
+import { MapPin } from "lucide-react";
 
 const artisans = [
   {
@@ -124,7 +125,10 @@ export default function ArtisansPage() {
               <h2 className="artisan-name">{a.name}</h2>
               <p className="artisan-role">{a.role}</p>
               <p className="artisan-location">
-                <span className="pin">📍</span> {a.location}
+                <span className="pin" aria-hidden="true">
+                  <MapPin size={16} />
+                </span>{" "}
+                {a.location}
               </p>
               <blockquote className="artisan-quote">"{a.quote}"</blockquote>
               <p className="artisan-bio">{a.bio}</p>

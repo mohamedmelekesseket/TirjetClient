@@ -61,9 +61,9 @@ export default function CompactFooter() {
           <motion.div variants={itemVariants} className="art-compact-col">
             <h3 className="art-compact-title">Navigation</h3>
             <ul className="art-compact-list">
-              <li><Link href="#">Accueil</Link></li>
-              <li><Link href="#">Marketplace</Link></li>
-              <li><Link href="#">À propos</Link></li>
+              <li><Link href="/">Accueil</Link></li>
+              <li><Link href="/boutique">Marketplace</Link></li>
+              <li><Link href="/apropos">À propos</Link></li>
             </ul>
           </motion.div>
 
@@ -71,8 +71,8 @@ export default function CompactFooter() {
           <motion.div variants={itemVariants} className="art-compact-col">
             <h3 className="art-compact-title">Artisans</h3>
             <ul className="art-compact-list">
-              <li><Link href="#">Devenir artisan</Link></li>
-              <li><Link href="#">Connexion</Link></li>
+              <li><Link href="/Rejoigneznous">Devenir artisan</Link></li>
+              <li><Link href="/connexion">Connexion</Link></li>
             </ul>
           </motion.div>
 

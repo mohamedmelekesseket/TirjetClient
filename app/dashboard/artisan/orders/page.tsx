@@ -1,3 +1,6 @@
+"use client";
+
+import { Eye, Pencil } from "lucide-react";
 const orders = [
   { id: '#CMD-001', product: 'Tajine en céramique',   customer: 'Sara Moussaoui',  email: 'sara.m@email.com', date: '02 Avr 2026', total: '350 MAD',   status: 'Livré',      statusClass: 'badge-success' },
   { id: '#CMD-002', product: 'Sac en cuir fait main', customer: 'Khalid Benali',   email: 'k.benali@email.com', date: '01 Avr 2026', total: '580 MAD',   status: 'En cours',   statusClass: 'badge-primary' },
@@ -101,8 +104,12 @@ export default function OrdersPage() {
                   </td>
                   <td>
                     <div className="order-actions-cell">
-                      <button className="icon-btn" title="Voir">👁</button>
-                      <button className="icon-btn" title="Modifier">✎</button>
+                      <button className="icon-btn" title="Voir" aria-label="Voir">
+                        <Eye size={16} />
+                      </button>
+                      <button className="icon-btn" title="Modifier" aria-label="Modifier">
+                        <Pencil size={16} />
+                      </button>
                     </div>
                   </td>
                 </tr>

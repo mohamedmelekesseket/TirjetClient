@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { Check, X } from "lucide-react";
+import Link from "next/link";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Product {
@@ -199,7 +201,9 @@ function Gallery({ images }: { images: string[] }) {
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
               onClick={(e) => e.stopPropagation()}
             />
-            <button className="pd-lightbox__close" onClick={() => setLightbox(false)}>✕</button>
+            <button className="pd-lightbox__close" onClick={() => setLightbox(false)} aria-label="Fermer">
+              <X size={18} />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -235,7 +239,7 @@ function RelatedCard({ p, index }: { p: typeof RELATED[0]; index: number }) {
           <span className="pd-rel-card__loc"><Pin />{p.loc}</span>
           <span className="pd-rel-card__price">{p.price}</span>
         </div>
-        <a href="#" className="pd-rel-card__cta">Voir la pièce →</a>
+        <Link href="/boutique" className="pd-rel-card__cta">Voir la pièce →</Link>
       </div>
     </motion.article>
   );
@@ -343,9 +347,9 @@ export default function ProductPage() {
                 <span className="pd-artisan-row__loc"><Pin />{product.artisan.city.toUpperCase()}</span>
               )}
             </div>
-            <a href={`/artisans/${product.artisan._id}`} className="pd-artisan-row__link">
+            <Link href="/Artisans" className="pd-artisan-row__link">
               Voir le profil →
-            </a>
+            </Link>
           </div>
 
           <div className="pd-divider" />
@@ -375,7 +379,8 @@ export default function ProductPage() {
                 {added ? (
                   <motion.span key="added"
                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                    ✓ Ajouté au panier
+                    <Check size={16} style={{ marginRight: 8 }} aria-hidden="true" />
+                    Ajouté au panier
                   </motion.span>
                 ) : (
                   <motion.span key="add"
@@ -399,9 +404,9 @@ export default function ProductPage() {
           {/* Trust badges */}
           <div className="pd-trust">
             {[
-              { icon: "🔒", text: "Paiement sécurisé" },
-              { icon: "🚚", text: "Livraison 3–5 jours" },
-              { icon: "↩️", text: "Retour 14 jours" },
+              { icon: ".", text: "Paiement sécurisé" },
+              { icon: ".", text: "Livraison 3–5 jours" },
+              { icon: ".", text: "Retour 14 jours" },
             ].map(b => (
               <div key={b.text} className="pd-trust__item">
                 <span className="pd-trust__icon">{b.icon}</span>
@@ -515,7 +520,9 @@ export default function ProductPage() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.95 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}>
-            <span className="pd-toast__icon">✓</span>
+            <span className="pd-toast__icon" aria-hidden="true">
+              <Check size={18} />
+            </span>
             <div>
               <strong>{product.title}</strong>
               <span>ajouté au panier · {qty} pièce{qty > 1 ? "s" : ""}</span>

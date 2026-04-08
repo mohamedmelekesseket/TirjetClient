@@ -323,7 +323,7 @@ export default function AboutPage() {
             Valorisez votre savoir-faire dès aujourd&apos;hui.
           </p>
           <div className="ap-join__btns">
-            <a href="/register" className="ap-btn ap-btn--green">Créer ma boutique →</a>
+            <a href="/Rejoigneznous" className="ap-btn ap-btn--green">Créer ma boutique →</a>
             <a href="/contact" className="ap-btn ap-btn--ghost">Nous contacter</a>
           </div>
           <div className="ap-join__blob ap-join__blob--l" />

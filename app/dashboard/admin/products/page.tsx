@@ -1,3 +1,20 @@
+import {
+  Axe,
+  Check,
+  Download,
+  Eye,
+  Flag,
+  Gem,
+  Lamp,
+  Package,
+  Search,
+  Shirt,
+  ShoppingBag,
+  Sparkles,
+  X,
+} from "lucide-react";
+import type { ComponentType } from "react";
+
 const products = [
   { id: 1,  name: 'Tajine en céramique',   artisan: 'Ahmed Benali',   category: 'Poterie',       price: 350,  orders: 12, status: 'Publié',   reported: false },
   { id: 2,  name: 'Sac en cuir fait main', artisan: 'Fatima Zahra',   category: 'Maroquinerie',  price: 580,  orders: 8,  status: 'Publié',   reported: false },
@@ -15,9 +32,14 @@ const statusClass: Record<string, string> = {
   'Suspendu': 'badge-danger',
 };
 
-const emojiMap: Record<string, string> = {
-  Poterie: '🏺', Maroquinerie: '👜', Textile: '🧵',
-  Métal: '🔦', Chaussures: '👡', Bois: '🌿', Bijoux: '💍',
+const categoryIcon: Record<string, ComponentType<{ size?: number }>> = {
+  Poterie: Package,
+  Maroquinerie: ShoppingBag,
+  Textile: Shirt,
+  Métal: Lamp,
+  Chaussures: Sparkles,
+  Bois: Axe,
+  Bijoux: Gem,
 };
 
 export default function AdminProductsPage() {
@@ -30,10 +52,15 @@ export default function AdminProductsPage() {
         </div>
         <div className="header-actions-row">
           <div className="search-bar">
-            <span className="search-bar-icon">⌕</span>
+            <span className="search-bar-icon" aria-hidden="true">
+              <Search size={16} />
+            </span>
             <input className="search-bar-input" placeholder="Rechercher un produit..." />
           </div>
-          <button className="btn btn-secondary">⬇ Exporter</button>
+          <button className="btn btn-secondary">
+            <Download size={16} style={{ marginRight: 8 }} aria-hidden="true" />
+            Exporter
+          </button>
         </div>
       </div>
 
@@ -90,7 +117,10 @@ export default function AdminProductsPage() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: '1.1rem', flexShrink: 0,
                       }}>
-                        {emojiMap[p.category] || '🏺'}
+                        {(() => {
+                          const Icon = categoryIcon[p.category] || Package;
+                          return <Icon size={18} />;
+                        })()}
                       </div>
                       <span style={{ fontWeight: 500, fontSize: '0.875rem' }}>{p.name}</span>
                     </div>
@@ -105,7 +135,12 @@ export default function AdminProductsPage() {
                   <td className="td-mono">{p.orders}</td>
                   <td>
                     {p.reported
-                      ? <span className="badge badge-danger">⚑ Signalé</span>
+                      ? (
+                        <span className="badge badge-danger">
+                          <Flag size={14} style={{ marginRight: 6 }} aria-hidden="true" />
+                          Signalé
+                        </span>
+                      )
                       : <span style={{ color: '#8B9AB5', fontSize: '0.82rem' }}>—</span>
                     }
                   </td>
@@ -114,11 +149,24 @@ export default function AdminProductsPage() {
                   </td>
                   <td>
                     <div style={{ display: 'flex', gap: '6px' }}>
-                      <button className="icon-btn" title="Voir">👁</button>
-                      {p.status === 'En attente' && <button className="btn btn-success btn-sm">✓</button>}
-                      {p.reported && <button className="btn btn-danger btn-sm">✕ Retirer</button>}
+                      <button className="icon-btn" title="Voir" aria-label="Voir">
+                        <Eye size={16} />
+                      </button>
+                      {p.status === 'En attente' && (
+                        <button className="btn btn-success btn-sm" aria-label="Valider">
+                          <Check size={14} />
+                        </button>
+                      )}
+                      {p.reported && (
+                        <button className="btn btn-danger btn-sm">
+                          <X size={14} style={{ marginRight: 6 }} aria-hidden="true" />
+                          Retirer
+                        </button>
+                      )}
                       {!p.reported && p.status !== 'En attente' && (
-                        <button className="icon-btn danger" title="Supprimer">✕</button>
+                        <button className="icon-btn danger" title="Supprimer" aria-label="Supprimer">
+                          <X size={16} />
+                        </button>
                       )}
                     </div>
                   </td>

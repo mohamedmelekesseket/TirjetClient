@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, useScroll, useTransform,Variants  } from "framer-motion";
 import Image1 from "../images/hero-artisan.jpg";
 import story from "../images/story.jpg";
@@ -151,6 +153,7 @@ function Hero() {
   const containerRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "end start"] });
   const imgY = useTransform(scrollYProgress, [0, 1], ["0%", "18%"]);
+  const router = useRouter();
 
   useEffect(() => { const t = setTimeout(() => setIn(true), 60); return () => clearTimeout(t); }, []);
 
@@ -184,10 +187,20 @@ function Hero() {
         </p>
 
         <div className="pg-hero__ctas">
-          <motion.button className="pg-btn pg-btn--amber" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <motion.button
+            className="pg-btn pg-btn--amber"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => router.push("/boutique")}
+          >
             Explorer la boutique →
           </motion.button>
-          <motion.button className="pg-btn pg-btn--ghost" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <motion.button
+            className="pg-btn pg-btn--ghost"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => router.push("/apropos")}
+          >
             Notre histoire
           </motion.button>
         </div>
@@ -268,7 +281,7 @@ function Products() {
           <p className="pg-label pg-label--amber">Boutique</p>
           <h2 className="pg-h2">Créations en vedette</h2>
         </div>
-        <a href="#" className="pg-textlink">Voir tout →</a>
+        <Link href="/boutique" className="pg-textlink">Voir tout →</Link>
       </motion.div>
 
       <div className="pg-products__grid">
@@ -312,6 +325,7 @@ function Products() {
 }
 
 function Story() {
+  const router = useRouter();
   return (
     <section className="pg-story">
       <motion.div
@@ -358,6 +372,7 @@ function Story() {
         <motion.button
           className="pg-btn pg-btn--dark"
           whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+          onClick={() => router.push("/apropos")}
         >
           En savoir plus →
         </motion.button>
@@ -409,6 +424,7 @@ function Artisans() {
 }
 
 function CTA() {
+  const router = useRouter();
   return (
     <section className="pg-cta">
       {/* Geometric pattern overlay */}
@@ -432,10 +448,20 @@ function CTA() {
           <br />Valorisez votre savoir-faire dès aujourd&apos;hui.
         </p>
         <div className="pg-cta__btns">
-          <motion.button className="pg-btn pg-btn--amber" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <motion.button
+            className="pg-btn pg-btn--amber"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => router.push("/Rejoigneznous")}
+          >
             Créer ma boutique →
           </motion.button>
-          <motion.button className="pg-btn pg-btn--ghost" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <motion.button
+            className="pg-btn pg-btn--ghost"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => router.push("/apropos")}
+          >
             En savoir plus
           </motion.button>
         </div>

@@ -1,3 +1,5 @@
+import { Bell, Search } from "lucide-react";
+
 export default function Navbar({ title, role }: { title: string; role: 'artisan' | 'admin' }) {
   return (
     <header className="navbar">
@@ -10,12 +12,14 @@ export default function Navbar({ title, role }: { title: string; role: 'artisan'
 
         <div className="navbar-right">
           <div className="navbar-search">
-            <span className="navbar-search-icon">⌕</span>
+            <span className="navbar-search-icon" aria-hidden="true">
+              <Search size={16} />
+            </span>
             <input className="navbar-search-input" placeholder="Rechercher..." />
           </div>
 
           <button className="navbar-icon-btn" aria-label="Notifications">
-            🔔
+            <Bell size={18} />
             <span className="navbar-notif-badge">3</span>
           </button>
 

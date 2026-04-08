@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { CheckCircle2 } from "lucide-react";
+import Link from "next/link";
 
 const specialites = [
   "Tissage & Tapis",
@@ -138,7 +140,9 @@ export default function RejoindrePage() {
             
             {submitted ? (
               <div className="rj-success">
-                <div className="rj-success__icon">✓</div>
+                <div className="rj-success__icon" aria-hidden="true">
+                  <CheckCircle2 size={28} />
+                </div>
                 <h3 className="rj-success__title">Candidature envoyée !</h3>
                 <p className="rj-success__desc">
                   Merci {values.nom.split(" ")[0]}. Notre équipe vous contactera
@@ -261,7 +265,7 @@ export default function RejoindrePage() {
                 <div className="rj-form-footer">
                   <p className="rj-form-legal">
                     En soumettant ce formulaire, vous acceptez nos{" "}
-                    <a href="#">conditions d'utilisation</a>.
+                    <Link href="/apropos">conditions d&apos;utilisation</Link>.
                   </p>
                   <button className="rj-btn rj-btn--gold" onClick={handleSubmit}>
                     Envoyer ma candidature →

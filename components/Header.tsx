@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, User, LogOut, X } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
 
 const links = [
   { href: "/", label: "Accueil" },
@@ -15,9 +16,16 @@ const links = [
 
 const Header = () => {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = useSession();
+  const apiToken = (session as any)?.apiToken as string | undefined;
+  const apiUser = (session as any)?.apiUser as { name?: string } | undefined;
+  const isLoggedIn = Boolean(apiToken);
+
   const [showHeader, setShowHeader] = useState(true);
   const [lastScroll, setLastScroll] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -33,6 +41,7 @@ const Header = () => {
 
   useEffect(() => {
     setMenuOpen(false);
+    setUserMenuOpen(false);
   }, [pathname]);
 
   return (
@@ -76,9 +85,116 @@ const Header = () => {
 
               {/* DESKTOP ACTIONS */}
               <div className="actions">
-                <Link href="/connexion">
-                  <button className="btnOutline">Connexion</button>
-                </Link>
+                {!isLoggedIn ? (
+                  <Link href="/connexion">
+                    <button className="btnOutline">Connexion</button>
+                  </Link>
+                ) : (
+                  <div style={{ position: "relative" }}>
+                    <button
+                      type="button"
+                      className="btnOutline"
+                      aria-label="Compte"
+                      aria-haspopup="menu"
+                      aria-expanded={userMenuOpen}
+                      onClick={() => setUserMenuOpen((v) => !v)}
+                      style={{ padding: 10, width: 42, height: 42, display: "grid", placeItems: "center" }}
+                    >
+                      <User size={18} />
+                    </button>
+
+                    <AnimatePresence>
+                      {userMenuOpen && (
+                        <>
+                          <div
+                            onClick={() => setUserMenuOpen(false)}
+                            style={{ position: "fixed", inset: 0, zIndex: 999 }}
+                          />
+                          <motion.div
+                            role="menu"
+                            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                            transition={{ duration: 0.16 }}
+                            style={{
+                              position: "absolute",
+                              right: 0,
+                              top: "calc(100% + 10px)",
+                              zIndex: 1000,
+                              minWidth: 220,
+                              background: "rgba(250,246,241,0.98)",
+                              border: "1px solid rgba(205,133,80,0.18)",
+                              boxShadow: "0 14px 40px rgba(44,24,16,0.14)",
+                              borderRadius: 14,
+                              overflow: "hidden",
+                              backdropFilter: "blur(12px)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                padding: "12px 14px",
+                                borderBottom: "1px solid rgba(205,133,80,0.14)",
+                                fontSize: 14,
+                                fontWeight: 700,
+                                color: "#2c1810",
+                              }}
+                            >
+                              {apiUser?.name || "Mon compte"}
+                            </div>
+
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={() => {
+                                setUserMenuOpen(false);
+                                router.push("/profile");
+                              }}
+                              style={{
+                                width: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                                padding: "12px 14px",
+                                background: "transparent",
+                                border: "none",
+                                cursor: "pointer",
+                                color: "#2c1810",
+                                fontSize: 14,
+                              }}
+                            >
+                              <User size={16} />
+                              Profil
+                            </button>
+
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={() => {
+                                setUserMenuOpen(false);
+                                signOut({ callbackUrl: "/" });
+                              }}
+                              style={{
+                                width: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                                padding: "12px 14px",
+                                background: "transparent",
+                                border: "none",
+                                cursor: "pointer",
+                                color: "#b42318",
+                                fontSize: 14,
+                              }}
+                            >
+                              <LogOut size={16} />
+                              Se déconnecter
+                            </button>
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
                 <Link href="/Rejoigneznous">
                   <button className="btnPrimary">REJOINDRE</button>
                 </Link>
@@ -143,9 +259,32 @@ const Header = () => {
               <div className="drawerDivider" />
 
               <div className="drawerActions">
-                <Link href="/connexion" onClick={() => setMenuOpen(false)}>
-                  <button className="drawerBtnOutline">Connexion</button>
-                </Link>
+                {!isLoggedIn ? (
+                  <Link href="/connexion" onClick={() => setMenuOpen(false)}>
+                    <button className="drawerBtnOutline">Connexion</button>
+                  </Link>
+                ) : (
+                  <>
+                    <button
+                      className="drawerBtnOutline"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        router.push("/profile");
+                      }}
+                    >
+                      Mon profil
+                    </button>
+                    <button
+                      className="drawerBtnOutline"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        signOut({ callbackUrl: "/" });
+                      }}
+                    >
+                      Se déconnecter
+                    </button>
+                  </>
+                )}
                 <Link href="/Rejoigneznous" onClick={() => setMenuOpen(false)}>
                   <button className="drawerBtnPrimary">REJOINDRE</button>
                 </Link>
