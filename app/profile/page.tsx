@@ -101,7 +101,7 @@ const s: any = {
     alignItems: "flex-start",
     gap: 32,
     maxWidth: 1200,
-    margin: "0",
+    margin: "0 0",
   },
   avatarWrap: { position: "relative", flexShrink: 0 },
   avatar: {
@@ -390,6 +390,7 @@ export default function UserProfile() {
 
   // Use a ref so the fetch effect doesn't re-run while token is being injected
   const fetchedRef = useRef(false);
+  const meFetchedRef = useRef(false);
 
   // ── Redirect if not logged in ──────────────────────────────────────────────
   useEffect(() => {
@@ -425,9 +426,11 @@ export default function UserProfile() {
     })();
   }, [status, apiToken, update]);
 
-  // ── Step 2: once we have apiToken, fetch /api/auth/me ─────────────────────
+  // ── Step 2: once we have apiToken, fetch /api/auth/me (run once only) ────────
   useEffect(() => {
     if (!apiToken) return;
+    if (meFetchedRef.current) return;
+    meFetchedRef.current = true;
 
     let cancelled = false;
     (async () => {
