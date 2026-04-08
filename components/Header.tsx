@@ -17,10 +17,13 @@ const links = [
 const Header = () => {
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const apiToken = (session as any)?.apiToken as string | undefined;
   const apiUser = (session as any)?.apiUser as { name?: string } | undefined;
-  const isLoggedIn = Boolean(apiToken);
+  const sessionUser = session?.user;
+  // Logged in with Google/Facebook even if API JWT not synced yet
+  const isLoggedIn = status === "authenticated";
+  const displayName = apiUser?.name || sessionUser?.name || sessionUser?.email || "Compte";
 
   const [showHeader, setShowHeader] = useState(true);
   const [lastScroll, setLastScroll] = useState(0);
@@ -139,7 +142,7 @@ const Header = () => {
                                 color: "#2c1810",
                               }}
                             >
-                              {apiUser?.name || "Mon compte"}
+                              {displayName}
                             </div>
 
                             <button

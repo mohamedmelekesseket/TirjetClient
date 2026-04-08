@@ -1,8 +1,8 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useEffect, useRef, useState } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
   BadgeCheck,
@@ -12,6 +12,8 @@ import {
   Lock,
   Mail,
   Sparkles,
+  User,
+  LogOut,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -86,7 +88,6 @@ const FAVOURITES = [
 
 type FavouriteItem = (typeof FAVOURITES)[number];
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const s: any = {
   page: {
     minHeight: "100vh",
@@ -94,86 +95,13 @@ const s: any = {
     fontFamily: "'Cormorant Garamond', 'Georgia', serif",
     color: "#2c1810",
   },
-
-  // NAV
-  nav: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "0 48px",
-    height: 72,
-    background: "rgba(250,246,241,0.85)",
-    backdropFilter: "blur(12px)",
-    borderBottom: "1px solid rgba(205,133,80,0.15)",
-    position: "sticky",
-    top: 0,
-    zIndex: 100,
-  },
-  navBrand: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-  },
-  navLogo: {
-    width: 40,
-    height: 40,
-    borderRadius: "50%",
-    background: "linear-gradient(135deg, #cd8550 0%, #e8a070 100%)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#fff",
-    fontWeight: 700,
-    fontSize: 18,
-    fontFamily: "Georgia, serif",
-  },
-  navBrandText: { lineHeight: 1.1 },
-  navBrandTitle: { fontSize: 17, fontWeight: 700, letterSpacing: "0.02em", color: "#2c1810" },
-  navBrandSub: { fontSize: 10, letterSpacing: "0.18em", color: "#9a7060", textTransform: "uppercase" },
-  navLinks: { display: "flex", gap: 36, listStyle: "none", margin: 0, padding: 0 },
-  navLink: {
-    fontSize: 15,
-    color: "#5a3e35",
-    cursor: "pointer",
-    letterSpacing: "0.02em",
-    transition: "color 0.2s",
-    textDecoration: "none",
-  },
-  navActions: { display: "flex", gap: 12, alignItems: "center" },
-  btnOutline: {
-    padding: "8px 20px",
-    border: "1.5px solid #cd8550",
-    borderRadius: 50,
-    background: "transparent",
-    color: "#cd8550",
-    fontSize: 14,
-    cursor: "pointer",
-    letterSpacing: "0.04em",
-    fontFamily: "inherit",
-    transition: "all 0.2s",
-  },
-  btnFill: {
-    padding: "8px 22px",
-    border: "none",
-    borderRadius: 50,
-    background: "linear-gradient(135deg, #cd8550 0%, #e8a070 100%)",
-    color: "#fff",
-    fontSize: 14,
-    cursor: "pointer",
-    letterSpacing: "0.04em",
-    fontFamily: "inherit",
-    fontWeight: 600,
-    boxShadow: "0 4px 14px rgba(205,133,80,0.35)",
-  },
-
-  // HERO
   hero: {
     padding: "52px 80px 44px",
     display: "flex",
     alignItems: "flex-start",
     gap: 32,
     maxWidth: 1200,
-    margin: "0 auto",
+    margin: "0",
   },
   avatarWrap: { position: "relative", flexShrink: 0 },
   avatar: {
@@ -260,8 +188,6 @@ const s: any = {
     border: "1px solid rgba(205,133,80,0.25)",
     marginLeft: 8,
   },
-
-  // LAYOUT
   layout: {
     maxWidth: 1200,
     margin: "0 auto",
@@ -271,11 +197,6 @@ const s: any = {
     gap: 48,
     alignItems: "start",
   },
-
-  // MAIN
-  main: {},
-
-  // TABS
   tabs: {
     display: "flex",
     gap: 0,
@@ -296,15 +217,11 @@ const s: any = {
     letterSpacing: "0.01em",
     transition: "all 0.2s",
   }),
-
-  // GRID
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(3, 1fr)",
     gap: 18,
   },
-
-  // CARD
   card: {
     borderRadius: 16,
     overflow: "hidden",
@@ -364,8 +281,6 @@ const s: any = {
     background: "rgba(205,133,80,0.1)",
   },
   cardPrice: { fontSize: 15, fontWeight: 700, color: "#2c1810" },
-
-  // SIDEBAR
   sidebar: {},
   infoCard: {
     background: "#fff",
@@ -400,19 +315,14 @@ const s: any = {
   },
   infoLabel: { fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "#9a7060", textTransform: "uppercase", marginBottom: 2 },
   infoValue: { fontSize: 14, color: "#2c1810", fontWeight: 500, wordBreak: "break-all" },
-
-  // EMPTY
   empty: {
     gridColumn: "1/-1",
     textAlign: "center",
     padding: "60px 0",
     color: "#9a7060",
   },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyText: { fontSize: 16 },
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatDate(iso?: string) {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
@@ -422,10 +332,8 @@ function getInitials(name?: string) {
   return name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "?";
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
 function FavCard({ item, index }: { item: FavouriteItem; index: number }) {
   const [liked, setLiked] = useState(true);
-
   return (
     <motion.div
       style={s.card}
@@ -434,16 +342,7 @@ function FavCard({ item, index }: { item: FavouriteItem; index: number }) {
       transition={{ duration: 0.4, delay: index * 0.07, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ y: -4, boxShadow: "0 8px 32px rgba(44,24,16,0.13)" }}
     >
-      <img
-        src={item.image}
-        alt={item.title}
-        style={s.cardImg}
-        onError={(e) => {
-          const img = e.currentTarget;
-          img.style.background = "#e8d5c0";
-          img.src = "";
-        }}
-      />
+      <img src={item.image} alt={item.title} style={s.cardImg} />
       {item.badge && <span style={s.cardBadge}>{item.badge}</span>}
       <motion.button
         style={{ ...s.heartBtn, color: liked ? "#ef4444" : "#9a7060" }}
@@ -466,7 +365,6 @@ function FavCard({ item, index }: { item: FavouriteItem; index: number }) {
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
 export default function UserProfile() {
   const router = useRouter();
   const { data: session, status, update } = useSession();
@@ -475,21 +373,36 @@ export default function UserProfile() {
   const [loadingUser, setLoadingUser] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  // Pull token/user from session — cast once here
   const apiToken = (session as any)?.apiToken as string | undefined;
+  const sessionUser = session?.user
+    ? {
+        name: session.user.name ?? undefined,
+        email: session.user.email ?? undefined,
+        image: session.user.image ?? undefined,
+      }
+    : undefined;
+  const displayName =
+    ((session as any)?.apiUser as { name?: string } | undefined)?.name ||
+    sessionUser?.name ||
+    sessionUser?.email ||
+    "Compte";
 
+  // Use a ref so the fetch effect doesn't re-run while token is being injected
+  const fetchedRef = useRef(false);
+
+  // ── Redirect if not logged in ──────────────────────────────────────────────
   useEffect(() => {
-    if (status === "loading") return;
-    if (status === "unauthenticated") {
-      router.replace("/connexion");
-    }
+    if (status === "unauthenticated") router.replace("/connexion");
   }, [status, router]);
 
-  // Si NextAuth est OK mais le JWT API (Railway) manque, on le récupère via route serveur sécurisée
+  // ── Step 1: if authenticated but no apiToken yet, call sync-token ──────────
   useEffect(() => {
     if (status !== "authenticated") return;
-    if (apiToken) return;
+    if (apiToken) return; // already have it — skip
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
 
-    let cancelled = false;
     (async () => {
       try {
         setLoadingUser(true);
@@ -497,26 +410,22 @@ export default function UserProfile() {
         const r = await fetch("/api/auth/sync-token", { method: "POST" });
         const data = await r.json();
         if (!r.ok) throw new Error(data.error || "sync-token failed");
-        await update({
-          apiToken: data.token,
-          apiUser: data.user,
-        } as any);
-      } catch (e) {
-        if (!cancelled) {
-          setLoadError(
-            "Impossible de lier votre session au serveur. Vérifiez INTERNAL_API_KEY (Vercel + Railway) et API_URL."
-          );
-        }
-      } finally {
-        if (!cancelled) setLoadingUser(false);
+        // Inject token+user into the NextAuth session; the session update triggers
+        // a re-render with the new apiToken, which runs Step 2 below.
+        await update({ apiToken: data.token, apiUser: data.user } as any);
+      } catch (e: any) {
+        setLoadError(
+          e.message?.includes("INTERNAL_API_KEY")
+            ? "INTERNAL_API_KEY manquant — vérifiez les variables Vercel et Railway."
+            : "Impossible de lier votre session au serveur. Vérifiez INTERNAL_API_KEY (Vercel + Railway) et API_URL."
+        );
+        setLoadingUser(false);
       }
+      // Don't set loadingUser(false) here — Step 2 will do it after /me succeeds
     })();
-
-    return () => {
-      cancelled = true;
-    };
   }, [status, apiToken, update]);
 
+  // ── Step 2: once we have apiToken, fetch /api/auth/me ─────────────────────
   useEffect(() => {
     if (!apiToken) return;
 
@@ -529,37 +438,29 @@ export default function UserProfile() {
         const resp = await fetch(`${apiUrl}/api/auth/me`, {
           headers: { Authorization: `Bearer ${apiToken}` },
         });
-        if (!resp.ok) throw new Error("Not authorized");
+        if (!resp.ok) throw new Error(`/api/auth/me returned ${resp.status}`);
         const me = (await resp.json()) as ApiUser;
         if (!cancelled) setUser(me);
-      } catch {
-        if (!cancelled) {
+      } catch (err: any) {
+        if (!cancelled)
           setLoadError(
             "Impossible de charger votre profil. Vérifiez la configuration API/CORS (Railway) puis réessayez."
           );
-        }
       } finally {
         if (!cancelled) setLoadingUser(false);
       }
     })();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [apiToken]);
 
   const memberSince = formatDate(user?.createdAt);
 
   return (
     <div style={s.page}>
-      {loadError ? (
-        <div
-          style={{
-            maxWidth: 980,
-            margin: "100px auto 0",
-            padding: "0 24px",
-          }}
-        >
+      {/* ── ERROR BANNER ── */}
+      {loadError && (
+        <div style={{ maxWidth: 980, margin: "100px auto 0", padding: "0 24px" }}>
           <div
             style={{
               background: "rgba(239,68,68,0.10)",
@@ -572,7 +473,7 @@ export default function UserProfile() {
           >
             {loadError}{" "}
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => { fetchedRef.current = false; window.location.reload(); }}
               style={{
                 marginLeft: 8,
                 border: "none",
@@ -587,39 +488,11 @@ export default function UserProfile() {
             </button>
           </div>
         </div>
-      ) : null}
-
-      {/* ── NAV ── */}
-      <motion.nav style={s.nav} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <div style={s.navBrand}>
-          <div style={s.navLogo}>T</div>
-          <div style={s.navBrandText}>
-            <div style={s.navBrandTitle}>Tirjet</div>
-            <div style={s.navBrandSub}>Atelier & Boutique</div>
-          </div>
-        </div>
-        <ul style={s.navLinks}>
-          {[
-            { label: "Accueil", href: "/" },
-            { label: "Boutique", href: "/boutique" },
-            { label: "Artisans", href: "/Artisans" },
-          ].map((l) => (
-            <li key={l.href}>
-              <Link style={s.navLink as any} href={l.href}>
-                {l.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <div style={s.navActions}>
-          <button style={s.btnOutline}>Connexion</button>
-          <motion.button style={s.btnFill} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>REJOINDRE</motion.button>
-        </div>
-      </motion.nav>
+      )}
 
       {/* ── HERO ── */}
       <motion.section
-        style={s.hero}
+        style={{ ...s.hero, marginTop: 80 /* clear global Header */ }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.15 }}
@@ -632,19 +505,10 @@ export default function UserProfile() {
           transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
         >
           {user?.image ? (
-            <img
-              src={user.image}
-              alt={user.name}
-              style={s.avatar}
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-                const next = (e.target as HTMLImageElement).nextSibling as HTMLElement | null;
-                if (next) next.style.display = "flex";
-              }}
-            />
+            <img src={user.image ?? undefined} alt={user.name ?? undefined} style={s.avatar} />
           ) : null}
           <div style={{ ...s.avatarFallback, display: user?.image ? "none" : "flex" }}>
-            {getInitials(user?.name)}
+            {loadingUser ? "…" : getInitials(user?.name || sessionUser?.name)}
           </div>
           {user?.isVerified && (
             <motion.div
@@ -667,25 +531,29 @@ export default function UserProfile() {
                 <Sparkles size={14} />
                 Membre
               </span>
-              {user?.provider ? (
+              {user?.provider && (
                 <span style={s.providerPill}>
-                  <span>{user.provider === "google" ? "G" : user.provider === "facebook" ? "f" : "•"}</span>{" "}
+                  <span>{user.provider === "google" ? "G" : user.provider === "facebook" ? "f" : "•"}</span>
                   {user.provider.charAt(0).toUpperCase() + user.provider.slice(1)}
                 </span>
-              ) : null}
+              )}
             </div>
-            <h1 style={s.heroName}>{loadingUser ? "Chargement..." : (user?.name || "Profil")}</h1>
+            <h1 style={s.heroName}>
+              {loadingUser
+                ? "Chargement..."
+                : user?.name || sessionUser?.name || "Profil"}
+            </h1>
             <div style={s.heroMeta}>
               <span style={s.metaItem}>
                 <Mail size={14} />
-                {user?.email || "-"}
+                {user?.email || sessionUser?.email || "-"}
               </span>
-              {memberSince ? (
+              {memberSince && (
                 <span style={s.metaItem}>
                   <Calendar size={14} />
                   Membre depuis {memberSince}
                 </span>
-              ) : null}
+              )}
               <span style={{ ...s.metaItem, color: user?.status === "active" ? "#22c55e" : "#ef4444" }}>
                 <span
                   aria-hidden="true"
@@ -698,7 +566,7 @@ export default function UserProfile() {
                     marginRight: 6,
                   }}
                 />
-                {user?.status === "active" ? "Actif" : "Inactif"}
+                {loadingUser ? "…" : user?.status === "active" ? "Actif" : "Inactif"}
               </span>
             </div>
           </motion.div>
@@ -707,19 +575,10 @@ export default function UserProfile() {
 
       {/* ── BODY ── */}
       <div style={s.layout}>
-
-        {/* MAIN */}
-        <main style={s.main}>
-          {/* Tabs */}
+        <main>
           <div style={s.tabs}>
-            {[
-              { key: "favoris", label: `Favoris (${FAVOURITES.length})` },
-            ].map(({ key, label }) => (
-              <button
-                key={key}
-                style={s.tabBtn(activeTab === key)}
-                onClick={() => setActiveTab(key)}
-              >
+            {[{ key: "favoris", label: `Favoris (${FAVOURITES.length})` }].map(({ key, label }) => (
+              <button key={key} style={s.tabBtn(activeTab === key)} onClick={() => setActiveTab(key)}>
                 {label}
               </button>
             ))}
@@ -734,18 +593,10 @@ export default function UserProfile() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3 }}
               >
-                {/* Grid */}
                 <div style={s.grid}>
-                  {FAVOURITES.length === 0 ? (
-                    <div style={s.empty}>
-                      <div style={s.emptyIcon}>
-                        <Heart size={48} />
-                      </div>
-                      <div style={s.emptyText}>Aucun favori dans cette catégorie</div>
-                    </div>
-                  ) : (
-                    FAVOURITES.map((item, i) => <FavCard key={item.id} item={item} index={i} />)
-                  )}
+                  {FAVOURITES.map((item, i) => (
+                    <FavCard key={item.id} item={item} index={i} />
+                  ))}
                 </div>
               </motion.div>
             )}
@@ -754,8 +605,6 @@ export default function UserProfile() {
 
         {/* SIDEBAR */}
         <aside style={s.sidebar}>
-
-          {/* Info */}
           <motion.div
             style={s.infoCard}
             initial={{ opacity: 0, x: 30 }}
@@ -764,11 +613,13 @@ export default function UserProfile() {
           >
             <div style={s.infoTitle}>Informations</div>
             {[
-              { icon: <Mail size={16} />, label: "Email", value: user?.email || "-" },
+              { icon: <Mail size={16} />, label: "Email", value: user?.email || sessionUser?.email || "-" },
               {
                 icon: <Lock size={16} />,
                 label: "Connexion via",
-                value: user?.provider ? user.provider.charAt(0).toUpperCase() + user.provider.slice(1) : "-",
+                value: user?.provider
+                  ? user.provider.charAt(0).toUpperCase() + user.provider.slice(1)
+                  : "-",
               },
               { icon: <Calendar size={16} />, label: "Membre depuis", value: memberSince || "-" },
               { icon: <BadgeCheck size={16} />, label: "Statut", value: user?.isVerified ? "Vérifié" : "Non vérifié" },
@@ -782,7 +633,6 @@ export default function UserProfile() {
               </div>
             ))}
           </motion.div>
-
         </aside>
       </div>
     </div>
