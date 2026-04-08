@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
   BadgeCheck,
@@ -12,10 +12,7 @@ import {
   Lock,
   Mail,
   Sparkles,
-  User,
-  LogOut,
 } from "lucide-react";
-import Link from "next/link";
 
 type ApiUser = {
   _id: string;
@@ -88,241 +85,6 @@ const FAVOURITES = [
 
 type FavouriteItem = (typeof FAVOURITES)[number];
 
-const s: any = {
-  page: {
-    minHeight: "100vh",
-    background: "linear-gradient(135deg, #faf6f1 0%, #f5ede3 50%, #faf6f1 100%)",
-    fontFamily: "'Cormorant Garamond', 'Georgia', serif",
-    color: "#2c1810",
-  },
-  hero: {
-    padding: "52px 80px 44px",
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 32,
-    maxWidth: 1200,
-    margin: "0 0",
-  },
-  avatarWrap: { position: "relative", flexShrink: 0 },
-  avatar: {
-    width: 110,
-    height: 110,
-    borderRadius: 18,
-    objectFit: "cover",
-    border: "3px solid rgba(205,133,80,0.3)",
-    display: "block",
-    background: "#e8d5c0",
-  },
-  avatarFallback: {
-    width: 110,
-    height: 110,
-    borderRadius: 18,
-    background: "linear-gradient(135deg, #cd8550 0%, #e8a070 100%)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#fff",
-    fontSize: 40,
-    fontWeight: 700,
-    flexShrink: 0,
-  },
-  verifiedBadge: {
-    position: "absolute",
-    bottom: -6,
-    right: -6,
-    width: 28,
-    height: 28,
-    borderRadius: "50%",
-    background: "#22c55e",
-    border: "2.5px solid #faf6f1",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#fff",
-    fontSize: 14,
-  },
-  heroInfo: { flex: 1 },
-  heroName: {
-    fontSize: 38,
-    fontWeight: 700,
-    margin: "0 0 6px",
-    letterSpacing: "-0.01em",
-    color: "#1a0f09",
-  },
-  heroMeta: {
-    display: "flex",
-    alignItems: "center",
-    gap: 20,
-    marginBottom: 12,
-    flexWrap: "wrap",
-  },
-  metaItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    fontSize: 14,
-    color: "#7a5a50",
-  },
-  rolePill: {
-    display: "inline-flex",
-    alignItems: "center",
-    padding: "4px 14px",
-    borderRadius: 50,
-    background: "linear-gradient(135deg, #cd8550 0%, #e8a070 100%)",
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: 600,
-    letterSpacing: "0.04em",
-    marginBottom: 8,
-  },
-  providerPill: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 6,
-    padding: "4px 14px",
-    borderRadius: 50,
-    background: "rgba(205,133,80,0.12)",
-    color: "#cd8550",
-    fontSize: 12,
-    fontWeight: 500,
-    border: "1px solid rgba(205,133,80,0.25)",
-    marginLeft: 8,
-  },
-  layout: {
-    maxWidth: 1200,
-    margin: "0 auto",
-    padding: "0 80px 80px",
-    display: "grid",
-    gridTemplateColumns: "1fr 300px",
-    gap: 48,
-    alignItems: "start",
-  },
-  tabs: {
-    display: "flex",
-    gap: 0,
-    borderBottom: "2px solid rgba(205,133,80,0.15)",
-    marginBottom: 28,
-  },
-  tabBtn: (active: boolean) => ({
-    padding: "12px 28px",
-    background: "none",
-    border: "none",
-    borderBottom: active ? "2px solid #cd8550" : "2px solid transparent",
-    marginBottom: -2,
-    color: active ? "#cd8550" : "#7a5a50",
-    fontSize: 16,
-    fontWeight: active ? 700 : 400,
-    cursor: "pointer",
-    fontFamily: "inherit",
-    letterSpacing: "0.01em",
-    transition: "all 0.2s",
-  }),
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: 18,
-  },
-  card: {
-    borderRadius: 16,
-    overflow: "hidden",
-    background: "#fff",
-    boxShadow: "0 2px 16px rgba(44,24,16,0.07)",
-    cursor: "pointer",
-    position: "relative",
-  },
-  cardImg: {
-    width: "100%",
-    aspectRatio: "4/3",
-    objectFit: "cover",
-    display: "block",
-    background: "#e8d5c0",
-  },
-  cardBadge: {
-    position: "absolute",
-    top: 10,
-    left: 10,
-    padding: "4px 10px",
-    borderRadius: 50,
-    background: "linear-gradient(135deg, #cd8550 0%, #e8a070 100%)",
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: 700,
-    letterSpacing: "0.08em",
-  },
-  heartBtn: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 34,
-    height: 34,
-    borderRadius: "50%",
-    background: "rgba(255,255,255,0.92)",
-    border: "none",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    fontSize: 16,
-    boxShadow: "0 2px 8px rgba(44,24,16,0.12)",
-    transition: "transform 0.15s",
-  },
-  cardBody: { padding: "12px 14px 14px" },
-  cardTitle: { fontSize: 15, fontWeight: 700, margin: "0 0 3px", color: "#1a0f09" },
-  cardArtisan: { fontSize: 12, color: "#9a7060", margin: "0 0 8px" },
-  cardFooter: { display: "flex", justifyContent: "space-between", alignItems: "center" },
-  cardCategory: {
-    fontSize: 11,
-    fontWeight: 600,
-    letterSpacing: "0.08em",
-    color: "#cd8550",
-    textTransform: "uppercase",
-    padding: "3px 10px",
-    borderRadius: 50,
-    background: "rgba(205,133,80,0.1)",
-  },
-  cardPrice: { fontSize: 15, fontWeight: 700, color: "#2c1810" },
-  sidebar: {},
-  infoCard: {
-    background: "#fff",
-    borderRadius: 20,
-    padding: "28px 24px",
-    boxShadow: "0 2px 20px rgba(44,24,16,0.07)",
-    marginBottom: 20,
-  },
-  infoTitle: {
-    fontSize: 20,
-    fontWeight: 700,
-    marginBottom: 20,
-    color: "#1a0f09",
-    letterSpacing: "-0.01em",
-  },
-  infoRow: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 14,
-    marginBottom: 18,
-  },
-  infoIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    background: "rgba(205,133,80,0.12)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 16,
-    flexShrink: 0,
-  },
-  infoLabel: { fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "#9a7060", textTransform: "uppercase", marginBottom: 2 },
-  infoValue: { fontSize: 14, color: "#2c1810", fontWeight: 500, wordBreak: "break-all" },
-  empty: {
-    gridColumn: "1/-1",
-    textAlign: "center",
-    padding: "60px 0",
-    color: "#9a7060",
-  },
-};
-
 function formatDate(iso?: string) {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
@@ -336,16 +98,16 @@ function FavCard({ item, index }: { item: FavouriteItem; index: number }) {
   const [liked, setLiked] = useState(true);
   return (
     <motion.div
-      style={s.card}
+      className="profile-card"
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.07, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ y: -4, boxShadow: "0 8px 32px rgba(44,24,16,0.13)" }}
     >
-      <img src={item.image} alt={item.title} style={s.cardImg} />
-      {item.badge && <span style={s.cardBadge}>{item.badge}</span>}
+      <img src={item.image} alt={item.title} className="profile-card-img" />
+      {item.badge && <span className="profile-card-badge">{item.badge}</span>}
       <motion.button
-        style={{ ...s.heartBtn, color: liked ? "#ef4444" : "#9a7060" }}
+        className={`profile-heart-btn${liked ? " liked" : ""}`}
         onClick={() => setLiked((l) => !l)}
         whileTap={{ scale: 0.8 }}
         whileHover={{ scale: 1.15 }}
@@ -353,12 +115,12 @@ function FavCard({ item, index }: { item: FavouriteItem; index: number }) {
       >
         {liked ? <Heart size={16} fill="currentColor" /> : <HeartOff size={16} />}
       </motion.button>
-      <div style={s.cardBody}>
-        <p style={s.cardTitle}>{item.title}</p>
-        <p style={s.cardArtisan}>par {item.artisan}</p>
-        <div style={s.cardFooter}>
-          <span style={s.cardCategory}>{item.category}</span>
-          <span style={s.cardPrice}>{item.price}</span>
+      <div className="profile-card-body">
+        <p className="profile-card-title">{item.title}</p>
+        <p className="profile-card-artisan">par {item.artisan}</p>
+        <div className="profile-card-footer">
+          <span className="profile-card-category">{item.category}</span>
+          <span className="profile-card-price">{item.price}</span>
         </div>
       </div>
     </motion.div>
@@ -373,7 +135,6 @@ export default function UserProfile() {
   const [loadingUser, setLoadingUser] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Pull token/user from session — cast once here
   const apiToken = (session as any)?.apiToken as string | undefined;
   const sessionUser = session?.user
     ? {
@@ -382,25 +143,19 @@ export default function UserProfile() {
         image: session.user.image ?? undefined,
       }
     : undefined;
-  const displayName =
-    ((session as any)?.apiUser as { name?: string } | undefined)?.name ||
-    sessionUser?.name ||
-    sessionUser?.email ||
-    "Compte";
 
-  // Use a ref so the fetch effect doesn't re-run while token is being injected
   const fetchedRef = useRef(false);
   const meFetchedRef = useRef(false);
 
-  // ── Redirect if not logged in ──────────────────────────────────────────────
+  // ── Redirect if not logged in ────────────────────────────────────────────
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/connexion");
   }, [status, router]);
 
-  // ── Step 1: if authenticated but no apiToken yet, call sync-token ──────────
+  // ── Step 1: authenticated but no apiToken → call sync-token ─────────────
   useEffect(() => {
     if (status !== "authenticated") return;
-    if (apiToken) return; // already have it — skip
+    if (apiToken) return;
     if (fetchedRef.current) return;
     fetchedRef.current = true;
 
@@ -411,8 +166,6 @@ export default function UserProfile() {
         const r = await fetch("/api/auth/sync-token", { method: "POST" });
         const data = await r.json();
         if (!r.ok) throw new Error(data.error || "sync-token failed");
-        // Inject token+user into the NextAuth session; the session update triggers
-        // a re-render with the new apiToken, which runs Step 2 below.
         await update({ apiToken: data.token, apiUser: data.user } as any);
       } catch (e: any) {
         setLoadError(
@@ -422,11 +175,10 @@ export default function UserProfile() {
         );
         setLoadingUser(false);
       }
-      // Don't set loadingUser(false) here — Step 2 will do it after /me succeeds
     })();
   }, [status, apiToken, update]);
 
-  // ── Step 2: once we have apiToken, fetch /api/auth/me (run once only) ────────
+  // ── Step 2: have apiToken → fetch /api/auth/me once ─────────────────────
   useEffect(() => {
     if (!apiToken) return;
     if (meFetchedRef.current) return;
@@ -444,7 +196,7 @@ export default function UserProfile() {
         if (!resp.ok) throw new Error(`/api/auth/me returned ${resp.status}`);
         const me = (await resp.json()) as ApiUser;
         if (!cancelled) setUser(me);
-      } catch (err: any) {
+      } catch {
         if (!cancelled)
           setLoadError(
             "Impossible de charger votre profil. Vérifiez la configuration API/CORS (Railway) puis réessayez."
@@ -458,33 +210,22 @@ export default function UserProfile() {
   }, [apiToken]);
 
   const memberSince = formatDate(user?.createdAt);
+  const isActive = user?.status === "active";
 
   return (
-    <div style={s.page}>
+    <div className="profile-page">
+
       {/* ── ERROR BANNER ── */}
       {loadError && (
-        <div style={{ maxWidth: 980, margin: "100px auto 0", padding: "0 24px" }}>
-          <div
-            style={{
-              background: "rgba(239,68,68,0.10)",
-              border: "1px solid rgba(239,68,68,0.25)",
-              color: "#7f1d1d",
-              borderRadius: 16,
-              padding: "14px 16px",
-              fontSize: 14,
-            }}
-          >
-            {loadError}{" "}
+        <div className="profile-error-wrap">
+          <div className="profile-error-box">
+            {loadError}
             <button
-              onClick={() => { fetchedRef.current = false; window.location.reload(); }}
-              style={{
-                marginLeft: 8,
-                border: "none",
-                background: "transparent",
-                textDecoration: "underline",
-                cursor: "pointer",
-                color: "inherit",
-                fontWeight: 700,
+              className="profile-error-retry"
+              onClick={() => {
+                fetchedRef.current = false;
+                meFetchedRef.current = false;
+                window.location.reload();
               }}
             >
               Réessayer
@@ -495,27 +236,29 @@ export default function UserProfile() {
 
       {/* ── HERO ── */}
       <motion.section
-        style={{ ...s.hero, marginTop: 80 /* clear global Header */ }}
+        className="profile-hero"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.15 }}
       >
-        {/* Avatar */}
         <motion.div
-          style={s.avatarWrap}
+          className="profile-avatar-wrap"
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
         >
-          {user?.image ? (
-            <img src={user.image ?? undefined} alt={user.name ?? undefined} style={s.avatar} />
-          ) : null}
-          <div style={{ ...s.avatarFallback, display: user?.image ? "none" : "flex" }}>
+          {user?.image && (
+            <img src={user.image} alt={user.name ?? undefined} className="profile-avatar" />
+          )}
+          <div
+            className="profile-avatar-fallback"
+            style={{ display: user?.image ? "none" : "flex" }}
+          >
             {loadingUser ? "…" : getInitials(user?.name || sessionUser?.name)}
           </div>
           {user?.isVerified && (
             <motion.div
-              style={s.verifiedBadge}
+              className="profile-verified-badge"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.55, type: "spring", stiffness: 300 }}
@@ -526,50 +269,46 @@ export default function UserProfile() {
           )}
         </motion.div>
 
-        {/* Info */}
-        <div style={s.heroInfo}>
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
+        <div className="profile-hero-info">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+          >
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
-              <span style={{ ...s.rolePill, gap: 8 }}>
+              <span className="profile-role-pill">
                 <Sparkles size={14} />
                 Membre
               </span>
               {user?.provider && (
-                <span style={s.providerPill}>
+                <span className="profile-provider-pill">
                   <span>{user.provider === "google" ? "G" : user.provider === "facebook" ? "f" : "•"}</span>
                   {user.provider.charAt(0).toUpperCase() + user.provider.slice(1)}
                 </span>
               )}
             </div>
-            <h1 style={s.heroName}>
-              {loadingUser
-                ? "Chargement..."
-                : user?.name || sessionUser?.name || "Profil"}
+
+            <h1 className="profile-hero-name">
+              {loadingUser ? "Chargement..." : user?.name || sessionUser?.name || "Profil"}
             </h1>
-            <div style={s.heroMeta}>
-              <span style={s.metaItem}>
+
+            <div className="profile-hero-meta">
+              <span className="profile-meta-item">
                 <Mail size={14} />
                 {user?.email || sessionUser?.email || "-"}
               </span>
               {memberSince && (
-                <span style={s.metaItem}>
+                <span className="profile-meta-item">
                   <Calendar size={14} />
                   Membre depuis {memberSince}
                 </span>
               )}
-              <span style={{ ...s.metaItem, color: user?.status === "active" ? "#22c55e" : "#ef4444" }}>
+              <span className={`profile-meta-item ${isActive ? "profile-meta-active" : "profile-meta-inactive"}`}>
                 <span
-                  aria-hidden="true"
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: user?.status === "active" ? "#22c55e" : "#ef4444",
-                    display: "inline-block",
-                    marginRight: 6,
-                  }}
+                  className="profile-status-dot"
+                  style={{ background: isActive ? "#22c55e" : "#ef4444" }}
                 />
-                {loadingUser ? "…" : user?.status === "active" ? "Actif" : "Inactif"}
+                {loadingUser ? "…" : isActive ? "Actif" : "Inactif"}
               </span>
             </div>
           </motion.div>
@@ -577,11 +316,15 @@ export default function UserProfile() {
       </motion.section>
 
       {/* ── BODY ── */}
-      <div style={s.layout}>
+      <div className="profile-layout">
         <main>
-          <div style={s.tabs}>
+          <div className="profile-tabs">
             {[{ key: "favoris", label: `Favoris (${FAVOURITES.length})` }].map(({ key, label }) => (
-              <button key={key} style={s.tabBtn(activeTab === key)} onClick={() => setActiveTab(key)}>
+              <button
+                key={key}
+                className={`profile-tab-btn${activeTab === key ? " active" : ""}`}
+                onClick={() => setActiveTab(key)}
+              >
                 {label}
               </button>
             ))}
@@ -596,7 +339,7 @@ export default function UserProfile() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3 }}
               >
-                <div style={s.grid}>
+                <div className="profile-grid">
                   {FAVOURITES.map((item, i) => (
                     <FavCard key={item.id} item={item} index={i} />
                   ))}
@@ -606,15 +349,14 @@ export default function UserProfile() {
           </AnimatePresence>
         </main>
 
-        {/* SIDEBAR */}
-        <aside style={s.sidebar}>
+        <aside>
           <motion.div
-            style={s.infoCard}
+            className="profile-info-card"
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5, duration: 0.5 }}
           >
-            <div style={s.infoTitle}>Informations</div>
+            <div className="profile-info-title">Informations</div>
             {[
               { icon: <Mail size={16} />, label: "Email", value: user?.email || sessionUser?.email || "-" },
               {
@@ -627,11 +369,11 @@ export default function UserProfile() {
               { icon: <Calendar size={16} />, label: "Membre depuis", value: memberSince || "-" },
               { icon: <BadgeCheck size={16} />, label: "Statut", value: user?.isVerified ? "Vérifié" : "Non vérifié" },
             ].map(({ icon, label, value }) => (
-              <div style={s.infoRow} key={label}>
-                <div style={s.infoIcon}>{icon}</div>
+              <div className="profile-info-row" key={label}>
+                <div className="profile-info-icon">{icon}</div>
                 <div>
-                  <div style={s.infoLabel}>{label}</div>
-                  <div style={s.infoValue}>{value}</div>
+                  <div className="profile-info-label">{label}</div>
+                  <div className="profile-info-value">{value}</div>
                 </div>
               </div>
             ))}
