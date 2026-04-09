@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { motion,Variants  } from 'framer-motion';
 import { ShoppingBag, Mail, Phone, MapPin } from 'lucide-react';
+import logo from '../images/tirjet_app_icon (1).png'
 
 export default function CompactFooter() {
   const currentYear = new Date().getFullYear();
@@ -48,7 +49,9 @@ export default function CompactFooter() {
           {/* Brand Column */}
           <motion.div variants={itemVariants} className="art-compact-col">
             <Link href="/" className="art-compact-logo">
-              <ShoppingBag size={20} className="art-compact-icon" />
+              {/* <ShoppingBag size={20} className="art-compact-icon" /> */}
+              <img src={logo.src} width={'50px'} alt="" />
+              
               <span>Tirjet</span>
             </Link>
             <p className="art-compact-tagline">
@@ -93,7 +96,7 @@ export default function CompactFooter() {
           variants={itemVariants} 
           className="art-compact-bottom"
         >
-          <p>© {currentYear} Tirjet. Tous droits réservés.</p>
+          <p>Copyright © 2025, TAMAGUIT. Developed by TAMAGUIT</p>
         </motion.div>
       </div>
     </motion.footer>

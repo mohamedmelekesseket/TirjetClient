@@ -52,34 +52,34 @@ const values = [
 const products = [
   {
     cat: "Tissage",
-    name: "Tapis berbère traditionnel",
-    shop: "Atelier Azilal",
-    loc: "Azilal",
-    price: "1 200",
+    name: "Kilim berbère traditionnel",
+    shop: "Atelier Kairouan",
+    loc: "Kairouan",
+    price: "850",
     img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=700&q=85",
   },
   {
     cat: "Poterie",
-    name: "Poterie artisanale peinte",
-    shop: "Poterie Safi",
-    loc: "Safi",
-    price: "350",
+    name: "Poterie artisanale de Nabeul",
+    shop: "Céramique Nabeul",
+    loc: "Nabeul",
+    price: "220",
     img: "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=700&q=85",
   },
   {
     cat: "Bijouterie",
     name: "Bijoux en argent amazigh",
-    shop: "Bijoux Tiznit",
-    loc: "Tiznit",
-    price: "890",
+    shop: "Bijoux Djerba",
+    loc: "Djerba",
+    price: "650",
     img: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=700&q=85",
   },
 ];
 
 const artisans = [
-  { name: "Atelier Azilal", craft: "Tapis berbères", loc: "Azilal", img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&q=80" },
-  { name: "Poterie Safi", craft: "Céramique", loc: "Safi", img: "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=500&q=80" },
-  { name: "Bijoux Tiznit", craft: "Bijouterie", loc: "Tiznit", img: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=500&q=80" },
+  { name: "Atelier Kairouan", craft: "Kilims & tapis", loc: "Kairouan", img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&q=80" },
+  { name: "Céramique Nabeul", craft: "Céramique", loc: "Nabeul", img: "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=500&q=80" },
+  { name: "Bijoux Djerba", craft: "Bijouterie", loc: "Djerba", img: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=500&q=80" },
 ];
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -183,7 +183,7 @@ function Hero() {
 
         <p className="pg-hero__sub">
           Pièces uniques sourcées directement auprès des maîtres<br />
-          artisans. Chaque objet porte une histoire, un territoire.
+          artisans de Tunisie. Chaque objet porte une histoire, un territoire.
         </p>
 
         <div className="pg-hero__ctas">
@@ -208,7 +208,7 @@ function Hero() {
         <div className="pg-hero__rule" />
 
         <div className="pg-hero__stats">
-          {[["150+", "Artisans"], ["2 000+", "Créations"], ["12", "Régions"]].map(([n, l]) => (
+          {[["150+", "Artisans"], ["2 000+", "Créations"], ["24", "Gouvernorats"]].map(([n, l]) => (
             <div key={l} className="pg-hero__stat">
               <span className="pg-hero__stat-n">{n}</span>
               <span className="pg-hero__stat-l">{l}</span>
@@ -312,7 +312,7 @@ function Products() {
                 <div className="pg-prod-card__foot">
                   <span className="pg-prod-card__loc"><Pin />{p.loc}</span>
                   <span className="pg-prod-card__price">
-                    <strong>{p.price}</strong> MAD
+                    <strong>{p.price}</strong> TND
                   </span>
                 </div>
               </div>
@@ -338,8 +338,8 @@ function Story() {
         <img src={story.src} alt="Artisane tissant" />
         {/* floating badge */}
         <div className="pg-story__badge">
-          <span className="pg-story__badge-num">12</span>
-          <span className="pg-story__badge-lbl">Régions<br />couvertes</span>
+          <span className="pg-story__badge-num">24</span>
+          <span className="pg-story__badge-lbl">Gouvernorats<br />couverts</span>
         </div>
       </motion.div>
 
@@ -354,7 +354,7 @@ function Story() {
         <h2 className="pg-h2">Préserver un<br /><em>héritage millénaire</em></h2>
         <p className="pg-story__para">
           Tirjet est née de la volonté de valoriser l&apos;artisanat amazigh. Nous connectons les
-          artisans talentueux du Maroc avec le monde entier, en leur offrant une vitrine
+          artisans talentueux de Tunisie avec le monde entier, en leur offrant une vitrine
           numérique pour leurs créations uniques.
         </p>
         <p className="pg-story__para">

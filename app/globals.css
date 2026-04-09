@@ -2535,6 +2535,12 @@ input[type="range"].price-slider::-moz-range-thumb {
   justify-content: space-between;
   padding: 36px;
   min-height: 100ht2-mainvh;
+  background-color: #1a1208;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 250px 250px;
+
 }
 
 .lp-left__img {
@@ -2548,16 +2554,14 @@ input[type="range"].price-slider::-moz-range-thumb {
   filter: brightness(0.72);
 }
 
-.lp-left__overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(10, 10, 10, 0.35) 0%,
-    rgba(10, 10, 10, 0.1) 40%,
-    rgba(10, 10, 10, 0.75) 100%
-  );
-}
+/* .lp-left__overlay {
+background-color: #1a1208;
+background-image:
+  linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+  linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+background-size: 250px 250px;
+
+} */
 
 /* Top badge */
 .lp-left__badge {
@@ -2831,6 +2835,7 @@ input[type="range"].price-slider::-moz-range-thumb {
   .lp-left {
     min-height: 52vh;
     padding: 28px;
+    display: none;
   }
 
   .lp-left__title {

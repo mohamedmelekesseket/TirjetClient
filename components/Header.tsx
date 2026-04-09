@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Menu, User, LogOut, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
-
+import logo from '../images/tirjet_app_icon (1).png'
 const links = [
   { href: "/", label: "Accueil" },
   { href: "/boutique", label: "Boutique" },
@@ -62,7 +62,8 @@ const Header = () => {
             <div className="topBar">
               {/* LOGO */}
               <div className="logo">
-                <div className="logoCircle">T</div>
+                <img src={logo.src} width={'50px'} alt="" />
+                {/* <div className="logoCircle">T</div> */}
                 <div className="logoText">
                   <h1>Tirjet</h1>
                   <span>ATELIER & BOUTIQUE</span>

@@ -82,11 +82,11 @@ export default function LoginPage() {
       {/* ── LEFT PANEL ── */}
       <div className="lp-left">
         {/* Background image */}
-        <img
+        {/* <img
           src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=900&q=80"
           alt="Amazigh artisan"
           className="lp-left__img"
-        />
+        /> */}
         {/* Dark gradient overlay */}
         <div className="lp-left__overlay" />
 
@@ -243,7 +243,7 @@ export default function LoginPage() {
               <span>{isGoogleLoading ? "Connexion..." : "Continuer avec Google"}</span>
             </motion.button>
 
-            <motion.button
+            {/* <motion.button
               className="lp-oauth-btn lp-oauth-btn--facebook"
               onClick={async () => {
                 try {
@@ -259,7 +259,7 @@ export default function LoginPage() {
             >
               <FacebookIcon />
               <span>{isFacebookLoading ? "Connexion..." : "Continuer avec Facebook"}</span>
-            </motion.button>
+            </motion.button> */}
           </motion.div>
 
           {/* Divider */}
@@ -280,8 +280,8 @@ export default function LoginPage() {
             transition={{ delay: 0.52, duration: 0.5 }}
           >
             En vous connectant, vous acceptez nos{" "}
-            <Link href="/apropos">conditions d&apos;utilisation</Link> et notre{" "}
-            <Link href="/apropos">politique de confidentialité</Link>.
+            <Link href="/privacy">conditions d&apos;utilisation</Link> et notre{" "}
+            <Link href="/privacy">politique de confidentialité</Link>.
           </motion.p>
         </motion.div>
       </div>
