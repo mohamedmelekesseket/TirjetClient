@@ -516,17 +516,186 @@ body {
 
 
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   TIRJET — Globals CSS  (prefix: pg-)
-   Palette:
-     Ink       #16110C   deep espresso
-     Parchment #F8F3EC   warm off-white
-     Stone     #EDE6DB   light warm grey
-     Amber     #C9A055   rich gold (replacing pale #c9a96e)
-     Rust      #9E3D1F   deep terracotta
-     Forest    #1F3D2B   deep green accent
-   Fonts: Cormorant Garamond (display) + DM Sans (body)
-══════════════════════════════════════════════════════════════════════════════ */
+
+
+
+/* ═══════════════════════════════════════════
+   PRIVACY PAGE
+═══════════════════════════════════════════ */
+.privacy-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #faf6f1 0%, #f5ede3 50%, #faf6f1 100%);
+  font-family: 'Cormorant Garamond', 'Georgia', serif;
+  color: #2c1810;
+  padding: 120px 24px 80px;
+}
+
+.privacy-container {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.privacy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 50px;
+  background: rgba(205, 133, 80, 0.12);
+  border: 1px solid rgba(205, 133, 80, 0.25);
+  color: #cd8550;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.privacy-title {
+  font-size: 48px;
+  font-weight: 700;
+  color: #1a0f09;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+  line-height: 1.1;
+}
+
+.privacy-subtitle {
+  font-size: 16px;
+  color: #9a7060;
+  margin: 0 0 48px;
+  letter-spacing: 0.02em;
+}
+
+.privacy-divider {
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, #cd8550, #e8a070);
+  border-radius: 2px;
+  margin-bottom: 48px;
+}
+
+.privacy-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 36px 40px;
+  box-shadow: 0 2px 24px rgba(44, 24, 16, 0.07);
+  margin-bottom: 20px;
+  border: 1px solid rgba(205, 133, 80, 0.08);
+  transition: box-shadow 0.2s;
+}
+
+.privacy-card:hover {
+  box-shadow: 0 8px 36px rgba(44, 24, 16, 0.11);
+}
+
+.privacy-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.privacy-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(205,133,80,0.15) 0%, rgba(232,160,112,0.15) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #cd8550;
+}
+
+.privacy-card-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a0f09;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.privacy-card-text {
+  font-size: 15px;
+  color: #5a3e35;
+  line-height: 1.75;
+  margin: 0;
+}
+
+.privacy-card-text strong {
+  color: #2c1810;
+  font-weight: 600;
+}
+
+.privacy-contact-card {
+  background: linear-gradient(135deg, #cd8550 0%, #e8a070 100%);
+  border-radius: 20px;
+  padding: 36px 40px;
+  margin-top: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.privacy-contact-text h3 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 6px;
+}
+
+.privacy-contact-text p {
+  font-size: 14px;
+  color: rgba(255,255,255,0.8);
+  margin: 0;
+}
+
+.privacy-contact-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #fff;
+  color: #cd8550;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 14px rgba(44,24,16,0.15);
+}
+
+.privacy-contact-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(44,24,16,0.2);
+}
+
+.privacy-footer-note {
+  text-align: center;
+  font-size: 13px;
+  color: #9a7060;
+  margin-top: 40px;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 600px) {
+  .privacy-title { font-size: 32px; }
+  .privacy-card { padding: 24px 20px; }
+  .privacy-contact-card { padding: 28px 24px; }
+}
+
+
+
+
+
+
+
+
 
 /* ═══════════════════════════════════════════
    PROFILE PAGE

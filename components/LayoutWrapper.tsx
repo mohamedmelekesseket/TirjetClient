@@ -14,6 +14,7 @@ export default function LayoutWrapper({
   const hideHeader =
     pathname === "/connexion" ||
     pathname === "/Rejoigneznous" ||
+    pathname === "/privacy" ||
     pathname.startsWith("/dashboard");
 
   return (
