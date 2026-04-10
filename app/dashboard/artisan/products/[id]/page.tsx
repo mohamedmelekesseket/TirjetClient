@@ -31,7 +31,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               </div>
               <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: '#0234AB', marginBottom: '6px' }}>Poterie</div>
               <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#0A0F2C', marginBottom: '8px' }}>Tajine en céramique berbère</div>
-              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '1.3rem', fontWeight: 700, color: '#0234AB', marginBottom: '16px' }}>350 MAD</div>
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '1.3rem', fontWeight: 700, color: '#0234AB', marginBottom: '16px' }}>350 TND</div>
               <p style={{ fontSize: '0.875rem', color: '#4A5568', lineHeight: 1.7 }}>
                 Tajine artisanal en céramique, fabriqué à la main par des artisans berbères de la région d&apos;Azilal. 
                 Chaque pièce est unique et porte les motifs traditionnels de l&apos;artisanat marocain authentique.

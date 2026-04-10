@@ -6792,6 +6792,7 @@ tbody td {
 
 .product-card {
   background: white;
+  width: 100%;
   border-radius: 18px;
   border: 1px solid rgba(2,52,171,0.07);
   box-shadow: 0 2px 12px rgba(2,52,171,0.05);
@@ -6807,7 +6808,7 @@ tbody td {
 }
 
 .product-card-image {
-  height: 160px;
+  height: 200px;
   background: linear-gradient(135deg, #EEF2FF, #E0E9FF);
   display: flex;
   align-items: center;

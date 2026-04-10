@@ -2,16 +2,16 @@ import Link from 'next/link';
 import { StatCard } from '../components/Card';
 
 const recentProducts = [
-  { id: 1, name: 'Tajine en céramique',   category: 'Poterie',       price: '350 MAD',   status: 'Actif',      orders: 12, color: '#0B9E5E' },
-  { id: 2, name: 'Sac en cuir fait main', category: 'Maroquinerie',  price: '580 MAD',   status: 'Actif',      orders: 8,  color: '#0B9E5E' },
-  { id: 3, name: 'Tapis berbère',          category: 'Textile',       price: '1 200 MAD', status: 'En attente', orders: 3,  color: '#F59E0B' },
-  { id: 4, name: 'Lanterne en fer forgé',  category: 'Métal',         price: '420 MAD',   status: 'Actif',      orders: 15, color: '#0B9E5E' },
+  { id: 1, name: 'Tajine en céramique',   category: 'Poterie',       price: '350 TND',   status: 'Actif',      orders: 12, color: '#0B9E5E' },
+  { id: 2, name: 'Sac en cuir fait main', category: 'Maroquinerie',  price: '580 TND',   status: 'Actif',      orders: 8,  color: '#0B9E5E' },
+  { id: 3, name: 'Tapis berbère',          category: 'Textile',       price: '1 200 TND', status: 'En attente', orders: 3,  color: '#F59E0B' },
+  { id: 4, name: 'Lanterne en fer forgé',  category: 'Métal',         price: '420 TND',   status: 'Actif',      orders: 15, color: '#0B9E5E' },
 ];
 
 const recentOrders = [
-  { id: '#CMD-001', product: 'Tajine en céramique', customer: 'Sara M.',   total: '350 MAD',   status: 'Livré',      statusClass: 'badge-success' },
-  { id: '#CMD-002', product: 'Sac en cuir',         customer: 'Khalid B.', total: '580 MAD',   status: 'En cours',   statusClass: 'badge-primary' },
-  { id: '#CMD-003', product: 'Tapis berbère',        customer: 'Nadia R.',  total: '1 200 MAD', status: 'En attente', statusClass: 'badge-warning' },
+  { id: '#CMD-001', product: 'Tajine en céramique', customer: 'Sara M.',   total: '350 TND',   status: 'Livré',      statusClass: 'badge-success' },
+  { id: '#CMD-002', product: 'Sac en cuir',         customer: 'Khalid B.', total: '580 TND',   status: 'En cours',   statusClass: 'badge-primary' },
+  { id: '#CMD-003', product: 'Tapis berbère',        customer: 'Nadia R.',  total: '1 200 TND', status: 'En attente', statusClass: 'badge-warning' },
 ];
 
 export default function ArtisanDashboard() {
@@ -33,7 +33,7 @@ export default function ArtisanDashboard() {
       <div className="stats-grid">
         <StatCard icon="◈" label="Produits"  value="24"          delta="+3"    positive color="#0234AB" delay={0.05} />
         <StatCard icon="◉" label="Commandes" value="156"         delta="+12%"  positive color="#0B9E5E" delay={0.1}  />
-        <StatCard icon="$" label="Revenus"   value="45 200 MAD"  delta="+8%"   positive color="#F5A623" delay={0.15} />
+        <StatCard icon="$" label="Revenus"   value="45 200 TND"  delta="+8%"   positive color="#F5A623" delay={0.15} />
         <StatCard icon="◎" label="Vues"      value="2 340"        delta="+15%"  positive color="#8B5CF6" delay={0.2}  />
       </div>
 

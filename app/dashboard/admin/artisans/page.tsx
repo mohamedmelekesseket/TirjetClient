@@ -1,51 +1,183 @@
-const artisans = [
-  { id: 1, name: 'Ahmed Benali',    city: 'Marrakech', speciality: 'Poterie',      products: 24, orders: 156, revenue: '45 200', status: 'Actif',      joined: 'Jan 2025', rating: 4.8 },
-  { id: 2, name: 'Fatima Zahra',   city: 'Fès',       speciality: 'Textile',      products: 18, orders: 89,  revenue: '28 400', status: 'Actif',      joined: 'Mar 2025', rating: 4.6 },
-  { id: 3, name: 'Karim Essadki',  city: 'Meknès',    speciality: 'Maroquinerie', products: 0,  orders: 0,   revenue: '0',      status: 'En attente', joined: 'Avr 2026', rating: 0   },
-  { id: 4, name: 'Leila Bouhsini', city: 'Rabat',     speciality: 'Bijoux',       products: 31, orders: 204, revenue: '62 100', status: 'Actif',      joined: 'Nov 2024', rating: 4.9 },
-  { id: 5, name: 'Hamid Ouazzani', city: 'Salé',      speciality: 'Bois',         products: 0,  orders: 0,   revenue: '0',      status: 'En attente', joined: 'Avr 2026', rating: 0   },
-  { id: 6, name: 'Sara Moussaoui', city: 'Agadir',    speciality: 'Céramique',    products: 12, orders: 67,  revenue: '19 800', status: 'Suspendu',   joined: 'Fév 2025', rating: 3.9 },
-  { id: 7, name: 'Omar Idrissi',   city: 'Tanger',    speciality: 'Métal',        products: 9,  orders: 44,  revenue: '13 200', status: 'Actif',      joined: 'Sep 2025', rating: 4.5 },
-  { id: 8, name: 'Nadia Rachidi',  city: 'Casablanca',speciality: 'Poterie',      products: 22, orders: 138, revenue: '41 400', status: 'Actif',      joined: 'Juin 2025',rating: 4.7 },
-];
+"use client";
 
-const statusClass: Record<string, string> = {
-  'Actif': 'badge-success',
-  'En attente': 'badge-warning',
-  'Suspendu': 'badge-danger',
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+interface Artisan {
+  _id: string;
+  user: {
+    _id: string;
+    name: string;
+    email: string;
+    status: string;
+  };
+  phone?: string;
+  region?: string;
+  isApproved: boolean;
+  createdAt: string;
+}
+
+type FilterTab = "Tous" | "Actif" | "En attente" | "Suspendu";
+
+const initials = (name: string) =>
+  name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+
+const statusLabel = (a: Artisan): string => {
+  if (a.user.status === "blocked") return "Suspendu";
+  if (!a.isApproved) return "En attente";
+  return "Actif";
 };
 
-const initials = (name: string) => name.split(' ').map(n => n[0]).join('').slice(0, 2);
+const statusClass: Record<string, string> = {
+  Actif: "badge-success",
+  "En attente": "badge-warning",
+  Suspendu: "badge-danger",
+};
 
 export default function AdminArtisansPage() {
+  const { data: session, status: sessionStatus } = useSession();
+  const apiToken = (session as any)?.apiToken as string | undefined;
+
+  const [artisans, setArtisans] = useState<Artisan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<FilterTab>("Tous");
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const getHeaders = () => ({
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${apiToken}`,
+  });
+
+  const fetchArtisans = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API}/api/artisans`, { headers: getHeaders() });
+      if (res.status === 401) throw new Error("Non autorisé — session expirée ?");
+      if (!res.ok) throw new Error("Erreur lors du chargement des artisans");
+      const data = await res.json();
+      setArtisans(data.artisans || data.data || []);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (apiToken) fetchArtisans();
+  }, [apiToken]);
+
+  const handleApprove = async (artisanId: string) => {
+    setActionLoading(artisanId + "-approve");
+    try {
+      const res = await fetch(`${API}/api/artisans/${artisanId}/approve`, {
+        method: "PATCH",
+        headers: getHeaders(),
+      });
+      if (!res.ok) throw new Error("Échec de la validation");
+      await fetchArtisans();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleReject = async (artisanId: string) => {
+    if (!confirm("Rejeter cet artisan ?")) return;
+    setActionLoading(artisanId + "-reject");
+    try {
+      const res = await fetch(`${API}/api/artisans/${artisanId}/reject`, {
+        method: "PATCH",
+        headers: getHeaders(),
+      });
+      if (!res.ok) throw new Error("Échec du rejet");
+      await fetchArtisans();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleSuspend = async (userId: string, artisanId: string) => {
+    if (!confirm("Suspendre cet artisan ?")) return;
+    setActionLoading(artisanId + "-suspend");
+    try {
+      const res = await fetch(`${API}/api/users/${userId}/status`, {
+        method: "PATCH",
+        headers: getHeaders(),
+        body: JSON.stringify({ status: "blocked" }),
+      });
+      if (!res.ok) throw new Error("Échec de la suspension");
+      await fetchArtisans();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const filtered = artisans.filter((a) => {
+    const label = statusLabel(a);
+    const matchTab =
+      activeTab === "Tous" ||
+      (activeTab === "Actif" && label === "Actif") ||
+      (activeTab === "En attente" && label === "En attente") ||
+      (activeTab === "Suspendu" && label === "Suspendu");
+    const matchSearch =
+      a.user.name.toLowerCase().includes(search.toLowerCase()) ||
+      (a.region || "").toLowerCase().includes(search.toLowerCase());
+    return matchTab && matchSearch;
+  });
+
+  const counts = {
+    total: artisans.length,
+    actif: artisans.filter((a) => statusLabel(a) === "Actif").length,
+    enAttente: artisans.filter((a) => statusLabel(a) === "En attente").length,
+    suspendu: artisans.filter((a) => statusLabel(a) === "Suspendu").length,
+  };
+
+  const isSessionLoading = sessionStatus === "loading" || (!apiToken && sessionStatus === "authenticated");
+
   return (
     <div>
       <div className="page-header anim-fade-up">
         <div>
           <h1 className="page-title">Gestion des Artisans</h1>
-          <p className="page-subtitle">{artisans.length} artisans inscrits sur la plateforme</p>
+          <p className="page-subtitle">{counts.total} artisans inscrits sur la plateforme</p>
         </div>
         <div className="header-actions-row">
           <div className="search-bar">
             <span className="search-bar-icon">⌕</span>
-            <input className="search-bar-input" placeholder="Rechercher un artisan..." />
+            <input
+              className="search-bar-input"
+              placeholder="Rechercher un artisan..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
           <button className="btn btn-secondary">⬇ Exporter</button>
         </div>
       </div>
 
-      {/* Summary cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      {/* Stat cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "16px", marginBottom: "24px" }}>
         {[
-          { label: 'Total artisans', val: '142', color: '#0234AB', icon: '◈' },
-          { label: 'Actifs',         val: '118', color: '#0B9E5E', icon: '✓' },
-          { label: 'En attente',     val: '16',  color: '#F59E0B', icon: '⏳' },
-          { label: 'Suspendus',      val: '8',   color: '#E53E3E', icon: '✕' },
+          { label: "Total artisans", val: counts.total, color: "#0234AB", icon: "◈" },
+          { label: "Actifs",         val: counts.actif,     color: "#0B9E5E", icon: "✓" },
+          { label: "En attente",     val: counts.enAttente, color: "#F59E0B", icon: "⏳" },
+          { label: "Suspendus",      val: counts.suspendu,  color: "#E53E3E", icon: "✕" },
         ].map((s, i) => (
           <div key={s.label} className="order-stat-mini anim-fade-up" style={{ animationDelay: `${i * 0.07}s` }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
               <div className="order-stat-mini-label">{s.label}</div>
-              <span style={{ fontSize: '1rem', color: s.color }}>{s.icon}</span>
+              <span style={{ fontSize: "1rem", color: s.color }}>{s.icon}</span>
             </div>
             <div className="order-stat-mini-value" style={{ color: s.color }}>{s.val}</div>
           </div>
@@ -54,83 +186,124 @@ export default function AdminArtisansPage() {
 
       {/* Filter tabs */}
       <div className="tabs">
-        {['Tous', 'Actif', 'En attente', 'Suspendu'].map((t, i) => (
-          <button key={t} className={`tab${i === 0 ? ' active' : ''}`}>{t}</button>
+        {(["Tous", "Actif", "En attente", "Suspendu"] as FilterTab[]).map((t) => (
+          <button key={t} className={`tab${activeTab === t ? " active" : ""}`} onClick={() => setActiveTab(t)}>
+            {t}
+          </button>
         ))}
       </div>
 
-      {/* Table */}
+      {/* Table card */}
       <div className="card anim-fade-up anim-d3">
         <div className="card-header">
           <h2 className="card-title">Liste des artisans</h2>
+          <span style={{ fontSize: "0.8rem", color: "#8B9AB5" }}>{filtered.length} résultat(s)</span>
         </div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Artisan</th>
-                <th>Ville</th>
-                <th>Spécialité</th>
-                <th>Produits</th>
-                <th>Commandes</th>
-                <th>Revenu (MAD)</th>
-                <th>Note</th>
-                <th>Statut</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {artisans.map((a, i) => (
-                <tr key={a.id} style={{ animationDelay: `${i * 0.055}s` }}>
-                  <td>
-                    <div className="user-cell">
-                      <div className="user-row-avatar">{initials(a.name)}</div>
-                      <div>
-                        <div className="user-cell-name">{a.name}</div>
-                        <div className="user-cell-email">Depuis {a.joined}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td style={{ color: '#4A5568', fontSize: '0.875rem' }}>{a.city}</td>
-                  <td>
-                    <span className="badge badge-primary">{a.speciality}</span>
-                  </td>
-                  <td className="td-mono">{a.products}</td>
-                  <td className="td-mono">{a.orders}</td>
-                  <td>
-                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.8rem', fontWeight: 700, color: '#0B9E5E' }}>
-                      {a.revenue !== '0' ? `${a.revenue} MAD` : '—'}
-                    </span>
-                  </td>
-                  <td>
-                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.82rem', fontWeight: 700, color: a.rating >= 4.5 ? '#0B9E5E' : a.rating > 0 ? '#F59E0B' : '#8B9AB5' }}>
-                      {a.rating > 0 ? `${a.rating} ★` : '—'}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`badge ${statusClass[a.status] || 'badge-gray'}`}>{a.status}</span>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      {a.status === 'En attente' && (
-                        <>
-                          <button className="btn btn-success btn-sm">✓ Valider</button>
-                          <button className="btn btn-danger btn-sm">✕</button>
-                        </>
-                      )}
-                      {a.status !== 'En attente' && (
-                        <>
-                          <button className="icon-btn" title="Voir">👁</button>
-                          <button className="icon-btn danger" title="Suspendre">⊘</button>
-                        </>
-                      )}
-                    </div>
-                  </td>
+
+        {isSessionLoading && (
+          <div style={{ padding: "40px", textAlign: "center", color: "#8B9AB5" }}>
+            Chargement de la session...
+          </div>
+        )}
+
+        {!isSessionLoading && loading && (
+          <div style={{ padding: "40px", textAlign: "center", color: "#8B9AB5" }}>Chargement...</div>
+        )}
+
+        {!isSessionLoading && error && (
+          <div style={{ padding: "24px", textAlign: "center", color: "#E53E3E" }}>
+            {error}{" "}
+            <button className="btn btn-secondary" onClick={fetchArtisans}>Réessayer</button>
+          </div>
+        )}
+
+        {!isSessionLoading && !loading && !error && (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Artisan</th>
+                  <th>Région</th>
+                  <th>Téléphone</th>
+                  <th>Statut</th>
+                  <th>Inscrit le</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: "center", padding: "32px", color: "#8B9AB5" }}>
+                      Aucun artisan trouvé
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((a, i) => {
+                    const label = statusLabel(a);
+                    return (
+                      <tr key={a._id} style={{ animationDelay: `${i * 0.055}s` }}>
+                        <td>
+                          <div className="user-cell">
+                            <div className="user-row-avatar">{initials(a.user.name)}</div>
+                            <div>
+                              <div className="user-cell-name">{a.user.name}</div>
+                              <div className="user-cell-email">{a.user.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ color: "#4A5568", fontSize: "0.875rem" }}>{a.region || "—"}</td>
+                        <td style={{ color: "#4A5568", fontSize: "0.875rem" }}>{a.phone || "—"}</td>
+                        <td>
+                          <span className={`badge ${statusClass[label] || "badge-gray"}`}>{label}</span>
+                        </td>
+                        <td style={{ color: "#8B9AB5", fontSize: "0.82rem" }}>
+                          {new Date(a.createdAt).toLocaleDateString("fr-FR")}
+                        </td>
+                        <td>
+                          <div style={{ display: "flex", gap: "6px" }}>
+                            {label === "En attente" && (
+                              <>
+                                <button
+                                  className="btn btn-success btn-sm"
+                                  disabled={actionLoading === a._id + "-approve"}
+                                  onClick={() => handleApprove(a._id)}
+                                >
+                                  {actionLoading === a._id + "-approve" ? "..." : "✓ Valider"}
+                                </button>
+                                <button
+                                  className="btn btn-danger btn-sm"
+                                  disabled={actionLoading === a._id + "-reject"}
+                                  onClick={() => handleReject(a._id)}
+                                >
+                                  {actionLoading === a._id + "-reject" ? "..." : "✕"}
+                                </button>
+                              </>
+                            )}
+                            {label !== "En attente" && (
+                              <>
+                                <button className="icon-btn" title="Voir">👁</button>
+                                {label !== "Suspendu" && (
+                                  <button
+                                    className="icon-btn danger"
+                                    title="Suspendre"
+                                    disabled={actionLoading === a._id + "-suspend"}
+                                    onClick={() => handleSuspend(a.user._id, a._id)}
+                                  >
+                                    {actionLoading === a._id + "-suspend" ? "..." : "⊘"}
+                                  </button>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

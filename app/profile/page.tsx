@@ -278,7 +278,7 @@ export default function UserProfile() {
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
               <span className="profile-role-pill">
                 <Sparkles size={14} />
-                Membre
+                {user?.role || sessionUser?.role || "-"}
               </span>
               {user?.provider && (
                 <span className="profile-provider-pill">
