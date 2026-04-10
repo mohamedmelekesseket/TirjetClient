@@ -10,8 +10,8 @@ import UploadImage from '@/app/dashboard/components/UploadImage';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const CATEGORIES = ['fokhar', 'margoum', 'tissage', 'bijoux', 'Bois', 'Métal'];
 
-export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params); // ← use() unwraps the Promise in a client component
   const router = useRouter();
   const { data: session } = useSession();
   const apiToken = (session as any)?.apiToken as string | undefined;
@@ -68,7 +68,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const handle = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
-
+  interface Props {
+    multiple?: boolean;
+    onUpload: (urls: string[]) => void;  // ← this is missing
+  }
   const handleSave = async () => {
     try {
       setSaving(true);

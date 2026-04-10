@@ -1,7 +1,13 @@
 'use client';
 import { useState, useRef } from 'react';
 
-export default function UploadImage({ multiple = true }: { multiple?: boolean }) {
+export default function UploadImage({
+  multiple = true,
+  onUpload,
+}: {
+  multiple?: boolean;
+  onUpload?: (urls: string[]) => void;
+}) {
   const [previews, setPreviews] = useState<string[]>([]);
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -10,6 +16,7 @@ export default function UploadImage({ multiple = true }: { multiple?: boolean })
     if (!files) return;
     const urls = Array.from(files).map(f => URL.createObjectURL(f));
     setPreviews(p => [...p, ...urls]);
+    onUpload?.(urls); // ← call the callback with the new URLs
   };
 
   return (
@@ -34,7 +41,6 @@ export default function UploadImage({ multiple = true }: { multiple?: boolean })
           style={{ display: 'none' }}
         />
       </div>
-
       {previews.length > 0 && (
         <div className="upload-previews">
           {previews.map((src, i) => (

@@ -18,6 +18,8 @@ interface Product {
   images: string[];
   artisan: { _id: string; name: string };
   createdAt: string;
+  isSuspended?: boolean;  // add this
+
 }
 
 type FilterTab = "Tous" | "Publiés" | "En attente" | "Signalés" | "Suspendus";
@@ -36,8 +38,8 @@ const categoryLabel: Record<string, string> = {
   tissage: "Tissage",
 };
 
-const productStatus = (p: Product) => (!p.isApproved ? "En attente" : "Publié");
-
+const productStatus = (p: Product): "Publié" | "En attente" | "Suspendu" =>
+  !p.isApproved ? "En attente" : "Publié";
 const statusClass: Record<string, string> = {
   Publié: "badge-success",
   "En attente": "badge-warning",
