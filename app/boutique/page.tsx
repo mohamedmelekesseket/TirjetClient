@@ -1,9 +1,10 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Check, Heart, HeartOff, Search, SlidersHorizontal, X, Loader2, Package } from "lucide-react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -34,10 +35,16 @@ interface Product {
 type FilterGroup = "cat" | "region" | "mat";
 
 export default function Boutique() {
+  const { data: session } = useSession();
+  const apiToken = (session as any)?.apiToken as string | undefined;
+
   const [products, setProducts]   = useState<Product[]>([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState<string | null>(null);
+
   const [wishlist, setWishlist]   = useState<string[]>([]);
+  const [wishPending, setWishPending] = useState<string[]>([]);
+
   const [addedIds, setAddedIds]   = useState<string[]>([]);
   const [panelOpen, setPanelOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,7 +56,7 @@ export default function Boutique() {
     maxPrice: 5000,
   });
 
-  // ── Fetch ────────────────────────────────────────────────────────────────
+  // ── Fetch products ────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -58,11 +65,9 @@ export default function Boutique() {
         const res = await fetch(`${API}/api/products`);
         if (!res.ok) throw new Error(`Erreur ${res.status}`);
         const data = await res.json();
-        // handle { products: [] } or [] directly
         const list: Product[] = Array.isArray(data)
           ? data
           : data.products ?? data.data ?? [];
-        // only show approved products with stock
         setProducts(list.filter(p => p.isApproved && p.stock > 0));
       } catch (err: any) {
         setError(err.message);
@@ -70,19 +75,59 @@ export default function Boutique() {
         setLoading(false);
       }
     };
-
     fetchProducts();
   }, []);
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  const toggleWish = (id: string) =>
-    setWishlist(p => p.includes(id) ? p.filter(i => i !== id) : [...p, id]);
+  // ── Fetch favourite IDs ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!apiToken) return;
+    const fetchIds = async () => {
+      try {
+        const res = await fetch(`${API}/api/favourites/ids`, {
+          headers: { Authorization: `Bearer ${apiToken}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setWishlist(data.ids ?? []);
+      } catch {}
+    };
+    fetchIds();
+  }, [apiToken]);
 
+  // ── Toggle wishlist (optimistic) ──────────────────────────────────────────
+  const toggleWish = useCallback(async (id: string) => {
+    if (!apiToken) return;
+    if (wishPending.includes(id)) return;
+
+    const isInWish = wishlist.includes(id);
+
+    setWishlist(prev =>
+      isInWish ? prev.filter(i => i !== id) : [...prev, id]
+    );
+    setWishPending(prev => [...prev, id]);
+
+    try {
+      const res = await fetch(`${API}/api/favourites/${id}`, {
+        method: isInWish ? "DELETE" : "POST",
+        headers: { Authorization: `Bearer ${apiToken}` },
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setWishlist(prev =>
+        isInWish ? [...prev, id] : prev.filter(i => i !== id)
+      );
+    } finally {
+      setWishPending(prev => prev.filter(i => i !== id));
+    }
+  }, [apiToken, wishlist, wishPending]);
+
+  // ── Add to cart ───────────────────────────────────────────────────────────
   const handleAddToCart = (id: string) => {
     setAddedIds(p => [...p, id]);
     setTimeout(() => setAddedIds(p => p.filter(i => i !== id)), 2000);
   };
 
+  // ── Filter helpers ────────────────────────────────────────────────────────
   const toggleChip = (group: FilterGroup, val: string) =>
     setFilters(p => ({
       ...p,
@@ -100,12 +145,11 @@ export default function Boutique() {
     filters.cat.length + filters.region.length + filters.mat.length +
     (filters.minPrice > 0 || filters.maxPrice < 5000 ? 1 : 0);
 
-  // ── Client-side filter ───────────────────────────────────────────────────
   const filteredProducts = products.filter(p => {
-    if (filters.cat.length    && !filters.cat.includes(p.category))       return false;
+    if (filters.cat.length    && !filters.cat.includes(p.category))          return false;
     if (filters.region.length && !filters.region.includes(p.location ?? "")) return false;
     if (filters.mat.length    && !filters.mat.includes(p.material ?? ""))    return false;
-    if (p.price < filters.minPrice || p.price > filters.maxPrice)         return false;
+    if (p.price < filters.minPrice || p.price > filters.maxPrice)            return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       if (
@@ -118,31 +162,31 @@ export default function Boutique() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="boutique">
+    <div className="boutique__page">
 
       {/* HERO */}
-      <header className="hero">
-        <motion.p className="hero-eyebrow"
+      <header className="boutique__hero">
+        <motion.p className="boutique__hero-eyebrow"
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1 }}>
           Artisanat Tunisien · Collection 2025
         </motion.p>
-        <motion.h1 className="hero-title"
+        <motion.h1 className="boutique__hero-title"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.25 }}>
           L'art de<br /><em>l'artisan</em>
         </motion.h1>
-        <div className="hero-line" />
+        <div className="boutique__hero-line" />
       </header>
 
       {/* SEARCH + FILTER */}
-      <motion.div className="search-section"
+      <motion.div className="boutique__search"
         initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, delay: 0.55 }}>
 
-        <div className="search-bar-row">
-          <div className="search-field">
-            <span className="search-icon" aria-hidden="true"><Search size={16} /></span>
+        <div className="boutique__search-row">
+          <div className="boutique__search-field">
+            <span className="boutique__search-icon" aria-hidden="true"><Search size={16} /></span>
             <input
               type="text"
               placeholder="Rechercher une pièce, une région ou une technique…"
@@ -151,12 +195,12 @@ export default function Boutique() {
             />
           </div>
           <button
-            className={`filter-toggle-btn${panelOpen ? " open" : ""}`}
+            className={`boutique__filter-btn${panelOpen ? " boutique__filter-btn--open" : ""}`}
             onClick={() => setPanelOpen(v => !v)}
           >
-            <span className="filter-icon" aria-hidden="true"><SlidersHorizontal size={16} /></span>
+            <span aria-hidden="true"><SlidersHorizontal size={16} /></span>
             Filtres
-            {activeCount > 0 && <span className="filter-badge">{activeCount}</span>}
+            {activeCount > 0 && <span className="boutique__filter-badge">{activeCount}</span>}
           </button>
         </div>
 
@@ -167,71 +211,71 @@ export default function Boutique() {
           transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] as any }}
           style={{ overflow: "hidden" }}
         >
-          <div className="filter-panel-inner">
+          <div className="boutique__filter-panel">
 
-            <div className="filter-group">
-              <div className="filter-label">Catégorie</div>
-              <div className="chip-list">
+            <div className="boutique__filter-group">
+              <div className="boutique__filter-label">Catégorie</div>
+              <div className="boutique__chips">
                 {CATS.map(v => (
                   <button key={v}
-                    className={`chip${filters.cat.includes(v) ? " active" : ""}`}
+                    className={`boutique__chip${filters.cat.includes(v) ? " boutique__chip--active" : ""}`}
                     onClick={() => toggleChip("cat", v)}>{v}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="filter-group">
-              <div className="filter-label">Région</div>
-              <div className="chip-list">
+            <div className="boutique__filter-group">
+              <div className="boutique__filter-label">Région</div>
+              <div className="boutique__chips">
                 {REGIONS.map(v => (
                   <button key={v}
-                    className={`chip${filters.region.includes(v) ? " active" : ""}`}
+                    className={`boutique__chip${filters.region.includes(v) ? " boutique__chip--active" : ""}`}
                     onClick={() => toggleChip("region", v)}>{v}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="filter-group">
-              <div className="filter-label">Matière</div>
-              <div className="chip-list">
+            <div className="boutique__filter-group">
+              <div className="boutique__filter-label">Matière</div>
+              <div className="boutique__chips">
                 {MATS.map(v => (
                   <button key={v}
-                    className={`chip${filters.mat.includes(v) ? " active" : ""}`}
+                    className={`boutique__chip${filters.mat.includes(v) ? " boutique__chip--active" : ""}`}
                     onClick={() => toggleChip("mat", v)}>{v}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="filter-group">
-              <div className="filter-label">Prix (TND)</div>
-              <div className="price-range">
-                <div className="price-display">
-                  <span className="price-val">Min <em>{filters.minPrice.toLocaleString("fr-TN")}</em></span>
-                  <span className="price-val">Max <em>{filters.maxPrice.toLocaleString("fr-TN")}</em></span>
+            <div className="boutique__filter-group">
+              <div className="boutique__filter-label">Prix (TND)</div>
+              <div className="boutique__price-range">
+                <div className="boutique__price-display">
+                  <span className="boutique__price-val">Min <em>{filters.minPrice.toLocaleString("fr-TN")}</em></span>
+                  <span className="boutique__price-val">Max <em>{filters.maxPrice.toLocaleString("fr-TN")}</em></span>
                 </div>
-                <div className="slider-wrap">
-                  <div className="slider-track" />
-                  <div className="slider-fill" style={{
+                <div className="boutique__slider-wrap">
+                  <div className="boutique__slider-track" />
+                  <div className="boutique__slider-fill" style={{
                     left:  `${(filters.minPrice / 5000) * 100}%`,
                     width: `${((filters.maxPrice - filters.minPrice) / 5000) * 100}%`,
                   }} />
-                  <input type="range" className="price-slider"
+                  <input type="range" className="boutique__price-slider"
                     min={0} max={5000} step={50} value={filters.minPrice}
                     onChange={e => {
                       const v = Math.min(Number(e.target.value), filters.maxPrice - 50);
                       setFilters(p => ({ ...p, minPrice: v }));
                     }} />
-                  <input type="range" className="price-slider"
+                  <input type="range" className="boutique__price-slider"
                     min={0} max={5000} step={50} value={filters.maxPrice}
                     onChange={e => {
                       const v = Math.max(Number(e.target.value), filters.minPrice + 50);
                       setFilters(p => ({ ...p, maxPrice: v }));
                     }} />
                 </div>
-                <div className="price-minmax-labels">
+                <div className="boutique__price-labels">
                   <span>0 TND</span><span>5 000 TND</span>
                 </div>
               </div>
@@ -243,33 +287,33 @@ export default function Boutique() {
         {/* Active filter tags */}
         <AnimatePresence>
           {activeCount > 0 && (
-            <motion.div className="active-tags-row"
+            <motion.div className="boutique__active-tags"
               initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.25 }}>
               {(["cat", "region", "mat"] as FilterGroup[]).flatMap(group =>
                 filters[group].map(val => (
-                  <button key={`${group}-${val}`} className="active-tag"
+                  <button key={`${group}-${val}`} className="boutique__tag"
                     onClick={() => toggleChip(group, val)}>
                     {val} <span aria-hidden="true"><X size={14} /></span>
                   </button>
                 ))
               )}
               {(filters.minPrice > 0 || filters.maxPrice < 5000) && (
-                <button className="active-tag"
+                <button className="boutique__tag"
                   onClick={() => setFilters(p => ({ ...p, minPrice: 0, maxPrice: 5000 }))}>
                   {filters.minPrice.toLocaleString("fr-TN")} – {filters.maxPrice.toLocaleString("fr-TN")} TND{" "}
                   <span aria-hidden="true"><X size={14} /></span>
                 </button>
               )}
-              <button className="clear-all-btn" onClick={clearAll}>Tout effacer</button>
+              <button className="boutique__clear-btn" onClick={clearAll}>Tout effacer</button>
             </motion.div>
           )}
         </AnimatePresence>
       </motion.div>
 
       {/* MAIN */}
-      <main className="main-body">
-        <motion.div className="section-label"
+      <main className="boutique__main">
+        <motion.div className="boutique__section-label"
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.7 }}>
           <span>
@@ -303,7 +347,7 @@ export default function Boutique() {
             <Package size={40} style={{ margin: "0 auto 1rem" }} />
             <p>Aucun produit trouvé.</p>
             {activeCount > 0 && (
-              <button className="clear-all-btn" style={{ marginTop: "1rem" }} onClick={clearAll}>
+              <button className="boutique__clear-btn" style={{ marginTop: "1rem" }} onClick={clearAll}>
                 Effacer les filtres
               </button>
             )}
@@ -312,81 +356,103 @@ export default function Boutique() {
 
         {/* Product grid */}
         {!loading && !error && filteredProducts.length > 0 && (
-          <div className="product-grid">
-            {filteredProducts.map((p, index) => (
-              <motion.div key={p._id} className="product-card"
-                initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.8 + index * 0.1, ease: [0.16, 1, 0.3, 1] as any }}
-                whileHover={{ y: -6 }}>
+          <div className="boutique__grid">
+            {filteredProducts.map((p, index) => {
+              const isWished  = wishlist.includes(p._id);
+              const isPending = wishPending.includes(p._id);
 
-                {/* Image */}
-                <div className="img-wrap">
-                  {p.images?.[0] ? (
-                    <motion.img
-                      src={p.images[0]}
-                      alt={p.title}
-                      loading="lazy"
-                      whileHover={{ scale: 1.07 }}
-                      transition={{ duration: 1.4 }}
-                    />
-                  ) : (
-                    <div style={{
-                      width: "100%", height: "100%",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      background: "#f0ebe3", opacity: 0.6,
-                    }}>
-                      <Package size={36} />
+              return (
+                <Link href={`/boutique/${p._id}`} >
+                  <motion.div  className="boutique__card"
+                    initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.7, delay: 0.8 + index * 0.1, ease: [0.16, 1, 0.3, 1] as any }}
+                    whileHover={{ y: -6 }}>
+
+                    {/* Image */}
+                    <div className="boutique__card-img">
+
+                      {p.images?.[0] ? (
+                        <motion.img
+                          src={p.images[0]}
+                          alt={p.title}
+                          loading="lazy"
+                          whileHover={{ scale: 1.07 }}
+                          transition={{ duration: 1.4 }}
+                        />
+                      ) : (
+                        <div style={{
+                          width: "100%", height: "100%",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          background: "#f0ebe3", opacity: 0.6,
+                        }}>
+                          <Package size={36} />
+                        </div>
+                      )}
+                      <div className="boutique__card-overlay" />
+                      <span className="boutique__card-cat">{p.category}</span>
+
+                      <button
+                        className="boutique__card-wish"
+                        onClick={() => toggleWish(p._id)}
+                        disabled={isPending}
+                        style={{
+                          color:   isWished ? "#d4784f" : undefined,
+                          opacity: isPending ? 0.5 : 1,
+                          cursor:  isPending ? "wait" : "pointer",
+                        }}
+                        aria-label={isWished ? "Retirer des favoris" : "Ajouter aux favoris"}
+                      >
+                        {isWished
+                          ? <Heart size={18} fill="currentColor" />
+                          : <HeartOff size={18} />}
+                      </button>
                     </div>
-                  )}
-                  <div className="img-overlay" />
-                  <span className="cat-pill">{p.category}</span>
-                  <button className="wish-btn" onClick={() => toggleWish(p._id)}
-                    style={{ color: wishlist.includes(p._id) ? "#d4784f" : undefined }}>
-                    {wishlist.includes(p._id)
-                      ? <Heart size={18} fill="currentColor" />
-                      : <HeartOff size={18} />}
-                  </button>
-                </div>
 
-                {/* Body */}
-                <div className="card-body">
-                  <div className="card-top">
-                    <h3 className="card-title">{p.title}</h3>
-                    <span className="card-price">{p.price.toLocaleString("fr-TN")} TND</span>
-                  </div>
-                  <p className="card-desc">{p.description}</p>
-                  <div className="card-footer">
-                    <span className="card-loc">{p.location ?? p.category}</span>
-                    <Link href={`/boutique/${p._id}`} className="card-cta">Voir la pièce →</Link>
-                  </div>
-                  <motion.button className="card-cart"
-                    onClick={() => handleAddToCart(p._id)}
-                    initial={{ y: "100%" }} whileHover={{ y: 0 }}
-                    transition={{ duration: 0.4 }}
-                    style={addedIds.includes(p._id) ? { background: "#3a6b3a" } : undefined}>
-                    {addedIds.includes(p._id) ? (
-                      <><Check size={16} style={{ marginRight: 8 }} aria-hidden="true" />Ajouté</>
-                    ) : (
-                      "Ajouter au panier"
-                    )}
-                  </motion.button>
-                </div>
-              </motion.div>
-            ))}
+                    {/* Body */}
+                    <div className="boutique__card-body">
+                      <div className="boutique__card-top">
+                        <h3 className="boutique__card-title">{p.title}</h3>
+                        <span className="boutique__card-price">{p.price.toLocaleString("fr-TN")} TND</span>
+                      </div>
+                      <p className="boutique__card-desc">{p.description.slice(0, 120)}</p>
+                      {/* <div className="boutique__card-footer">
+                        <span className="boutique__card-loc">{p.location ?? p.category}</span>
+                        <Link href={`/boutique/${p._id}`} className="boutique__card-cta">Voir la pièce →</Link>
+                      </div> */}
+                      {/* <motion.button className="boutique__card-cart"
+                        onClick={() => handleAddToCart(p._id)}
+                        initial={{ y: "100%" }} whileHover={{ y: 0 }}
+                        transition={{ duration: 0.4 }}
+                        style={addedIds.includes(p._id) ? { background: "#3a6b3a" } : undefined}>
+                        {addedIds.includes(p._id) ? (
+                          <><Check size={16} style={{ marginRight: 8 }} aria-hidden="true" />Ajouté</>
+                        ) : (
+                          "Ajouter au panier"
+                        )}
+                      </motion.button> */}
+                    </div>
+                    <div className="boutique__card-footer">
+                      <span className="boutique__card-loc">{p.location ?? p.category}</span>
+                      <Link href={`/boutique/${p._id}`} className="boutique__card-cta">Voir la pièce →</Link>
+                    </div>
+                  </motion.div>
+                </Link>
+              );
+            })}
           </div>
         )}
 
         {/* Values */}
-        <motion.div className="values-wrap"
+        <motion.div className="boutique__values"
           initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}>
-          <div className="section-label"><span>Nos engagements</span></div>
-          <div className="values-grid">
+          <div className="boutique__section-label"><span>Nos engagements</span></div>
+          <div className="boutique__values-grid">
             {values.map(v => (
-              <motion.div key={v.n} className="value-item"
+              <motion.div key={v.n} className="boutique__value-item"
                 whileHover={{ backgroundColor: "#1a1410" }}>
-                <span className="value-num">{v.n}</span>
-                <p className="value-text">{v.t}</p>
+                <span className="boutique__value-num">{v.n}</span>
+                <p className="boutique__value-text">{v.t}</p>
               </motion.div>
             ))}
           </div>

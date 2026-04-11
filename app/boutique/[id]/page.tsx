@@ -1,9 +1,10 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
-import { Check, X, Loader2, Package } from "lucide-react";
+import { use, useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Check, X, Loader2, Package, Dot } from "lucide-react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -26,29 +27,20 @@ interface Product {
   createdAt: string;
 }
 
+interface Comment {
+  _id: string;
+  user: { _id: string; name: string; image?: string };
+  rating: number;
+  content: string;
+  createdAt: string;
+}
+
 const CATEGORY_LABELS: Record<string, string> = {
   margoum: "Margoum",
   fokhar:  "Poterie",
   bijoux:  "Bijoux",
   tissage: "Tissage",
 };
-
-// ─── Hooks ────────────────────────────────────────────────────────────────────
-function useInView(threshold = 0.12) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
-      { threshold }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [threshold]);
-  return { ref, visible };
-}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function Pin() {
@@ -70,7 +62,7 @@ function HeartIcon({ filled }: { filled: boolean }) {
   );
 }
 
-function StarRow({ count = 5 }: { count?: number }) {
+function StarRow({ count = 0, total }: { count?: number; total: number }) {
   return (
     <div className="pd-stars">
       {Array.from({ length: 5 }).map((_, i) => (
@@ -79,7 +71,7 @@ function StarRow({ count = 5 }: { count?: number }) {
           <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
         </svg>
       ))}
-      <span className="pd-stars__count">(24 avis)</span>
+      <span className="pd-stars__count">({total} avis)</span>
     </div>
   );
 }
@@ -167,19 +159,29 @@ function Gallery({ images }: { images: string[] }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { data: session } = useSession();
 
+  // ── Product state ──────────────────────────────────────────────────────────
   const [product, setProduct]   = useState<Product | null>(null);
   const [related, setRelated]   = useState<Product[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
 
-  const [qty, setQty]           = useState(1);
-  const [wish, setWish]         = useState(false);
-  const [added, setAdded]       = useState(false);
-  const [activeTab, setActiveTab] = useState<"desc" | "details" | "avis">("desc");
+  // ── UI state ───────────────────────────────────────────────────────────────
+  const [qty, setQty]               = useState(1);
+  const [wish, setWish]             = useState(false);
+  const [added, setAdded]           = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
+  const [activeTab, setActiveTab]   = useState< "details" | "avis">("details");
 
-
+  // ── Comments state ─────────────────────────────────────────────────────────
+  const [comments, setComments]               = useState<Comment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [newRating, setNewRating]             = useState(5);
+  const [newContent, setNewContent]           = useState("");
+  const [submitting, setSubmitting]           = useState(false);
+  const [submitError, setSubmitError]         = useState<string | null>(null);
+  const [editingId, setEditingId]             = useState<string | null>(null);
 
   // ── Fetch product ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -192,7 +194,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         const data = await res.json();
         setProduct(data);
 
-        // fetch related: same category, exclude current
         const relRes = await fetch(`${API}/api/products`);
         if (relRes.ok) {
           const allData = await relRes.json();
@@ -211,15 +212,120 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         setLoading(false);
       }
     };
-
     fetchProduct();
   }, [id]);
 
+  // ── Fetch comments when avis tab opens ────────────────────────────────────
+  useEffect(() => {
+    if (activeTab !== "avis" || !id) return;
+    const fetchComments = async () => {
+      setCommentsLoading(true);
+      try {
+        const res = await fetch(`${API}/api/products/${id}/comments`);
+        if (res.ok) setComments(await res.json());
+      } finally {
+        setCommentsLoading(false);
+      }
+    };
+    fetchComments();
+  }, [activeTab, id]);
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  const getToken = () => (session as any)?.apiToken as string | undefined;
+
+  const currentUserId = (session as any)?.apiUser?._id as string | undefined;
+
+  // ── Handlers ───────────────────────────────────────────────────────────────
   function handleCart() {
     setAdded(true);
     setToastVisible(true);
     setTimeout(() => setToastVisible(false), 2800);
   }
+
+  function handleStartEdit(r: Comment) {
+    setEditingId(r._id);
+    setNewRating(r.rating);
+    setNewContent(r.content);
+    setSubmitError(null);
+    const form = document.querySelector(".pd-review-form") as HTMLElement | null;
+    if (form) window.scrollTo({ top: form.getBoundingClientRect().top + window.scrollY - 100, behavior: "smooth" });
+  }
+
+  function handleCancelEdit() {
+    setEditingId(null);
+    setNewContent("");
+    setNewRating(5);
+    setSubmitError(null);
+  }
+
+  async function handleSubmitComment() {
+    if (!newContent.trim()) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const token = getToken();
+      if (!token) { setSubmitError("Vous devez être connecté pour laisser un avis."); return; }
+
+      const res = await fetch(`${API}/api/products/${id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ rating: newRating, content: newContent }),
+      });
+      if (!res.ok) throw new Error((await res.json()).message);
+
+      const created: Comment = await res.json();
+      setComments(prev => [created, ...prev]);
+      setNewContent("");
+      setNewRating(5);
+    } catch (err: any) {
+      setSubmitError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleUpdateComment() {
+    if (!newContent.trim() || !editingId) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const token = getToken();
+      const res = await fetch(`${API}/api/products/${id}/comments/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ rating: newRating, content: newContent }),
+      });
+      if (!res.ok) throw new Error((await res.json()).message);
+
+      const updated: Comment = await res.json();
+      setComments(prev => prev.map(c => c._id === editingId ? updated : c));
+      handleCancelEdit();
+    } catch (err: any) {
+      setSubmitError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    if (!confirm("Supprimer cet avis ?")) return;
+    try {
+      const token = getToken();
+      const res = await fetch(`${API}/api/products/${id}/comments/${commentId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error((await res.json()).message);
+      setComments(prev => prev.filter(c => c._id !== commentId));
+    } catch (err: any) {
+      setSubmitError(err.message);
+    }
+  }
+
+  // ── Derived ────────────────────────────────────────────────────────────────
+  const avgRating = comments.length
+    ? Math.round(comments.reduce((sum, c) => sum + c.rating, 0) / comments.length)
+    : 0;
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) return (
@@ -281,7 +387,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           </div>
 
           <h1 className="pd-info__title">{product.title}</h1>
-          <StarRow count={4} />
+          <StarRow count={avgRating} total={comments.length} />
 
           <div className="pd-info__price-row">
             <span className="pd-info__price">{product.price.toLocaleString("fr-TN")} TND</span>
@@ -289,7 +395,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           </div>
 
           <p className="pd-info__short-desc">
-            {product.description.slice(0, 120)}…
+            {product.description}…
           </p>
 
           <div className="pd-divider" />
@@ -360,9 +466,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           {/* Trust badges */}
           <div className="pd-trust">
             {[
-              { icon: "🔒", text: "Paiement sécurisé" },
-              { icon: "🚚", text: "Livraison 3–5 jours" },
-              { icon: "↩️", text: "Retour 14 jours" },
+              { icon: <Dot />, text: "Paiement sécurisé" },
+              { icon: <Dot />, text: "Livraison 3–5 jours" },
+              { icon: <Dot />, text: "Retour 14 jours" },
             ].map(b => (
               <div key={b.text} className="pd-trust__item">
                 <span className="pd-trust__icon">{b.icon}</span>
@@ -376,12 +482,12 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       {/* Tabs */}
       <section className="pd-tabs-section">
         <div className="pd-tabs__nav">
-          {(["desc", "details", "avis"] as const).map(t => (
+          {([ "details", "avis"] as const).map(t => (
             <motion.button key={t}
               className={`pd-tabs__tab${activeTab === t ? " pd-tabs__tab--active" : ""}`}
               onClick={() => setActiveTab(t)}
               whileHover={{ y: -1 }}>
-              {{ desc: "Description", details: "Détails", avis: "Avis (24)" }[t]}
+              {{ details: "Détails", avis: `Avis (${comments.length})` }[t]}
             </motion.button>
           ))}
         </div>
@@ -391,10 +497,12 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] as any }}>
 
-            {activeTab === "desc" && (
+            {/* Description tab */}
+            {/* {activeTab === "desc" && (
               <p className="pd-tab-text">{product.description}</p>
-            )}
+            )} */}
 
+            {/* Details tab */}
             {activeTab === "details" && (
               <div className="pd-details-grid">
                 {[
@@ -412,36 +520,147 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               </div>
             )}
 
+            {/* Avis tab */}
             {activeTab === "avis" && (
               <div className="pd-reviews">
-                {[
-                  { name: "Mariem B.", rating: 5, text: "Absolument magnifique, dépasse les attentes. La qualité et le soin des détails sont remarquables.", date: "Jan 2025" },
-                  { name: "Karim T.",  rating: 4, text: "Très beau bijou, livraison rapide et emballage soigné.", date: "Fév 2025" },
-                  { name: "Sonia A.",  rating: 5, text: "Je recommande vivement. Pièce unique, chaque détail est parfait.", date: "Mar 2025" },
-                ].map((r, i) => (
-                  <motion.div key={i} className="pd-review"
-                    initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1, duration: 0.5 }}>
-                    <div className="pd-review__head">
-                      <div className="pd-review__avatar">{r.name[0]}</div>
-                      <div>
-                        <span className="pd-review__name">{r.name}</span>
-                        <div className="pd-review__stars">
-                          {Array.from({ length: 5 }).map((_, si) => (
-                            <svg key={si} width="11" height="11" viewBox="0 0 24 24"
-                              fill={si < r.rating ? "#C9A055" : "none"} stroke="#C9A055" strokeWidth="1.5">
-                              <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
-                            </svg>
-                          ))}
-                        </div>
-                      </div>
-                      <span className="pd-review__date">{r.date}</span>
+
+                {/* ── Add / Edit form ── */}
+                {session ? (
+                  <div className="pd-review-form">
+                    <h3 className="pd-review-form__title">
+                      {editingId ? "Modifier votre avis" : "Laisser un avis"}
+                    </h3>
+
+                    {/* Star picker */}
+                    <div className="pd-review-form__stars">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <button key={i} type="button" onClick={() => setNewRating(i + 1)}>
+                          <svg width="22" height="22" viewBox="0 0 24 24"
+                            fill={i < newRating ? "#C9A055" : "none"} stroke="#C9A055" strokeWidth="1.5">
+                            <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
+                          </svg>
+                        </button>
+                      ))}
                     </div>
-                    <p className="pd-review__text">{r.text}</p>
-                  </motion.div>
-                ))}
+
+                    <textarea
+                      className="pd-review-form__textarea"
+                      rows={3}
+                      placeholder="Partagez votre expérience…"
+                      value={newContent}
+                      onChange={e => setNewContent(e.target.value)}
+                    />
+
+                    {submitError && (
+                      <p style={{ color: "#c0392b", fontSize: 13, marginBottom: 8 }}>{submitError}</p>
+                    )}
+
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <motion.button
+                        className="pd-cart-btn"
+                        onClick={editingId ? handleUpdateComment : handleSubmitComment}
+                        disabled={submitting || !newContent.trim()}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}>
+                        {submitting
+                          ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
+                          : editingId ? "Enregistrer" : "Publier l'avis"}
+                      </motion.button>
+
+                      {editingId && (
+                        <motion.button
+                          className="pd-qty__btn"
+                          onClick={handleCancelEdit}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.97 }}
+                          style={{ padding: "0 1.2rem" }}>
+                          Annuler
+                        </motion.button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pd-review-form" style={{ textAlign: "center", opacity: 0.7 }}>
+                    <p style={{ marginBottom: "0.75rem" }}>Connectez-vous pour laisser un avis.</p>
+                    <Link href="/connexion" className="pd-artisan-row__link">Se connecter →</Link>
+                  </div>
+                )}
+
+
+                {/* ── Comments list ── */}
+                {commentsLoading ? (
+                  <div style={{ textAlign: "center", padding: "2rem", opacity: 0.4 }}>
+                    <Loader2 size={28} style={{ animation: "spin 1s linear infinite" }} />
+                  </div>
+                ) : comments.length === 0 ? (
+                  <p style={{ opacity: 0.4, textAlign: "center", padding: "1.5rem" }}>
+                    Aucun avis pour le moment. Soyez le premier !
+                  </p>
+                ) : (
+                  comments.map((r, i) => {
+                    const isMyComment = currentUserId === r.user._id;
+                    return (
+                      <motion.div key={r._id} className="pd-review"
+                        initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.08, duration: 0.5 }}>
+                        <div className="pd-review__head">
+                          <div className="pd-review__avatar">
+                            {r.user.image
+                              ? <img src={r.user.image} alt={r.user.name}
+                                  style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
+                              : r.user.name[0]}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <span className="pd-review__name">{r.user.name}</span>
+                            <div className="pd-review__stars">
+                              {Array.from({ length: 5 }).map((_, si) => (
+                                <svg key={si} width="11" height="11" viewBox="0 0 24 24"
+                                  fill={si < r.rating ? "#C9A055" : "none"} stroke="#C9A055" strokeWidth="1.5">
+                                  <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
+                                </svg>
+                              ))}
+                            </div>
+                          </div>
+                          <span className="pd-review__date">
+                            {new Date(r.createdAt).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })}
+                          </span>
+
+                          {/* Edit / Delete — owner only */}
+                          {isMyComment && (
+                            <div style={{ display: "flex", gap: 6, marginLeft: 8 }}>
+                              <motion.button
+                                className="pd-review__action-btn"
+                                onClick={() => handleStartEdit(r)}
+                                whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                                title="Modifier">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                              </motion.button>
+                              <motion.button
+                                className="pd-review__action-btn pd-review__action-btn--delete"
+                                onClick={() => handleDeleteComment(r._id)}
+                                whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                                title="Supprimer">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <polyline points="3 6 5 6 21 6"/>
+                                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                  <path d="M10 11v6M14 11v6"/>
+                                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                                </svg>
+                              </motion.button>
+                            </div>
+                          )}
+                        </div>
+                        <p className="pd-review__text">{r.content}</p>
+                      </motion.div>
+                    );
+                  })
+                )}
               </div>
             )}
+
           </motion.div>
         </AnimatePresence>
       </section>
@@ -516,7 +735,70 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         )}
       </AnimatePresence>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .pd-review-form {
+          background: var(--surface, #faf8f5);
+          border: 1px solid #e8e0d5;
+          border-radius: 12px;
+          padding: 1.25rem 1.5rem;
+          margin-bottom: 1.5rem;
+        }
+        .pd-review-form__title {
+          font-size: 1rem;
+          font-weight: 600;
+          margin-bottom: 0.75rem;
+        }
+        .pd-review-form__stars {
+          display: flex;
+          gap: 4px;
+          margin-bottom: 0.75rem;
+        }
+        .pd-review-form__stars button {
+          background: none;
+          border: none;
+          padding: 2px;
+          cursor: pointer;
+          transition: transform 0.15s;
+        }
+        .pd-review-form__stars button:hover { transform: scale(1.2); }
+        .pd-review-form__textarea {
+          width: 100%;
+          border: 1px solid #e0d8ce;
+          border-radius: 8px;
+          padding: 0.65rem 0.9rem;
+          font-size: 0.9rem;
+          resize: vertical;
+          margin-bottom: 0.75rem;
+          background: #fff;
+          font-family: inherit;
+          box-sizing: border-box;
+        }
+        .pd-review-form__textarea:focus {
+          outline: none;
+          border-color: #C9A055;
+        }
+        .pd-review__action-btn {
+          background: none;
+          border: 1px solid #e0d8ce;
+          border-radius: 6px;
+          padding: 4px 6px;
+          cursor: pointer;
+          color: #888;
+          display: flex;
+          align-items: center;
+          transition: all 0.15s;
+        }
+        .pd-review__action-btn:hover {
+          border-color: #C9A055;
+          color: #C9A055;
+        }
+        .pd-review__action-btn--delete:hover {
+          border-color: #c0392b;
+          color: #c0392b;
+        }
+      `}</style>
     </div>
   );
 }

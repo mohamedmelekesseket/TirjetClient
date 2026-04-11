@@ -15,6 +15,7 @@ const adminNav: NavItem[] = [
   { label: 'Tableau de bord', href: '/dashboard/admin',           icon: '⬡' },
   { label: 'Artisans',        href: '/dashboard/admin/artisans',  icon: '◈' },
   { label: 'Produits',        href: '/dashboard/admin/products',  icon: '◉' },
+  { label: 'categories',        href: '/dashboard/admin/categories ',  icon: '◉' },
   { label: 'Utilisateurs',    href: '/dashboard/admin/users',     icon: '◎' },
   { label: 'Statistiques',    href: '/dashboard/admin/stats',     icon: '◇' },
 ];
