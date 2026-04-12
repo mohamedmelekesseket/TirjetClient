@@ -9,13 +9,20 @@ import { useSession } from "next-auth/react";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+interface Category {
+  _id: string;
+  name: string;
+  isActive: boolean;
+}
+
 interface Product {
   _id: string;
   title: string;
   description: string;
   price: number;
   images: string[];
-  category: "margoum" | "fokhar" | "bijoux" | "tissage";
+  // May be a populated object or a raw ID string
+  category: { _id: string; name: string } | string;
   artisan: {
     _id: string;
     name: string;
@@ -35,12 +42,20 @@ interface Comment {
   createdAt: string;
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  margoum: "Margoum",
-  fokhar:  "Poterie",
-  bijoux:  "Bijoux",
-  tissage: "Tissage",
-};
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Resolves a category name from either a populated object, a raw ID, or a slug string. */
+function resolveCategoryName(
+  category: Product["category"],
+  categoriesMap: Map<string, string>
+): string {
+  if (!category) return "";
+  if (typeof category === "object") return category.name;
+  // Try ID lookup first
+  if (categoriesMap.has(category)) return categoriesMap.get(category)!;
+  // Fall back to displaying the raw value (slug or ID) as-is
+  return category;
+}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function Pin() {
@@ -161,6 +176,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const { id } = use(params);
   const { data: session } = useSession();
 
+  // ── Categories map (id → name) ─────────────────────────────────────────────
+  const [categoriesMap, setCategoriesMap] = useState<Map<string, string>>(new Map());
+
   // ── Product state ──────────────────────────────────────────────────────────
   const [product, setProduct]   = useState<Product | null>(null);
   const [related, setRelated]   = useState<Product[]>([]);
@@ -172,7 +190,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const [wish, setWish]             = useState(false);
   const [added, setAdded]           = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
-  const [activeTab, setActiveTab]   = useState< "details" | "avis">("details");
+  const [activeTab, setActiveTab]   = useState<"avis" | "details">("avis");
 
   // ── Comments state ─────────────────────────────────────────────────────────
   const [comments, setComments]               = useState<Comment[]>([]);
@@ -182,6 +200,19 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const [submitting, setSubmitting]           = useState(false);
   const [submitError, setSubmitError]         = useState<string | null>(null);
   const [editingId, setEditingId]             = useState<string | null>(null);
+
+  // ── Fetch categories → build id→name map ──────────────────────────────────
+  useEffect(() => {
+    fetch(`${API}/api/categories`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        const list: Category[] = data?.data ?? (Array.isArray(data) ? data : []);
+        const map = new Map<string, string>();
+        list.forEach(c => map.set(c._id, c.name));
+        setCategoriesMap(map);
+      })
+      .catch(() => {});
+  }, []);
 
   // ── Fetch product ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -200,9 +231,18 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           const all: Product[] = Array.isArray(allData)
             ? allData
             : allData.products ?? allData.data ?? [];
+
+          // Match by category ID regardless of populated vs raw
+          const thisCatId = typeof data.category === "object"
+            ? data.category._id
+            : data.category;
+
           setRelated(
             all
-              .filter(p => p._id !== data._id && p.category === data.category && p.isApproved && p.stock > 0)
+              .filter(p => {
+                const pCatId = typeof p.category === "object" ? p.category._id : p.category;
+                return p._id !== data._id && pCatId === thisCatId && p.isApproved && p.stock > 0;
+              })
               .slice(0, 3)
           );
         }
@@ -232,7 +272,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   const getToken = () => (session as any)?.apiToken as string | undefined;
-
   const currentUserId = (session as any)?.apiUser?._id as string | undefined;
 
   // ── Handlers ───────────────────────────────────────────────────────────────
@@ -345,7 +384,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   );
 
   const inStock  = product.stock > 0;
-  const catLabel = CATEGORY_LABELS[product.category] ?? product.category;
+  // ✅ Resolves from populated object, ID lookup, or falls back gracefully
+  const catLabel = resolveCategoryName(product.category, categoriesMap);
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -359,7 +399,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         <span className="pd-breadcrumb__sep">›</span>
         <Link href="/boutique">Boutique</Link>
         <span className="pd-breadcrumb__sep">›</span>
-        <Link href={`/boutique?cat=${product.category}`}>{catLabel}</Link>
+        <Link href={`/boutique?cat=${typeof product.category === "object" ? product.category._id : product.category}`}>
+          {catLabel}
+        </Link>
         <span className="pd-breadcrumb__sep">›</span>
         <span>{product.title}</span>
       </motion.nav>
@@ -394,9 +436,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             <span className="pd-info__price-sub">TVA incluse · Livraison gratuite</span>
           </div>
 
-          <p className="pd-info__short-desc">
-            {product.description}…
-          </p>
+          <p className="pd-info__short-desc">{product.description}</p>
 
           <div className="pd-divider" />
 
@@ -482,7 +522,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       {/* Tabs */}
       <section className="pd-tabs-section">
         <div className="pd-tabs__nav">
-          {([ "details", "avis"] as const).map(t => (
+          {(["details", "avis"] as const).map(t => (
             <motion.button key={t}
               className={`pd-tabs__tab${activeTab === t ? " pd-tabs__tab--active" : ""}`}
               onClick={() => setActiveTab(t)}
@@ -496,11 +536,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           <motion.div key={activeTab} className="pd-tabs__content"
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] as any }}>
-
-            {/* Description tab */}
-            {/* {activeTab === "desc" && (
-              <p className="pd-tab-text">{product.description}</p>
-            )} */}
 
             {/* Details tab */}
             {activeTab === "details" && (
@@ -524,14 +559,13 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             {activeTab === "avis" && (
               <div className="pd-reviews">
 
-                {/* ── Add / Edit form ── */}
+                {/* Add / Edit form */}
                 {session ? (
                   <div className="pd-review-form">
                     <h3 className="pd-review-form__title">
                       {editingId ? "Modifier votre avis" : "Laisser un avis"}
                     </h3>
 
-                    {/* Star picker */}
                     <div className="pd-review-form__stars">
                       {Array.from({ length: 5 }).map((_, i) => (
                         <button key={i} type="button" onClick={() => setNewRating(i + 1)}>
@@ -586,8 +620,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                   </div>
                 )}
 
-
-                {/* ── Comments list ── */}
+                {/* Comments list */}
                 {commentsLoading ? (
                   <div style={{ textAlign: "center", padding: "2rem", opacity: 0.4 }}>
                     <Loader2 size={28} style={{ animation: "spin 1s linear infinite" }} />
@@ -625,7 +658,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                             {new Date(r.createdAt).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })}
                           </span>
 
-                          {/* Edit / Delete — owner only */}
                           {isMyComment && (
                             <div style={{ display: "flex", gap: 6, marginLeft: 8 }}>
                               <motion.button
@@ -680,39 +712,42 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           </p>
         ) : (
           <div className="pd-related__grid">
-            {related.map((p, i) => (
-              <motion.article key={p._id} className="pd-rel-card"
-                initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.6, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] as any }}
-                whileHover={{ y: -6 }}>
-                <div className="pd-rel-card__media">
-                  {p.images?.[0]
-                    ? <motion.img src={p.images[0]} alt={p.title}
-                        whileHover={{ scale: 1.07 }}
-                        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] as any }} />
-                    : <div style={{ width: "100%", height: "100%", background: "#f0ebe3",
-                        display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <Package size={28} style={{ opacity: 0.4 }} />
-                      </div>
-                  }
-                  <div className="pd-rel-card__shade" />
-                  <span className="pd-rel-card__cat">{CATEGORY_LABELS[p.category] ?? p.category}</span>
-                </div>
-                <div className="pd-rel-card__body">
-                  <h4 className="pd-rel-card__name">{p.title}</h4>
-                  <div className="pd-rel-card__row">
-                    <span className="pd-rel-card__loc">
-                      <Pin />{p.artisan?.city?.toUpperCase() ?? "TUNISIE"}
-                    </span>
-                    <span className="pd-rel-card__price">{p.price.toLocaleString("fr-TN")} TND</span>
+            {related.map((p, i) => {
+              const relCatLabel = resolveCategoryName(p.category, categoriesMap);
+              return (
+                <motion.article key={p._id} className="pd-rel-card"
+                  initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.6, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] as any }}
+                  whileHover={{ y: -6 }}>
+                  <div className="pd-rel-card__media">
+                    {p.images?.[0]
+                      ? <motion.img src={p.images[0]} alt={p.title}
+                          whileHover={{ scale: 1.07 }}
+                          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] as any }} />
+                      : <div style={{ width: "100%", height: "100%", background: "#f0ebe3",
+                          display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Package size={28} style={{ opacity: 0.4 }} />
+                        </div>
+                    }
+                    <div className="pd-rel-card__shade" />
+                    <span className="pd-rel-card__cat">{relCatLabel}</span>
                   </div>
-                  <Link href={`/boutique/${p._id}`} className="pd-rel-card__cta">
-                    Voir la pièce →
-                  </Link>
-                </div>
-              </motion.article>
-            ))}
+                  <div className="pd-rel-card__body">
+                    <h4 className="pd-rel-card__name">{p.title}</h4>
+                    <div className="pd-rel-card__row">
+                      <span className="pd-rel-card__loc">
+                        <Pin />{p.artisan?.city?.toUpperCase() ?? "TUNISIE"}
+                      </span>
+                      <span className="pd-rel-card__price">{p.price.toLocaleString("fr-TN")} TND</span>
+                    </div>
+                    <Link href={`/boutique/${p._id}`} className="pd-rel-card__cta">
+                      Voir la pièce →
+                    </Link>
+                  </div>
+                </motion.article>
+              );
+            })}
           </div>
         )}
       </section>

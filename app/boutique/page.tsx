@@ -8,7 +8,6 @@ import { useSession } from "next-auth/react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-const CATS    = ["fokhar", "margoum", "tissage", "bijoux", "Bois", "Métal"];
 const REGIONS = ["Kairouan", "Nabeul", "Djerba", "Sfax", "Tunis", "Sejnane"];
 const MATS    = ["Laine", "Argent", "Céramique", "Cuir", "Alfa", "Cuivre"];
 
@@ -19,13 +18,20 @@ const values = [
   { n: "04", t: "Interface pensée pour mobile et desktop, en toute fluidité." },
 ];
 
+interface Category {
+  _id: string;
+  name: string;
+  isActive: boolean;
+}
+
 interface Product {
   _id: string;
   title: string;
   description: string;
   price: number;
   images: string[];
-  category: string;
+  // May come back as a populated object or a raw ID string
+  category: { _id: string; name: string } | string;
   stock: number;
   location?: string;
   material?: string;
@@ -39,6 +45,7 @@ export default function Boutique() {
   const apiToken = (session as any)?.apiToken as string | undefined;
 
   const [products, setProducts]   = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState<string | null>(null);
 
@@ -55,6 +62,32 @@ export default function Boutique() {
     minPrice: 0,
     maxPrice: 5000,
   });
+
+  // ── Resolve category name from either a populated object or a raw ID ────────
+  const getCategoryName = useCallback((category: Product["category"]): string => {
+    if (!category) return "";
+    if (typeof category === "object") return category.name;
+    // Raw ID — look it up in the fetched categories list
+    return categories.find(c => c._id === category)?.name ?? "";
+  }, [categories]);
+
+  // ── Resolve category ID for consistent filter matching ──────────────────────
+  const getCategoryId = (category: Product["category"]): string => {
+    if (!category) return "";
+    if (typeof category === "object") return category._id;
+    return category;
+  };
+
+  // ── Fetch categories ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    fetch(`${API}/api/categories`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.data) setCategories(data.data.filter((c: Category) => c.isActive));
+        else if (Array.isArray(data)) setCategories(data);
+      })
+      .catch(() => {});
+  }, []);
 
   // ── Fetch products ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -145,11 +178,12 @@ export default function Boutique() {
     filters.cat.length + filters.region.length + filters.mat.length +
     (filters.minPrice > 0 || filters.maxPrice < 5000 ? 1 : 0);
 
+  // Filter by category ID so it works regardless of populated vs raw
   const filteredProducts = products.filter(p => {
-    if (filters.cat.length    && !filters.cat.includes(p.category))          return false;
-    if (filters.region.length && !filters.region.includes(p.location ?? "")) return false;
-    if (filters.mat.length    && !filters.mat.includes(p.material ?? ""))    return false;
-    if (p.price < filters.minPrice || p.price > filters.maxPrice)            return false;
+    if (filters.cat.length && !filters.cat.includes(getCategoryId(p.category))) return false;
+    if (filters.region.length && !filters.region.includes(p.location ?? ""))   return false;
+    if (filters.mat.length    && !filters.mat.includes(p.material ?? ""))      return false;
+    if (p.price < filters.minPrice || p.price > filters.maxPrice)              return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       if (
@@ -213,13 +247,15 @@ export default function Boutique() {
         >
           <div className="boutique__filter-panel">
 
+            {/* Category chips — dynamic from API */}
             <div className="boutique__filter-group">
               <div className="boutique__filter-label">Catégorie</div>
               <div className="boutique__chips">
-                {CATS.map(v => (
-                  <button key={v}
-                    className={`boutique__chip${filters.cat.includes(v) ? " boutique__chip--active" : ""}`}
-                    onClick={() => toggleChip("cat", v)}>{v}
+                {categories.map(cat => (
+                  <button key={cat._id}
+                    className={`boutique__chip${filters.cat.includes(cat._id) ? " boutique__chip--active" : ""}`}
+                    onClick={() => toggleChip("cat", cat._id)}>
+                    {cat.name}
                   </button>
                 ))}
               </div>
@@ -284,13 +320,22 @@ export default function Boutique() {
           </div>
         </motion.div>
 
-        {/* Active filter tags */}
+        {/* Active filter tags — show category name not ID */}
         <AnimatePresence>
           {activeCount > 0 && (
             <motion.div className="boutique__active-tags"
               initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.25 }}>
-              {(["cat", "region", "mat"] as FilterGroup[]).flatMap(group =>
+              {filters.cat.map(id => {
+                const name = categories.find(c => c._id === id)?.name ?? id;
+                return (
+                  <button key={`cat-${id}`} className="boutique__tag"
+                    onClick={() => toggleChip("cat", id)}>
+                    {name} <span aria-hidden="true"><X size={14} /></span>
+                  </button>
+                );
+              })}
+              {(["region", "mat"] as FilterGroup[]).flatMap(group =>
                 filters[group].map(val => (
                   <button key={`${group}-${val}`} className="boutique__tag"
                     onClick={() => toggleChip(group, val)}>
@@ -360,17 +405,17 @@ export default function Boutique() {
             {filteredProducts.map((p, index) => {
               const isWished  = wishlist.includes(p._id);
               const isPending = wishPending.includes(p._id);
+              const catName   = getCategoryName(p.category);
 
               return (
-                <Link href={`/boutique/${p._id}`} >
-                  <motion.div  className="boutique__card"
+                <Link href={`/boutique/${p._id}`} key={p._id}>
+                  <motion.div className="boutique__card"
                     initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.7, delay: 0.8 + index * 0.1, ease: [0.16, 1, 0.3, 1] as any }}
                     whileHover={{ y: -6 }}>
 
                     {/* Image */}
                     <div className="boutique__card-img">
-
                       {p.images?.[0] ? (
                         <motion.img
                           src={p.images[0]}
@@ -389,11 +434,13 @@ export default function Boutique() {
                         </div>
                       )}
                       <div className="boutique__card-overlay" />
-                      <span className="boutique__card-cat">{p.category}</span>
+
+                      {/* ✅ Now shows the human-readable name */}
+                      <span className="boutique__card-cat">{catName}</span>
 
                       <button
                         className="boutique__card-wish"
-                        onClick={() => toggleWish(p._id)}
+                        onClick={e => { e.preventDefault(); toggleWish(p._id); }}
                         disabled={isPending}
                         style={{
                           color:   isWished ? "#d4784f" : undefined,
@@ -415,24 +462,9 @@ export default function Boutique() {
                         <span className="boutique__card-price">{p.price.toLocaleString("fr-TN")} TND</span>
                       </div>
                       <p className="boutique__card-desc">{p.description.slice(0, 120)}</p>
-                      {/* <div className="boutique__card-footer">
-                        <span className="boutique__card-loc">{p.location ?? p.category}</span>
-                        <Link href={`/boutique/${p._id}`} className="boutique__card-cta">Voir la pièce →</Link>
-                      </div> */}
-                      {/* <motion.button className="boutique__card-cart"
-                        onClick={() => handleAddToCart(p._id)}
-                        initial={{ y: "100%" }} whileHover={{ y: 0 }}
-                        transition={{ duration: 0.4 }}
-                        style={addedIds.includes(p._id) ? { background: "#3a6b3a" } : undefined}>
-                        {addedIds.includes(p._id) ? (
-                          <><Check size={16} style={{ marginRight: 8 }} aria-hidden="true" />Ajouté</>
-                        ) : (
-                          "Ajouter au panier"
-                        )}
-                      </motion.button> */}
                     </div>
                     <div className="boutique__card-footer">
-                      <span className="boutique__card-loc">{p.location ?? p.category}</span>
+                      <span className="boutique__card-loc">{p.location ?? catName}</span>
                       <Link href={`/boutique/${p._id}`} className="boutique__card-cta">Voir la pièce →</Link>
                     </div>
                   </motion.div>

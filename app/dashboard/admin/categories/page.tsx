@@ -13,6 +13,7 @@ interface Subcategory {
 interface Category {
   _id: string;
   name: string;
+  image: string;
   description: string;
   subcategories: Subcategory[];
   isActive: boolean;
@@ -22,6 +23,7 @@ interface Category {
 
 interface FormState {
   name: string;
+  image: string;
   description: string;
   subcategories: Subcategory[];
 }
@@ -42,7 +44,7 @@ export default function CategoriesPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<Category | null>(null);
   const [newSubInput, setNewSubInput] = useState<Record<string, string>>({});
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [form, setForm] = useState<FormState>({ name: "", description: "", subcategories: [] });
+  const [form, setForm] = useState<FormState>({ name: "", image: "", description: "", subcategories: [] });
   const [newSubName, setNewSubName] = useState<string>("");
 
   useEffect(() => { fetchCategories(); }, []);
@@ -69,14 +71,14 @@ export default function CategoriesPage() {
 
   const openCreate = (): void => {
     setEditingCategory(null);
-    setForm({ name: "", description: "", subcategories: [] });
+    setForm({ name: "", image: "", description: "", subcategories: [] });
     setNewSubName("");
     setShowModal(true);
   };
 
   const openEdit = (cat: Category): void => {
     setEditingCategory(cat);
-    setForm({ name: cat.name, description: cat.description ?? "", subcategories: [...cat.subcategories] });
+    setForm({ name: cat.name, image: cat.image ?? "", description: cat.description ?? "", subcategories: [...cat.subcategories] });
     setNewSubName("");
     setShowModal(true);
   };
@@ -209,10 +211,8 @@ export default function CategoriesPage() {
           <div className="cat-confirm-modal" onClick={(e) => e.stopPropagation()}>
             <div className="cat-confirm-icon">🗑️</div>
             <h3>Supprimer la catégorie ?</h3>
-            <p>
-              Cette action est irréversible. La catégorie{" "}
-              <strong>«&nbsp;{deleteConfirm.name}&nbsp;»</strong> et toutes ses
-              sous-catégories seront supprimées.
+            <p>Cette action est irréversible. La catégorie{" "}
+              <strong>«&nbsp;{deleteConfirm.name}&nbsp;»</strong> et toutes ses sous-catégories seront supprimées.
             </p>
             <div className="cat-confirm-actions">
               <button className="cat-btn cat-btn--ghost" onClick={() => setDeleteConfirm(null)}>Annuler</button>
@@ -230,6 +230,28 @@ export default function CategoriesPage() {
               <button className="cat-close-btn" onClick={() => setShowModal(false)}>✕</button>
             </div>
             <div className="cat-modal-body">
+
+              {/* Image URL */}
+              <div className="cat-field">
+                <label>Image (URL)</label>
+                <input
+                  className="cat-input"
+                  placeholder="https://example.com/image.jpg"
+                  value={form.image}
+                  onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))}
+                />
+                {/* Preview */}
+                {form.image && (
+                  <div className="cat-img-preview">
+                    <img
+                      src={form.image}
+                      alt="preview"
+                      onError={(e) => (e.currentTarget.style.display = "none")}
+                    />
+                  </div>
+                )}
+              </div>
+
               <div className="cat-field">
                 <label>Nom de la catégorie <span className="cat-required">*</span></label>
                 <input
@@ -239,6 +261,7 @@ export default function CategoriesPage() {
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 />
               </div>
+
               <div className="cat-field">
                 <label>Description</label>
                 <input
@@ -248,11 +271,9 @@ export default function CategoriesPage() {
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 />
               </div>
+
               <div className="cat-field">
-                <label>
-                  Sous-catégories{" "}
-                  <span className="cat-count-badge">{form.subcategories.length}</span>
-                </label>
+                <label>Sous-catégories <span className="cat-count-badge">{form.subcategories.length}</span></label>
                 <div className="cat-sub-list">
                   {form.subcategories.map((sub, idx) => (
                     <div key={sub._id} className="cat-sub-chip">
@@ -321,16 +342,11 @@ export default function CategoriesPage() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        {searchTerm && (
-          <button className="cat-search-clear" onClick={() => setSearchTerm("")}>✕</button>
-        )}
+        {searchTerm && <button className="cat-search-clear" onClick={() => setSearchTerm("")}>✕</button>}
       </div>
 
       {loading ? (
-        <div className="cat-loading">
-          <div className="cat-spinner" />
-          <span>Chargement des catégories...</span>
-        </div>
+        <div className="cat-loading"><div className="cat-spinner" /><span>Chargement...</span></div>
       ) : error ? (
         <div className="cat-error">
           <div className="cat-error-icon">⚠️</div>
@@ -352,6 +368,20 @@ export default function CategoriesPage() {
           {filtered.map((cat) => (
             <div key={cat._id} className={`cat-card ${!cat.isActive ? "cat-card--inactive" : ""}`}>
               <div className="cat-card-main">
+
+                {/* Category image or placeholder */}
+                <div className="cat-card-thumb">
+                  {cat.image ? (
+                    <img src={cat.image} alt={cat.name} onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                      e.currentTarget.nextElementSibling?.removeAttribute("style");
+                    }} />
+                  ) : null}
+                  <div className="cat-card-thumb-fallback" style={cat.image ? { display: "none" } : {}}>
+                    {cat.name.charAt(0)}
+                  </div>
+                </div>
+
                 <div className="cat-card-info">
                   <div className="cat-card-name">{cat.name}</div>
                   {cat.description && <div className="cat-card-desc">{cat.description}</div>}
@@ -363,29 +393,22 @@ export default function CategoriesPage() {
                     </span>
                   </div>
                 </div>
+
                 <div className="cat-card-actions">
-                  <button
-                    className="cat-action-btn"
+                  <button className="cat-action-btn"
                     onClick={() => setExpandedId(expandedId === cat._id ? null : cat._id)}
-                    title="Voir les sous-catégories"
-                  >
+                    title="Voir les sous-catégories">
                     {expandedId === cat._id ? "▲" : "▼"}
                   </button>
                   <button className="cat-action-btn" onClick={() => openEdit(cat)} title="Modifier">✏️</button>
                   <button
                     className={`cat-action-btn ${cat.isActive ? "cat-action-btn--toggle-off" : "cat-action-btn--toggle-on"}`}
                     onClick={() => handleToggleActive(cat)}
-                    title={cat.isActive ? "Désactiver" : "Activer"}
-                  >
+                    title={cat.isActive ? "Désactiver" : "Activer"}>
                     {cat.isActive ? "⊘" : "✓"}
                   </button>
-                  <button
-                    className="cat-action-btn cat-action-btn--delete"
-                    onClick={() => setDeleteConfirm(cat)}
-                    title="Supprimer"
-                  >
-                    🗑
-                  </button>
+                  <button className="cat-action-btn cat-action-btn--delete"
+                    onClick={() => setDeleteConfirm(cat)} title="Supprimer">🗑</button>
                 </div>
               </div>
 
@@ -411,10 +434,7 @@ export default function CategoriesPage() {
                       onChange={(e) => setNewSubInput((s) => ({ ...s, [cat._id]: e.target.value }))}
                       onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && handleAddSubInline(cat._id)}
                     />
-                    <button
-                      className="cat-btn cat-btn--outline cat-btn--sm"
-                      onClick={() => handleAddSubInline(cat._id)}
-                    >
+                    <button className="cat-btn cat-btn--outline cat-btn--sm" onClick={() => handleAddSubInline(cat._id)}>
                       + Ajouter
                     </button>
                   </div>

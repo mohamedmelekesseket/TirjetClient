@@ -1845,7 +1845,7 @@ img  { display: block; max-width: 100%; }
 ══════════════════════════════════════════════════════════════════════════════ */
 .pg-artisans {
   background: #ffffff;
-  padding: 100px 80px;
+  padding: 100px 0px;
   border-top: 1px solid rgba(201,160,85,0.1);
 }
 
@@ -1856,10 +1856,10 @@ img  { display: block; max-width: 100%; }
 
 .pg-artisans__grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 48px;
-  max-width: 960px;
-  margin: 0 auto;
+  grid-template-columns: repeat(6, 16.6% 16.6% 16.6% 16.6% 16.6% 16.6%);
+  gap: 1px;
+  width: 100%;
+  margin: 0 0;
   text-align: center;
 }
 
@@ -1901,7 +1901,7 @@ img  { display: block; max-width: 100%; }
 
 .pg-art-card__name {
   font-family: "Cormorant Garamond", serif;
-  font-size: 22px;
+  font-size: 12px;
   font-weight: 400;
   color: #16110C;
   margin: 0 0 4px;
@@ -8027,6 +8027,53 @@ tbody td {
   align-items: center;
   gap: 16px;
   padding: 20px 24px;
+}
+
+/* ── Image preview in modal ── */
+.cat-img-preview {
+  margin-top: 8px;
+  width: 100%;
+  height: 140px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.cat-img-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Thumbnail in card ── */
+.cat-card-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #f4ede3, #e8d5c0);
+  position: relative;
+}
+
+.cat-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cat-card-thumb-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #b85d38;
+  font-family: "Playfair Display", serif;
 }
 .cat-card-icon {
   width: 52px;
