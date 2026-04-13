@@ -30,6 +30,138 @@ const avatarGradient: Record<string, string> = {
   admin:  "linear-gradient(135deg,#8B5CF6,#6D28D9)",
 };
 
+// ── Role Change Modal ──────────────────────────────────────────────
+function RoleModal({
+  user,
+  onClose,
+  onConfirm,
+  loading,
+}: {
+  user: User;
+  onClose: () => void;
+  onConfirm: (newRole: User["role"]) => void;
+  loading: boolean;
+}) {
+  const [selected, setSelected] = useState<User["role"]>(user.role);
+
+  const roles: { value: User["role"]; label: string; description: string; color: string; gradient: string }[] = [
+    { value: "user",   label: "Client",  description: "Peut parcourir et commander des produits", color: "#0234AB", gradient: "linear-gradient(135deg,#0234AB,#1a4fd4)" },
+    { value: "vendor", label: "Artisan", description: "Peut créer et gérer des produits à vendre", color: "#0B9E5E", gradient: "linear-gradient(135deg,#0B9E5E,#047857)" },
+    { value: "admin",  label: "Admin",   description: "Accès complet à l'administration", color: "#8B5CF6", gradient: "linear-gradient(135deg,#8B5CF6,#6D28D9)" },
+  ];
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 1000,
+      background: "rgba(10,15,44,0.55)", backdropFilter: "blur(4px)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "1rem",
+    }} onClick={onClose}>
+      <div style={{
+        background: "#fff", borderRadius: 20, padding: "28px 28px 24px",
+        width: "100%", maxWidth: 420, boxShadow: "0 24px 60px rgba(2,52,171,0.18)",
+        animation: "modalIn 0.22s cubic-bezier(.34,1.56,.64,1) both",
+      }} onClick={e => e.stopPropagation()}>
+        <style>{`
+          @keyframes modalIn { from { opacity:0; transform:scale(0.92) translateY(12px); } to { opacity:1; transform:none; } }
+        `}</style>
+
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 22 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 14, background: avatarGradient[user.role], color: "#fff", fontWeight: 700, fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            {initials(user.name)}
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: "1rem", color: "#0A0F2C" }}>{user.name}</div>
+            <div style={{ fontSize: "0.78rem", color: "#8B9AB5" }}>{user.email}</div>
+          </div>
+        </div>
+
+        <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "#4A5568", marginBottom: 12 }}>
+          Choisir un nouveau rôle
+        </div>
+
+        {/* Role options */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+          {roles.map(r => {
+            const isActive = selected === r.value;
+            return (
+              <button key={r.value} onClick={() => setSelected(r.value)} style={{
+                display: "flex", alignItems: "center", gap: 14, padding: "13px 16px",
+                borderRadius: 12, cursor: "pointer", textAlign: "left", width: "100%",
+                border: `2px solid ${isActive ? r.color : "#E2E8F0"}`,
+                background: isActive ? `${r.color}08` : "#FAFAFA",
+                transition: "all 0.15s",
+              }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: isActive ? r.gradient : "#E2E8F0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.15s" }}>
+                  <span style={{ fontSize: "0.78rem", fontWeight: 800, color: isActive ? "#fff" : "#8B9AB5" }}>
+                    {r.label[0]}
+                  </span>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: "0.88rem", color: isActive ? r.color : "#2D3748" }}>
+                    {r.label}
+                    {user.role === r.value && (
+                      <span style={{ marginLeft: 8, fontSize: "0.68rem", background: "#E2E8F0", color: "#8B9AB5", padding: "1px 7px", borderRadius: 10, fontWeight: 600 }}>
+                        actuel
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: "0.73rem", color: "#8B9AB5", marginTop: 2 }}>{r.description}</div>
+                </div>
+                <div style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${isActive ? r.color : "#CBD5E0"}`, background: isActive ? r.color : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {isActive && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff" }} />}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Warning if changing to admin */}
+        {selected === "admin" && user.role !== "admin" && (
+          <div style={{ padding: "10px 14px", background: "#fff5f5", border: "1px solid #fed7d7", borderRadius: 10, fontSize: "0.78rem", color: "#c53030", marginBottom: 16, display: "flex", gap: 8, alignItems: "flex-start" }}>
+            <span style={{ flexShrink: 0 }}>⚠️</span>
+            Attention : accorder le rôle Admin donne un accès complet à la plateforme.
+          </div>
+        )}
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onClose} disabled={loading} style={{
+            flex: 1, padding: "11px", borderRadius: 10, border: "1.5px solid #E2E8F0",
+            background: "#fff", color: "#4A5568", fontWeight: 600, fontSize: "0.85rem",
+            cursor: "pointer", transition: "all 0.15s",
+          }}>
+            Annuler
+          </button>
+          <button
+            onClick={() => onConfirm(selected)}
+            disabled={loading || selected === user.role}
+            style={{
+              flex: 2, padding: "11px", borderRadius: 10, border: "none",
+              background: selected === user.role ? "#E2E8F0" : "linear-gradient(135deg,#0234AB,#1a4fd4)",
+              color: selected === user.role ? "#8B9AB5" : "#fff",
+              fontWeight: 700, fontSize: "0.85rem",
+              cursor: selected === user.role ? "not-allowed" : "pointer",
+              transition: "all 0.15s", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            }}
+          >
+            {loading ? (
+              <>
+                <span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid #ffffff44", borderTopColor: "#fff", animation: "spin 0.7s linear infinite", display: "inline-block" }} />
+                Mise à jour…
+              </>
+            ) : (
+              `Changer en ${roleLabel[selected]}`
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main page ──────────────────────────────────────────────────────
 export default function AdminUsersPage() {
   const { data: session, status: sessionStatus } = useSession();
   const apiToken = (session as any)?.apiToken as string | undefined;
@@ -41,6 +173,11 @@ export default function AdminUsersPage() {
   const [activeTab, setActiveTab] = useState<FilterTab>("Tous");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+
+  // Role modal state
+  const [roleModalUser, setRoleModalUser] = useState<User | null>(null);
+  const [roleLoading, setRoleLoading] = useState(false);
+  const [roleSuccess, setRoleSuccess] = useState<string | null>(null);
 
   const getHeaders = () => ({
     "Content-Type": "application/json",
@@ -67,6 +204,7 @@ export default function AdminUsersPage() {
     if (apiToken) fetchUsers();
   }, [apiToken]);
 
+  // ── Status toggle ──
   const handleToggleStatus = async (user: User) => {
     const newStatus = user.status === "active" ? "blocked" : "active";
     const action = newStatus === "blocked" ? "Suspendre" : "Réactiver";
@@ -87,6 +225,34 @@ export default function AdminUsersPage() {
     }
   };
 
+  // ── Role change ──
+  const handleRoleChange = async (newRole: User["role"]) => {
+    if (!roleModalUser) return;
+    setRoleLoading(true);
+    try {
+      const res = await fetch(`${API}/api/users/${roleModalUser._id}/role`, {
+        method: "PATCH",
+        headers: getHeaders(),
+        body: JSON.stringify({ role: newRole }),
+      });
+      if (!res.ok) throw new Error("Échec du changement de rôle");
+
+      // Optimistically update local state
+      setUsers(prev => prev.map(u =>
+        u._id === roleModalUser._id ? { ...u, role: newRole } : u
+      ));
+
+      setRoleModalUser(null);
+      setRoleSuccess(`Rôle de ${roleModalUser.name} changé en ${roleLabel[newRole]}`);
+      setTimeout(() => setRoleSuccess(null), 3500);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setRoleLoading(false);
+    }
+  };
+
+  // ── Filtering ──
   const filtered = users.filter((u) => {
     const matchTab =
       activeTab === "Tous" ||
@@ -111,11 +277,38 @@ export default function AdminUsersPage() {
   };
 
   const handleTabChange = (tab: FilterTab) => { setActiveTab(tab); setPage(1); };
-
   const isSessionLoading = sessionStatus === "loading" || (!apiToken && sessionStatus === "authenticated");
 
   return (
     <div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+      {/* Role modal */}
+      {roleModalUser && (
+        <RoleModal
+          user={roleModalUser}
+          onClose={() => !roleLoading && setRoleModalUser(null)}
+          onConfirm={handleRoleChange}
+          loading={roleLoading}
+        />
+      )}
+
+      {/* Success toast */}
+      {roleSuccess && (
+        <div style={{
+          position: "fixed", bottom: 28, right: 28, zIndex: 999,
+          background: "#0B9E5E", color: "#fff", padding: "12px 20px",
+          borderRadius: 12, fontSize: "0.85rem", fontWeight: 600,
+          boxShadow: "0 8px 24px rgba(11,158,94,0.35)",
+          animation: "modalIn 0.22s cubic-bezier(.34,1.56,.64,1) both",
+          display: "flex", alignItems: "center", gap: 8,
+        }}>
+          <style>{`@keyframes modalIn { from { opacity:0; transform:scale(0.92) translateY(12px); } to { opacity:1; transform:none; } }`}</style>
+          ✓ {roleSuccess}
+        </div>
+      )}
+
+      {/* Header */}
       <div className="page-header anim-fade-up">
         <div>
           <h1 className="page-title">Gestion des Utilisateurs</h1>
@@ -166,15 +359,11 @@ export default function AdminUsersPage() {
         </div>
 
         {isSessionLoading && (
-          <div style={{ padding: "40px", textAlign: "center", color: "#8B9AB5" }}>
-            Chargement de la session...
-          </div>
+          <div style={{ padding: "40px", textAlign: "center", color: "#8B9AB5" }}>Chargement de la session...</div>
         )}
-
         {!isSessionLoading && loading && (
           <div style={{ padding: "40px", textAlign: "center", color: "#8B9AB5" }}>Chargement...</div>
         )}
-
         {!isSessionLoading && error && (
           <div style={{ padding: "24px", textAlign: "center", color: "#E53E3E" }}>
             {error}{" "}
@@ -202,49 +391,67 @@ export default function AdminUsersPage() {
                         Aucun utilisateur trouvé
                       </td>
                     </tr>
-                  ) : (
-                    paginated.map((u, i) => (
-                      <tr key={u._id} style={{ animationDelay: `${i * 0.055}s` }}>
-                        <td>
-                          <div className="user-cell">
-                            <div className="user-row-avatar" style={{ background: avatarGradient[u.role] }}>
-                              {initials(u.name)}
-                            </div>
-                            <div>
-                              <div className="user-cell-name">{u.name}</div>
-                              <div className="user-cell-email">{u.email}</div>
-                            </div>
+                  ) : paginated.map((u, i) => (
+                    <tr key={u._id} style={{ animationDelay: `${i * 0.055}s` }}>
+                      <td>
+                        <div className="user-cell">
+                          <div className="user-row-avatar" style={{ background: avatarGradient[u.role] }}>
+                            {initials(u.name)}
                           </div>
-                        </td>
-                        <td>
+                          <div>
+                            <div className="user-cell-name">{u.name}</div>
+                            <div className="user-cell-email">{u.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        {/* Clickable role badge opens modal */}
+                        <button
+                          onClick={() => setRoleModalUser(u)}
+                          title="Changer le rôle"
+                          style={{
+                            background: "none", border: "none", cursor: "pointer",
+                            padding: 0, display: "inline-flex", alignItems: "center", gap: 5,
+                          }}
+                        >
                           <span className={`badge ${roleColors[u.role]}`}>{roleLabel[u.role]}</span>
-                        </td>
-                        <td style={{ color: "#8B9AB5", fontSize: "0.82rem" }}>
-                          {new Date(u.createdAt).toLocaleDateString("fr-FR")}
-                        </td>
-                        <td>
-                          <span className={`badge ${u.status === "active" ? "badge-success" : "badge-danger"}`}>
-                            {u.status === "active" ? "Actif" : "Suspendu"}
-                          </span>
-                        </td>
-                        <td>
-                          <div style={{ display: "flex", gap: "6px" }}>
-                            <button className="icon-btn" title="Voir profil">👁</button>
-                            {u.role !== "admin" && (
-                              <button
-                                className={`icon-btn${u.status === "active" ? " danger" : ""}`}
-                                title={u.status === "active" ? "Suspendre" : "Réactiver"}
-                                disabled={actionLoading === u._id}
-                                onClick={() => handleToggleStatus(u)}
-                              >
-                                {actionLoading === u._id ? "..." : u.status === "active" ? "⊘" : "✓"}
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
+                          <span style={{ fontSize: "0.68rem", color: "#8B9AB5", fontWeight: 500 }}>✎</span>
+                        </button>
+                      </td>
+                      <td style={{ color: "#8B9AB5", fontSize: "0.82rem" }}>
+                        {new Date(u.createdAt).toLocaleDateString("fr-FR")}
+                      </td>
+                      <td>
+                        <span className={`badge ${u.status === "active" ? "badge-success" : "badge-danger"}`}>
+                          {u.status === "active" ? "Actif" : "Suspendu"}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          {/* Change role button */}
+                          <button
+                            className="icon-btn"
+                            title="Changer le rôle"
+                            onClick={() => setRoleModalUser(u)}
+                            style={{ fontSize: "0.78rem", fontWeight: 600, color: "#0234AB" }}
+                          >
+                            ⇄ Rôle
+                          </button>
+                          {/* Suspend/activate (not for admins) */}
+                          {u.role !== "admin" && (
+                            <button
+                              className={`icon-btn${u.status === "active" ? " danger" : ""}`}
+                              title={u.status === "active" ? "Suspendre" : "Réactiver"}
+                              disabled={actionLoading === u._id}
+                              onClick={() => handleToggleStatus(u)}
+                            >
+                              {actionLoading === u._id ? "…" : u.status === "active" ? "⊘" : "✓"}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -259,25 +466,17 @@ export default function AdminUsersPage() {
                 {filtered.length === 0 ? 0 : (page - 1) * ITEMS_PER_PAGE + 1}–
                 {Math.min(page * ITEMS_PER_PAGE, filtered.length)} sur {filtered.length}
               </span>
-              <div style={{ display: "flex", gap: "6px" }}>
-                <button className="icon-btn" style={{ fontSize: "0.82rem" }} disabled={page === 1} onClick={() => setPage((p) => p - 1)}>←</button>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button className="icon-btn" style={{ fontSize: "0.82rem" }} disabled={page === 1} onClick={() => setPage(p => p - 1)}>←</button>
                 {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map((p) => (
-                  <button
-                    key={p}
-                    className="icon-btn"
-                    style={{
-                      background: page === p ? "#0234AB" : "white",
-                      color: page === p ? "white" : "#4A5568",
-                      borderColor: page === p ? "transparent" : "rgba(2,52,171,0.12)",
-                      fontSize: "0.82rem",
-                      fontWeight: page === p ? 700 : 400,
-                    }}
-                    onClick={() => setPage(p)}
-                  >
-                    {p}
-                  </button>
+                  <button key={p} className="icon-btn" style={{
+                    background: page === p ? "#0234AB" : "white",
+                    color: page === p ? "white" : "#4A5568",
+                    borderColor: page === p ? "transparent" : "rgba(2,52,171,0.12)",
+                    fontSize: "0.82rem", fontWeight: page === p ? 700 : 400,
+                  }} onClick={() => setPage(p)}>{p}</button>
                 ))}
-                <button className="icon-btn" style={{ fontSize: "0.82rem" }} disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>→</button>
+                <button className="icon-btn" style={{ fontSize: "0.82rem" }} disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>→</button>
               </div>
             </div>
           </>

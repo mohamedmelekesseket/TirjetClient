@@ -7,7 +7,7 @@ import { fontDisplay, fontSans } from "@/lib/font";
 
 export const metadata: Metadata = {
   title: "Tirjet",
-  description: "Artisanat Marocain",
+  description: "Artisanat Tunisie",
 };
 
 export default function RootLayout({

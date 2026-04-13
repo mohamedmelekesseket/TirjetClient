@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Check, Download, Eye, Flag, Gem, Package, Search, Shirt, Lamp, X } from "lucide-react";
 import type { ComponentType } from "react";
+import Link from 'next/link';
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -269,7 +270,9 @@ export default function AdminProductsPage() {
                         </td>
                         <td>
                           <div style={{ display: "flex", gap: "6px" }}>
-                            <button className="icon-btn" title="Voir"><Eye size={16} /></button>
+                          <Link href={`/dashboard/admin/products/${p._id}`} className="icon-btn" title="Voir">
+                            <Eye size={16} />
+                          </Link>
                             {status === "En attente" && (
                               <button
                                 className="btn btn-success btn-sm"
