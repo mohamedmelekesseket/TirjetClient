@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Check, X } from "lucide-react";
 import Link from "next/link";
+import { showSuccessToast } from "@/lib/toast";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Product {
@@ -253,7 +254,6 @@ export default function ProductPage() {
   const [wish, setWish] = useState(false);
   const [added, setAdded] = useState(false);
   const [activeTab, setActiveTab] = useState<"desc" | "details" | "avis">("desc");
-  const [toastVisible, setToastVisible] = useState(false);
 
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
@@ -263,8 +263,10 @@ export default function ProductPage() {
 
   function handleCart() {
     setAdded(true);
-    setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 2800);
+    showSuccessToast(
+      `${product.title} ajouté au panier`,
+      `${qty} pièce${qty > 1 ? "s" : ""} sélectionnée${qty > 1 ? "s" : ""}.`
+    );
   }
 
   const inStock = product.stock > 0;
@@ -512,25 +514,6 @@ export default function ProductPage() {
         </div>
       </section>
 
-      {/* ── Toast ─────────────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {toastVisible && (
-          <motion.div className="pd-toast"
-            initial={{ opacity: 0, y: 24, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.95 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}>
-            <span className="pd-toast__icon" aria-hidden="true">
-              <Check size={18} />
-            </span>
-            <div>
-              <strong>{product.title}</strong>
-              <span>ajouté au panier · {qty} pièce{qty > 1 ? "s" : ""}</span>
-            </div>
-            <a href="/cart" className="pd-toast__link">Voir le panier →</a>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

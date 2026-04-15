@@ -7,13 +7,17 @@ import { Loader2, X, ImagePlus } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-interface Subcategory { _id: string; name: string; slug: string; }
-interface Category { _id: string; name: string; subcategories: Subcategory[]; isActive: boolean; }
+interface SubcategoryL4 { _id: string; name: string; slug: string; }
+interface SubcategoryL3 { _id: string; name: string; slug: string; subcategories: SubcategoryL4[]; }
+interface SubcategoryL2 { _id: string; name: string; slug: string; subcategories: SubcategoryL3[]; }
+interface Category { _id: string; name: string; subcategories: SubcategoryL2[]; isActive: boolean; }
 
 interface FormState {
   title: string;
   categoryId: string;
-  subcategorySlug: string;
+  subcategoryL2Slug: string;
+  subcategoryL3Slug: string;
+  subcategoryL4Slug: string;
   price: string;
   stock: string;
   description: string;
@@ -43,7 +47,9 @@ export default function CreateProductPage() {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<FormState>({
-    title: '', categoryId: '', subcategorySlug: '', price: '', stock: '', description: '',
+    title: '', categoryId: '',
+    subcategoryL2Slug: '', subcategoryL3Slug: '', subcategoryL4Slug: '',
+    price: '', stock: '', description: '',
   });
   const [images, setImages]         = useState<File[]>([]);
   const [previews, setPreviews]     = useState<string[]>([]);
@@ -59,16 +65,24 @@ export default function CreateProductPage() {
       .catch(() => {});
   }, []);
 
+  // Derived subcategory lists based on current selections
   const selectedCategory = categories.find(c => c._id === form.categoryId);
+  const l2List = selectedCategory?.subcategories ?? [];
+  const selectedL2 = l2List.find(s => s.slug === form.subcategoryL2Slug);
+  const l3List = selectedL2?.subcategories ?? [];
+  const selectedL3 = l3List.find(s => s.slug === form.subcategoryL3Slug);
+  const l4List = selectedL3?.subcategories ?? [];
 
   const handle = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setForm(f => ({
-      ...f,
-      [name]: value,
-      // reset subcategory when category changes
-      ...(name === 'categoryId' ? { subcategorySlug: '' } : {}),
-    }));
+    setForm(f => {
+      const next = { ...f, [name]: value };
+      // Reset deeper levels when a parent changes
+      if (name === 'categoryId')         { next.subcategoryL2Slug = ''; next.subcategoryL3Slug = ''; next.subcategoryL4Slug = ''; }
+      if (name === 'subcategoryL2Slug')  { next.subcategoryL3Slug = ''; next.subcategoryL4Slug = ''; }
+      if (name === 'subcategoryL3Slug')  { next.subcategoryL4Slug = ''; }
+      return next;
+    });
     setErrors(prev => ({ ...prev, [name]: undefined }));
   };
 
@@ -98,12 +112,29 @@ export default function CreateProductPage() {
       setSubmitting(true);
       setServerError(null);
       const body = new FormData();
-      body.append('title',           form.title.trim());
-      body.append('category',        form.categoryId);
-      body.append('subcategorySlug', form.subcategorySlug);
-      body.append('price',           form.price);
-      body.append('stock',           form.stock || '1');
-      body.append('description',     form.description.trim());
+      body.append('title',       form.title.trim());
+      body.append('category',    form.categoryId);
+      body.append('price',       form.price);
+      body.append('stock',       form.stock || '1');
+      body.append('description', form.description.trim());
+
+      // L2
+      if (form.subcategoryL2Slug) {
+        body.append('subcategoryL2Slug', form.subcategoryL2Slug);
+        body.append('subcategoryL2Name', selectedL2?.name ?? '');
+      }
+      // L3
+      if (form.subcategoryL3Slug) {
+        body.append('subcategoryL3Slug', form.subcategoryL3Slug);
+        body.append('subcategoryL3Name', selectedL3?.name ?? '');
+      }
+      // L4
+      if (form.subcategoryL4Slug) {
+        const l4 = l4List.find(s => s.slug === form.subcategoryL4Slug);
+        body.append('subcategoryL4Slug', form.subcategoryL4Slug);
+        body.append('subcategoryL4Name', l4?.name ?? '');
+      }
+
       images.forEach(img => body.append('images', img));
 
       const res = await fetch(`${API}/api/products`, {
@@ -160,36 +191,68 @@ export default function CreateProductPage() {
                   {errors.title && <span className="form-error">{errors.title}</span>}
                 </div>
 
-                {/* Category + Subcategory */}
-                <div className="form-grid-2">
-                  <div className="form-group">
-                    <label className="form-label">Catégorie *</label>
-                    <select
-                      name="categoryId" value={form.categoryId} onChange={handle}
-                      className={`form-select${errors.categoryId ? ' input-error' : ''}`}
-                    >
-                      <option value="">Sélectionner...</option>
-                      {categories.map(c => (
-                        <option key={c._id} value={c._id}>{c.name}</option>
-                      ))}
-                    </select>
-                    {errors.categoryId && <span className="form-error">{errors.categoryId}</span>}
-                  </div>
+                {/* L1 Category */}
+                <div className="form-group">
+                  <label className="form-label">Catégorie *</label>
+                  <select
+                    name="categoryId" value={form.categoryId} onChange={handle}
+                    className={`form-select${errors.categoryId ? ' input-error' : ''}`}
+                  >
+                    <option value="">Sélectionner...</option>
+                    {categories.map(c => (
+                      <option key={c._id} value={c._id}>{c.name}</option>
+                    ))}
+                  </select>
+                  {errors.categoryId && <span className="form-error">{errors.categoryId}</span>}
+                </div>
 
+                {/* L2 Subcategory */}
+                {l2List.length > 0 && (
                   <div className="form-group">
                     <label className="form-label">Sous-catégorie</label>
                     <select
-                      name="subcategorySlug" value={form.subcategorySlug} onChange={handle}
+                      name="subcategoryL2Slug" value={form.subcategoryL2Slug} onChange={handle}
                       className="form-select"
-                      disabled={!selectedCategory || selectedCategory.subcategories.length === 0}
                     >
                       <option value="">Toutes</option>
-                      {selectedCategory?.subcategories.map(s => (
+                      {l2List.map(s => (
                         <option key={s._id} value={s.slug}>{s.name}</option>
                       ))}
                     </select>
                   </div>
-                </div>
+                )}
+
+                {/* L3 Subcategory */}
+                {l3List.length > 0 && (
+                  <div className="form-group">
+                    <label className="form-label">Sous-catégorie (niveau 3)</label>
+                    <select
+                      name="subcategoryL3Slug" value={form.subcategoryL3Slug} onChange={handle}
+                      className="form-select"
+                    >
+                      <option value="">Toutes</option>
+                      {l3List.map(s => (
+                        <option key={s._id} value={s.slug}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* L4 Subcategory */}
+                {l4List.length > 0 && (
+                  <div className="form-group">
+                    <label className="form-label">Sous-catégorie (niveau 4)</label>
+                    <select
+                      name="subcategoryL4Slug" value={form.subcategoryL4Slug} onChange={handle}
+                      className="form-select"
+                    >
+                      <option value="">Toutes</option>
+                      {l4List.map(s => (
+                        <option key={s._id} value={s.slug}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div className="form-group">
                   <label className="form-label">Description *</label>

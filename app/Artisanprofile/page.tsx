@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Plus } from "lucide-react";
 import Link from "next/link";
+import { showSuccessToast } from "@/lib/toast";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface User {
@@ -275,8 +276,6 @@ export default function ArtisanProfilePage() {
   const [cartAdded, setCartAdded] = useState<string[]>([]);
   const [filter, setFilter] = useState("all");
   const [tab, setTab] = useState<"creations" | "about">("creations");
-  const [toast, setToast] = useState(false);
-  const [toastTitle, setToastTtl] = useState("");
 
   const { ref: statsRef, visible: statsVisible } = useInView(0.3);
 
@@ -291,7 +290,7 @@ export default function ArtisanProfilePage() {
   function handleCart(id: string) {
     setCartAdded(c => c.includes(id) ? c : [...c, id]);
     const prod = products.find(p => p._id === id);
-    if (prod) { setToastTtl(prod.title); setToast(true); setTimeout(() => setToast(false), 2800); }
+    if (prod) showSuccessToast(`${prod.title} ajouté au panier`);
   }
 
   return (
@@ -499,18 +498,6 @@ export default function ArtisanProfilePage() {
         </motion.div>
       </motion.section>
 
-      {/* Toast */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div className="artp-toast"
-            initial={{ opacity: 0, y: 24, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.95 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
-            <span className="artp-toast__icon">✓</span>
-            <div><strong>{toastTitle}</strong><span>ajouté au panier</span></div>
-            <a href="/cart" className="artp-toast__link">Voir →</a>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

@@ -7,26 +7,37 @@ import { Loader2, X, ImagePlus, Search, UserCheck } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-interface Subcategory { _id: string; name: string; slug: string; }
-interface Category    { _id: string; name: string; subcategories: Subcategory[]; isActive: boolean; }
-interface Vendor      { _id: string; name: string; email: string; image?: string; }
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface L4 { _id: string; name: string; slug: string; }
+interface L3 { _id: string; name: string; slug: string; subcategories: L4[]; }
+interface L2 { _id: string; name: string; slug: string; subcategories: L3[]; }
+interface Category { _id: string; name: string; isActive: boolean; subcategories: L2[]; }
+interface Vendor   { _id: string; name: string; email: string; image?: string; }
 
 interface FormState {
-  title: string;
-  categoryId: string;
-  subcategorySlug: string;
-  price: string;
-  stock: string;
-  description: string;
+  title:            string;
+  categoryId:       string;
+  subcategoryL2Slug: string;
+  subcategoryL2Name: string;
+  subcategoryL3Slug: string;
+  subcategoryL3Name: string;
+  subcategoryL4Slug: string;
+  subcategoryL4Name: string;
+  price:            string;
+  stock:            string;
+  description:      string;
 }
 
 interface FieldError {
-  title?: string;
+  title?:      string;
   categoryId?: string;
-  price?: string;
+  price?:      string;
   description?: string;
-  vendor?: string;
+  vendor?:     string;
 }
+
+// ── Validation ────────────────────────────────────────────────────────────────
 
 function validate(form: FormState, vendorId: string): FieldError {
   const errors: FieldError = {};
@@ -39,34 +50,39 @@ function validate(form: FormState, vendorId: string): FieldError {
   return errors;
 }
 
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export default function AdminCreateProductPage() {
-  const router = useRouter();
+  const router   = useRouter();
   const { data: session } = useSession();
   const apiToken = (session as any)?.apiToken as string | undefined;
 
-  // ── Categories ──────────────────────────────────────
+  // ── Categories (full tree) ───────────────────────────────────────────────
   const [categories, setCategories] = useState<Category[]>([]);
 
-  // ── Vendor search ────────────────────────────────────
-  const [vendorEmail, setVendorEmail]     = useState('');
-  const [vendorResults, setVendorResults] = useState<Vendor[]>([]);
+  // ── Vendor search ────────────────────────────────────────────────────────
+  const [vendorEmail, setVendorEmail]         = useState('');
+  const [vendorResults, setVendorResults]     = useState<Vendor[]>([]);
   const [vendorSearching, setVendorSearching] = useState(false);
   const [selectedVendor, setSelectedVendor]   = useState<Vendor | null>(null);
   const vendorDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Form ─────────────────────────────────────────────
+  // ── Form ─────────────────────────────────────────────────────────────────
   const [form, setForm] = useState<FormState>({
-    title: '', categoryId: '', subcategorySlug: '',
+    title: '', categoryId: '',
+    subcategoryL2Slug: '', subcategoryL2Name: '',
+    subcategoryL3Slug: '', subcategoryL3Name: '',
+    subcategoryL4Slug: '', subcategoryL4Name: '',
     price: '', stock: '', description: '',
   });
-  const [images, setImages]           = useState<File[]>([]);
-  const [previews, setPreviews]       = useState<string[]>([]);
-  const [errors, setErrors]           = useState<FieldError>({});
-  const [submitting, setSubmitting]   = useState(false);
+  const [images, setImages]         = useState<File[]>([]);
+  const [previews, setPreviews]     = useState<string[]>([]);
+  const [errors, setErrors]         = useState<FieldError>({});
+  const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // ── Load categories ──────────────────────────────────
+  // ── Load categories ──────────────────────────────────────────────────────
   useEffect(() => {
     fetch(`${API}/api/categories`)
       .then(r => r.ok ? r.json() : null)
@@ -76,7 +92,18 @@ export default function AdminCreateProductPage() {
       .catch(() => {});
   }, []);
 
-  // ── Vendor search (debounced) ────────────────────────
+  // ── Derived sub-lists from selected L1 / L2 / L3 ────────────────────────
+  const selectedCategory = categories.find(c => c._id === form.categoryId);
+
+  const l2List: L2[] = selectedCategory?.subcategories ?? [];
+  const selectedL2   = l2List.find(l2 => l2.slug === form.subcategoryL2Slug);
+
+  const l3List: L3[] = selectedL2?.subcategories ?? [];
+  const selectedL3   = l3List.find(l3 => l3.slug === form.subcategoryL3Slug);
+
+  const l4List: L4[] = selectedL3?.subcategories ?? [];
+
+  // ── Vendor search (debounced) ─────────────────────────────────────────────
   useEffect(() => {
     if (vendorDebounce.current) clearTimeout(vendorDebounce.current);
     if (!vendorEmail.trim()) { setVendorResults([]); return; }
@@ -111,19 +138,43 @@ export default function AdminCreateProductPage() {
     setVendorResults([]);
   };
 
-  // ── Helpers ──────────────────────────────────────────
-  const selectedCategory = categories.find(c => c._id === form.categoryId);
-
+  // ── Generic form change handler ───────────────────────────────────────────
   const handle = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setForm(f => ({
-      ...f,
-      [name]: value,
-      ...(name === 'categoryId' ? { subcategorySlug: '' } : {}),
-    }));
+
+    setForm(f => {
+      const next = { ...f, [name]: value };
+
+      // Reset downstream selections when a parent level changes
+      if (name === 'categoryId') {
+        next.subcategoryL2Slug = ''; next.subcategoryL2Name = '';
+        next.subcategoryL3Slug = ''; next.subcategoryL3Name = '';
+        next.subcategoryL4Slug = ''; next.subcategoryL4Name = '';
+      }
+      if (name === 'subcategoryL2Slug') {
+        // also store the name for denormalization
+        const picked = l2List.find(l2 => l2.slug === value);
+        next.subcategoryL2Name = picked?.name ?? '';
+        next.subcategoryL3Slug = ''; next.subcategoryL3Name = '';
+        next.subcategoryL4Slug = ''; next.subcategoryL4Name = '';
+      }
+      if (name === 'subcategoryL3Slug') {
+        const picked = l3List.find(l3 => l3.slug === value);
+        next.subcategoryL3Name = picked?.name ?? '';
+        next.subcategoryL4Slug = ''; next.subcategoryL4Name = '';
+      }
+      if (name === 'subcategoryL4Slug') {
+        const picked = l4List.find(l4 => l4.slug === value);
+        next.subcategoryL4Name = picked?.name ?? '';
+      }
+
+      return next;
+    });
+
     setErrors(prev => ({ ...prev, [name]: undefined }));
   };
 
+  // ── Image helpers ─────────────────────────────────────────────────────────
   const handleFiles = (files: FileList | null) => {
     if (!files) return;
     const newFiles    = Array.from(files).slice(0, 8 - images.length);
@@ -143,7 +194,7 @@ export default function AdminCreateProductPage() {
     handleFiles(e.dataTransfer.files);
   };
 
-  // ── Submit ───────────────────────────────────────────
+  // ── Submit ────────────────────────────────────────────────────────────────
   const submit = async () => {
     const fieldErrors = validate(form, selectedVendor?._id ?? '');
     if (Object.keys(fieldErrors).length) { setErrors(fieldErrors); return; }
@@ -153,13 +204,27 @@ export default function AdminCreateProductPage() {
       setServerError(null);
 
       const body = new FormData();
-      body.append('title',           form.title.trim());
-      body.append('category',        form.categoryId);
-      body.append('subcategorySlug', form.subcategorySlug);
-      body.append('price',           form.price);
-      body.append('stock',           form.stock || '1');
-      body.append('description',     form.description.trim());
-      body.append('artisanId',       selectedVendor!._id);
+      body.append('title',            form.title.trim());
+      body.append('category',         form.categoryId);
+      body.append('price',            form.price);
+      body.append('stock',            form.stock || '1');
+      body.append('description',      form.description.trim());
+      body.append('artisanId',        selectedVendor!._id);
+
+      // L2 / L3 / L4 — only append if selected
+      if (form.subcategoryL2Slug) {
+        body.append('subcategoryL2Slug', form.subcategoryL2Slug);
+        body.append('subcategoryL2Name', form.subcategoryL2Name);
+      }
+      if (form.subcategoryL3Slug) {
+        body.append('subcategoryL3Slug', form.subcategoryL3Slug);
+        body.append('subcategoryL3Name', form.subcategoryL3Name);
+      }
+      if (form.subcategoryL4Slug) {
+        body.append('subcategoryL4Slug', form.subcategoryL4Slug);
+        body.append('subcategoryL4Name', form.subcategoryL4Name);
+      }
+
       images.forEach(img => body.append('images', img));
 
       const res = await fetch(`${API}/api/products/admin/for-vendor`, {
@@ -181,7 +246,7 @@ export default function AdminCreateProductPage() {
     }
   };
 
-  // ── UI ───────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div>
       {/* Header */}
@@ -206,7 +271,7 @@ export default function AdminCreateProductPage() {
       <form onSubmit={e => { e.preventDefault(); submit(); }} noValidate>
         <div className="create-product-grid">
 
-          {/* ══ LEFT — main fields (identical to artisan page) ══ */}
+          {/* ══ LEFT — main fields ══════════════════════════════════════════ */}
           <div className="create-product-main">
 
             {/* General info */}
@@ -216,6 +281,7 @@ export default function AdminCreateProductPage() {
               </div>
               <div className="card-body">
 
+                {/* Title */}
                 <div className="form-group">
                   <label className="form-label">Nom du produit *</label>
                   <input
@@ -226,14 +292,15 @@ export default function AdminCreateProductPage() {
                   {errors.title && <span className="form-error">{errors.title}</span>}
                 </div>
 
+                {/* L1 + L2 */}
                 <div className="form-grid-2">
                   <div className="form-group">
-                    <label className="form-label">Catégorie *</label>
+                    <label className="form-label">Catégorie (L1) *</label>
                     <select
                       name="categoryId" value={form.categoryId} onChange={handle}
                       className={`form-select${errors.categoryId ? ' input-error' : ''}`}
                     >
-                      <option value="">Sélectionner...</option>
+                      <option value="">Sélectionner…</option>
                       {categories.map(c => (
                         <option key={c._id} value={c._id}>{c.name}</option>
                       ))}
@@ -242,27 +309,75 @@ export default function AdminCreateProductPage() {
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Sous-catégorie</label>
+                    <label className="form-label">Sous-catégorie (L2)</label>
                     <select
-                      name="subcategorySlug" value={form.subcategorySlug} onChange={handle}
+                      name="subcategoryL2Slug" value={form.subcategoryL2Slug} onChange={handle}
                       className="form-select"
-                      disabled={!selectedCategory || selectedCategory.subcategories.length === 0}
+                      disabled={!form.categoryId || l2List.length === 0}
                     >
                       <option value="">Toutes</option>
-                      {selectedCategory?.subcategories.map(s => (
-                        <option key={s._id} value={s.slug}>{s.name}</option>
+                      {l2List.map(l2 => (
+                        <option key={l2._id} value={l2.slug}>{l2.name}</option>
                       ))}
                     </select>
                   </div>
                 </div>
 
-                <div className="form-group">
+                {/* L3 + L4 — only rendered when the parent level has items */}
+                {(l3List.length > 0 || form.subcategoryL2Slug) && (
+                  <div className="form-grid-2">
+                    <div className="form-group">
+                      <label className="form-label">Niveau 3 (L3)</label>
+                      <select
+                        name="subcategoryL3Slug" value={form.subcategoryL3Slug} onChange={handle}
+                        className="form-select"
+                        disabled={!form.subcategoryL2Slug || l3List.length === 0}
+                      >
+                        <option value="">Tous</option>
+                        {l3List.map(l3 => (
+                          <option key={l3._id} value={l3.slug}>{l3.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Niveau 4 (L4)</label>
+                      <select
+                        name="subcategoryL4Slug" value={form.subcategoryL4Slug} onChange={handle}
+                        className="form-select"
+                        disabled={!form.subcategoryL3Slug || l4List.length === 0}
+                      >
+                        <option value="">Tous</option>
+                        {l4List.map(l4 => (
+                          <option key={l4._id} value={l4.slug}>{l4.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Selected category breadcrumb */}
+                {form.categoryId && (
+                  <div style={{
+                    fontSize: '0.78rem', color: 'var(--color-text-secondary)',
+                    marginTop: 4, display: 'flex', gap: 6, flexWrap: 'wrap',
+                    alignItems: 'center',
+                  }}>
+                    <span>{selectedCategory?.name}</span>
+                    {form.subcategoryL2Name && <><span style={{ opacity: .4 }}>›</span><span>{form.subcategoryL2Name}</span></>}
+                    {form.subcategoryL3Name && <><span style={{ opacity: .4 }}>›</span><span>{form.subcategoryL3Name}</span></>}
+                    {form.subcategoryL4Name && <><span style={{ opacity: .4 }}>›</span><span>{form.subcategoryL4Name}</span></>}
+                  </div>
+                )}
+
+                {/* Description */}
+                <div className="form-group" style={{ marginTop: '1rem' }}>
                   <label className="form-label">Description *</label>
                   <textarea
                     name="description" value={form.description} onChange={handle}
                     className={`form-textarea${errors.description ? ' input-error' : ''}`}
                     rows={5}
-                    placeholder="Décrivez le produit, son histoire, ses matériaux..."
+                    placeholder="Décrivez le produit, son histoire, ses matériaux…"
                   />
                   {errors.description && <span className="form-error">{errors.description}</span>}
                 </div>
@@ -289,7 +404,6 @@ export default function AdminCreateProductPage() {
                       textAlign: 'center', cursor: 'pointer',
                       marginBottom: previews.length ? '1rem' : 0,
                       background: 'rgba(238,242,255,0.5)',
-                      transition: 'border-color 0.2s, background 0.2s',
                     }}
                   >
                     <ImagePlus size={28} style={{ margin: '0 auto .5rem', opacity: 0.4 }} />
@@ -331,10 +445,10 @@ export default function AdminCreateProductPage() {
             </div>
           </div>
 
-          {/* ══ RIGHT — side panel ══ */}
+          {/* ══ RIGHT — side panel ═════════════════════════════════════════ */}
           <div className="create-product-side">
 
-            {/* ── Vendor search card (new, admin-only) ── */}
+            {/* Vendor search card */}
             <div className="card anim-fade-up anim-d1">
               <div className="card-header">
                 <h2 className="card-title">Artisan *</h2>
@@ -345,18 +459,12 @@ export default function AdminCreateProductPage() {
                 )}
               </div>
               <div className="card-body">
-
-                {/* Search input */}
                 <div className="form-group" style={{ marginBottom: vendorResults.length ? 8 : 0, position: 'relative' }}>
                   <label className="form-label">Rechercher par email</label>
                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                    <Search size={15} style={{
-                      position: 'absolute', left: 12,
-                      color: '#8B9AB5', pointerEvents: 'none',
-                    }} />
+                    <Search size={15} style={{ position: 'absolute', left: 12, color: '#8B9AB5', pointerEvents: 'none' }} />
                     <input
-                      type="email"
-                      value={vendorEmail}
+                      type="email" value={vendorEmail}
                       onChange={e => {
                         setVendorEmail(e.target.value);
                         if (selectedVendor) setSelectedVendor(null);
@@ -368,17 +476,12 @@ export default function AdminCreateProductPage() {
                       autoComplete="off"
                     />
                     {vendorSearching && (
-                      <Loader2 size={14} style={{
-                        position: 'absolute', right: 12,
-                        color: '#8B9AB5', animation: 'spin 1s linear infinite',
-                      }} />
+                      <Loader2 size={14} style={{ position: 'absolute', right: 12, color: '#8B9AB5', animation: 'spin 1s linear infinite' }} />
                     )}
                     {selectedVendor && !vendorSearching && (
                       <button type="button" onClick={clearVendor} style={{
-                        position: 'absolute', right: 10,
-                        background: 'none', border: 'none',
-                        cursor: 'pointer', color: '#8B9AB5', padding: 0,
-                        display: 'flex', alignItems: 'center',
+                        position: 'absolute', right: 10, background: 'none', border: 'none',
+                        cursor: 'pointer', color: '#8B9AB5', padding: 0, display: 'flex', alignItems: 'center',
                       }}>
                         <X size={14} />
                       </button>
@@ -387,83 +490,59 @@ export default function AdminCreateProductPage() {
                   {errors.vendor && <span className="form-error">{errors.vendor}</span>}
                 </div>
 
-                {/* Dropdown results */}
                 {vendorResults.length > 0 && (
-                  <div style={{
-                    border: '1.5px solid rgba(2,52,171,0.12)',
-                    borderRadius: 10, overflow: 'hidden',
-                    marginBottom: 4,
-                  }}>
+                  <div style={{ border: '1.5px solid rgba(2,52,171,0.12)', borderRadius: 10, overflow: 'hidden', marginBottom: 4 }}>
                     {vendorResults.map(v => (
-                      <button
-                        key={v._id}
-                        type="button"
-                        onClick={() => pickVendor(v)}
+                      <button key={v._id} type="button" onClick={() => pickVendor(v)}
                         style={{
                           display: 'flex', alignItems: 'center', gap: 10,
                           width: '100%', padding: '9px 12px',
                           background: 'white', border: 'none',
                           borderBottom: '1px solid rgba(2,52,171,0.06)',
                           cursor: 'pointer', textAlign: 'left',
-                          transition: 'background 0.15s',
                           fontFamily: 'DM Sans, sans-serif',
                         }}
                         onMouseEnter={e => (e.currentTarget.style.background = '#F8FAFF')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'white')}
                       >
-                        {/* Avatar */}
                         <div style={{
                           width: 32, height: 32, borderRadius: 9, flexShrink: 0,
                           background: v.image ? 'transparent' : 'linear-gradient(135deg,#0234AB,#1a4fd4)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          overflow: 'hidden', color: '#fff',
-                          fontSize: '0.85rem', fontWeight: 700,
+                          overflow: 'hidden', color: '#fff', fontSize: '0.85rem', fontWeight: 700,
                         }}>
                           {v.image
-                            ? <img src={v.image} alt={v.name}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ? <img src={v.image} alt={v.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             : v.name[0].toUpperCase()
                           }
                         </div>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: '0.875rem', fontWeight: 500, color: '#0A0F2C',
-                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {v.name}
-                          </div>
-                          <div style={{ fontSize: '0.72rem', color: '#8B9AB5',
-                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {v.email}
-                          </div>
+                          <div style={{ fontSize: '0.875rem', fontWeight: 500, color: '#0A0F2C', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.name}</div>
+                          <div style={{ fontSize: '0.72rem', color: '#8B9AB5', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.email}</div>
                         </div>
                       </button>
                     ))}
                   </div>
                 )}
 
-                {/* Selected vendor chip */}
                 {selectedVendor && (
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: 10,
                     padding: '10px 12px', borderRadius: 10,
                     background: 'rgba(11,158,94,0.07)',
-                    border: '1.5px solid rgba(11,158,94,0.22)',
-                    marginTop: 4,
+                    border: '1.5px solid rgba(11,158,94,0.22)', marginTop: 4,
                   }}>
                     <UserCheck size={16} style={{ color: '#0B9E5E', flexShrink: 0 }} />
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0A0F2C' }}>
-                        {selectedVendor.name}
-                      </div>
-                      <div style={{ fontSize: '0.72rem', color: '#8B9AB5' }}>
-                        {selectedVendor.email}
-                      </div>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0A0F2C' }}>{selectedVendor.name}</div>
+                      <div style={{ fontSize: '0.72rem', color: '#8B9AB5' }}>{selectedVendor.email}</div>
                     </div>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Price & Stock — identical to artisan page */}
+            {/* Price & Stock */}
             <div className="card anim-fade-up anim-d2">
               <div className="card-header"><h2 className="card-title">Prix & Stock</h2></div>
               <div className="card-body">
@@ -485,7 +564,7 @@ export default function AdminCreateProductPage() {
               </div>
             </div>
 
-            {/* Tips — identical to artisan page */}
+            {/* Tips */}
             <div className="tips-card anim-fade-up anim-d3">
               <div className="tips-card-icon">✦</div>
               <div className="tips-card-title">Conseils vendeur</div>
@@ -497,7 +576,7 @@ export default function AdminCreateProductPage() {
               </ul>
             </div>
 
-            {/* Submit — identical to artisan page */}
+            {/* Submit */}
             <div className="anim-fade-up anim-d4">
               <button type="submit" className="publish-btn" disabled={submitting}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>

@@ -8,13 +8,17 @@ import UploadImage from '@/app/dashboard/components/UploadImage';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-interface Subcategory { _id: string; name: string; slug: string; }
-interface Category { _id: string; name: string; subcategories: Subcategory[]; isActive: boolean; }
+interface SubcategoryL4 { _id: string; name: string; slug: string; }
+interface SubcategoryL3 { _id: string; name: string; slug: string; subcategories: SubcategoryL4[]; }
+interface SubcategoryL2 { _id: string; name: string; slug: string; subcategories: SubcategoryL3[]; }
+interface Category { _id: string; name: string; subcategories: SubcategoryL2[]; isActive: boolean; }
 
 interface FormState {
   title: string;
   categoryId: string;
-  subcategorySlug: string;
+  subcategoryL2Slug: string;
+  subcategoryL3Slug: string;
+  subcategoryL4Slug: string;
   price: string;
   solde: string;
   stock: string;
@@ -36,18 +40,16 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<FormState>({
-    title: '', categoryId: '', subcategorySlug: '',
+    title: '', categoryId: '',
+    subcategoryL2Slug: '', subcategoryL3Slug: '', subcategoryL4Slug: '',
     price: '', solde: '', stock: '', description: '',
   });
   const [toggles, setToggles] = useState<AdminToggles>({
     isApproved: true, isSuspended: false, isHome: false, isReported: false,
   });
 
-  // ── Images: state for rendering + ref for always-fresh reads in callbacks ──
   const [images, _setImages] = useState<string[]>([]);
   const imagesRef = useRef<string[]>([]);
-
-  // Always update both state and ref together
   const setImages = useCallback((updater: string[] | ((prev: string[]) => string[])) => {
     _setImages(prev => {
       const next = typeof updater === 'function' ? updater(prev) : updater;
@@ -85,13 +87,15 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
         const data = await res.json();
         const p = data.product ?? data.data ?? data;
         setForm({
-          title:           p.title              ?? '',
-          categoryId:      p.category?._id ?? p.category ?? '',
-          subcategorySlug: p.subcategory?.slug  ?? '',
-          price:           String(p.price       ?? ''),
-          solde:           String(p.solde       ?? ''),
-          stock:           String(p.stock       ?? ''),
-          description:     p.description        ?? '',
+          title:             p.title              ?? '',
+          categoryId:        p.category?._id ?? p.category ?? '',
+          subcategoryL2Slug: p.subcategoryL2?.slug ?? p.subcategory?.slug ?? '',
+          subcategoryL3Slug: p.subcategoryL3?.slug ?? '',
+          subcategoryL4Slug: p.subcategoryL4?.slug ?? '',
+          price:             String(p.price       ?? ''),
+          solde:             String(p.solde       ?? ''),
+          stock:             String(p.stock       ?? ''),
+          description:       p.description        ?? '',
         });
         setToggles({
           isApproved:  !!p.isApproved,
@@ -110,15 +114,23 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
     fetchProduct();
   }, [id, apiToken]);
 
+  // Derived subcategory lists
   const selectedCategory = categories.find(c => c._id === form.categoryId);
+  const l2List = selectedCategory?.subcategories ?? [];
+  const selectedL2 = l2List.find(s => s.slug === form.subcategoryL2Slug);
+  const l3List = selectedL2?.subcategories ?? [];
+  const selectedL3 = l3List.find(s => s.slug === form.subcategoryL3Slug);
+  const l4List = selectedL3?.subcategories ?? [];
 
   const handle = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setForm(f => ({
-      ...f,
-      [name]: value,
-      ...(name === 'categoryId' ? { subcategorySlug: '' } : {}),
-    }));
+    setForm(f => {
+      const next = { ...f, [name]: value };
+      if (name === 'categoryId')        { next.subcategoryL2Slug = ''; next.subcategoryL3Slug = ''; next.subcategoryL4Slug = ''; }
+      if (name === 'subcategoryL2Slug') { next.subcategoryL3Slug = ''; next.subcategoryL4Slug = ''; }
+      if (name === 'subcategoryL3Slug') { next.subcategoryL4Slug = ''; }
+      return next;
+    });
   };
 
   const toggle = (key: keyof AdminToggles) => {
@@ -130,7 +142,6 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
     });
   };
 
-  // Stable callback so UploadImage always gets the latest reference
   const handleUpload = useCallback((urls: string[]) => {
     setUploading(false);
     setImages(prev => [...prev, ...urls]);
@@ -141,35 +152,38 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
   }, [setImages]);
 
   const handleSave = async () => {
-    if (uploading) {
-      setSaveError("Veuillez attendre la fin du téléchargement des images.");
-      return;
-    }
-
+    if (uploading) { setSaveError("Veuillez attendre la fin du téléchargement des images."); return; }
     try {
       setSaving(true);
       setSaveError(null);
       setSaveSuccess(false);
 
-      // Read from ref — always has the latest value, no stale closure risk
       const cleanImages = imagesRef.current.filter(url => !url.startsWith('blob:'));
+      const l4 = l4List.find(s => s.slug === form.subcategoryL4Slug);
 
       const res = await fetch(`${API}/api/products/${id}`, {
         method: 'PUT',
         headers: { ...headers(), 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title:           form.title,
-          category:        form.categoryId,
-          subcategorySlug: form.subcategorySlug,
-          price:           Number(form.price),
-          solde:           form.solde ? Number(form.solde) : '',
-          stock:           Number(form.stock),
-          description:     form.description,
-          images:          cleanImages,
-          isApproved:      toggles.isApproved,
-          isSuspended:     toggles.isSuspended,
-          isHome:          toggles.isHome,
-          isReported:      toggles.isReported,
+          title:             form.title,
+          category:          form.categoryId,
+          price:             Number(form.price),
+          solde:             form.solde ? Number(form.solde) : '',
+          stock:             Number(form.stock),
+          description:       form.description,
+          images:            cleanImages,
+          // L2 / L3 / L4 — send both slug and name
+          subcategoryL2Slug: form.subcategoryL2Slug,
+          subcategoryL2Name: selectedL2?.name ?? '',
+          subcategoryL3Slug: form.subcategoryL3Slug,
+          subcategoryL3Name: selectedL3?.name ?? '',
+          subcategoryL4Slug: form.subcategoryL4Slug,
+          subcategoryL4Name: l4?.name ?? '',
+          // Admin toggles
+          isApproved:  toggles.isApproved,
+          isSuspended: toggles.isSuspended,
+          isHome:      toggles.isHome,
+          isReported:  toggles.isReported,
         }),
       });
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
@@ -199,7 +213,6 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
     <div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-      {/* Header */}
       <div className="page-header anim-fade-up">
         <div>
           <Link href="/dashboard/admin/products" className="page-back">← Retour aux produits</Link>
@@ -215,7 +228,6 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
         </div>
       </div>
 
-      {/* Alerts */}
       {saveError && (
         <div style={{ color: '#e53e3e', background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 8, padding: '12px 16px', marginBottom: '1rem' }}>
           {saveError}
@@ -240,26 +252,47 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
                   className="form-input" placeholder="Ex: Tajine en céramique berbère" />
               </div>
 
-              <div className="form-grid-2">
-                <div className="form-group">
-                  <label className="form-label">Catégorie *</label>
-                  <select name="categoryId" value={form.categoryId} onChange={handle} className="form-select">
-                    <option value="">Sélectionner...</option>
-                    {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                  </select>
-                </div>
+              {/* L1 */}
+              <div className="form-group">
+                <label className="form-label">Catégorie *</label>
+                <select name="categoryId" value={form.categoryId} onChange={handle} className="form-select">
+                  <option value="">Sélectionner...</option>
+                  {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                </select>
+              </div>
+
+              {/* L2 */}
+              {l2List.length > 0 && (
                 <div className="form-group">
                   <label className="form-label">Sous-catégorie</label>
-                  <select name="subcategorySlug" value={form.subcategorySlug} onChange={handle}
-                    className="form-select"
-                    disabled={!selectedCategory || selectedCategory.subcategories.length === 0}>
+                  <select name="subcategoryL2Slug" value={form.subcategoryL2Slug} onChange={handle} className="form-select">
                     <option value="">Toutes</option>
-                    {selectedCategory?.subcategories.map(s => (
-                      <option key={s._id} value={s.slug}>{s.name}</option>
-                    ))}
+                    {l2List.map(s => <option key={s._id} value={s.slug}>{s.name}</option>)}
                   </select>
                 </div>
-              </div>
+              )}
+
+              {/* L3 */}
+              {l3List.length > 0 && (
+                <div className="form-group">
+                  <label className="form-label">Sous-catégorie (niveau 3)</label>
+                  <select name="subcategoryL3Slug" value={form.subcategoryL3Slug} onChange={handle} className="form-select">
+                    <option value="">Toutes</option>
+                    {l3List.map(s => <option key={s._id} value={s.slug}>{s.name}</option>)}
+                  </select>
+                </div>
+              )}
+
+              {/* L4 */}
+              {l4List.length > 0 && (
+                <div className="form-group">
+                  <label className="form-label">Sous-catégorie (niveau 4)</label>
+                  <select name="subcategoryL4Slug" value={form.subcategoryL4Slug} onChange={handle} className="form-select">
+                    <option value="">Toutes</option>
+                    {l4List.map(s => <option key={s._id} value={s.slug}>{s.name}</option>)}
+                  </select>
+                </div>
+              )}
 
               <div className="form-group">
                 <label className="form-label">Description</label>
@@ -332,7 +365,6 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
         {/* Sidebar */}
         <div className="create-product-side">
 
-          {/* Price & Stock */}
           <div className="card anim-fade-up anim-d2">
             <div className="card-header"><h2 className="card-title">Prix & Stock</h2></div>
             <div className="card-body">
@@ -368,7 +400,6 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
             </div>
           </div>
 
-          {/* Status summary */}
           <div className="card anim-fade-up anim-d3" style={{ border: '1px solid #e2e8f0' }}>
             <div className="card-header"><h2 className="card-title">Statut actuel</h2></div>
             <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -379,7 +410,6 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
             </div>
           </div>
 
-          {/* Actions */}
           <div className="anim-fade-up anim-d4">
             <button
               className="publish-btn"
@@ -404,15 +434,9 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
   );
 }
 
-// ── Small helper components ──────────────────────────────────────
-
 function ToggleRow({ icon, label, description, active, activeColor, onClick }: {
-  icon: React.ReactNode;
-  label: string;
-  description: string;
-  active: boolean;
-  activeColor: string;
-  onClick: () => void;
+  icon: React.ReactNode; label: string; description: string;
+  active: boolean; activeColor: string; onClick: () => void;
 }) {
   return (
     <button onClick={onClick} style={{

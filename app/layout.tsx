@@ -3,6 +3,7 @@ import "./globals.css";
 import PageTransition from "@/components/PageTransition";
 import Providers from "@/components/Providers";
 import LayoutWrapper from "@/components/LayoutWrapper";
+import AppToaster from "@/components/AppToaster";
 import { fontDisplay, fontSans } from "@/lib/font";
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ export default function RootLayout({
               <PageTransition>{children}</PageTransition>
             </div>
           </LayoutWrapper>
+          <AppToaster />
         </Providers>
       </body>
     </html>

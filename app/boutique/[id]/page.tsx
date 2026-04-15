@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, X, Loader2, Package, Dot } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { showSuccessToast } from "@/lib/toast";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -189,7 +190,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const [qty, setQty]               = useState(1);
   const [wish, setWish]             = useState(false);
   const [added, setAdded]           = useState(false);
-  const [toastVisible, setToastVisible] = useState(false);
   const [activeTab, setActiveTab]   = useState<"avis" | "details">("avis");
 
   // ── Comments state ─────────────────────────────────────────────────────────
@@ -277,8 +277,11 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   // ── Handlers ───────────────────────────────────────────────────────────────
   function handleCart() {
     setAdded(true);
-    setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 2800);
+    if (!product) return;
+    showSuccessToast(
+      `${product.title} ajouté au panier`,
+      `${qty} pièce${qty > 1 ? "s" : ""} sélectionnée${qty > 1 ? "s" : ""}.`
+    );
   }
 
   function handleStartEdit(r: Comment) {
@@ -751,24 +754,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           </div>
         )}
       </section>
-
-      {/* Toast */}
-      <AnimatePresence>
-        {toastVisible && (
-          <motion.div className="pd-toast"
-            initial={{ opacity: 0, y: 24, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.95 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as any }}>
-            <span className="pd-toast__icon" aria-hidden="true"><Check size={18} /></span>
-            <div>
-              <strong>{product.title}</strong>
-              <span>ajouté au panier · {qty} pièce{qty > 1 ? "s" : ""}</span>
-            </div>
-            <Link href="/cart" className="pd-toast__link">Voir le panier →</Link>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }

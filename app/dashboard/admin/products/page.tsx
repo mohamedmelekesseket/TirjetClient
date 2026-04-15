@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { Check, Download, Eye, Flag, Gem, Package, Search, Shirt, Lamp, X } from "lucide-react";
+import { Check, Plus, Eye, Flag, Gem, Package, Search, Shirt, Lamp, X, Loader2 } from "lucide-react";
 import type { ComponentType } from "react";
-import Link from 'next/link';
+import Link from "next/link";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -19,8 +19,7 @@ interface Product {
   images: string[];
   artisan: { _id: string; name: string };
   createdAt: string;
-  isSuspended?: boolean;  // add this
-
+  isSuspended?: boolean;
 }
 
 type FilterTab = "Tous" | "Publiés" | "En attente" | "Signalés" | "Suspendus";
@@ -41,6 +40,7 @@ const categoryLabel: Record<string, string> = {
 
 const productStatus = (p: Product): "Publié" | "En attente" | "Suspendu" =>
   !p.isApproved ? "En attente" : "Publié";
+
 const statusClass: Record<string, string> = {
   Publié: "badge-success",
   "En attente": "badge-warning",
@@ -57,6 +57,10 @@ export default function AdminProductsPage() {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<FilterTab>("Tous");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // ── Delete confirmation modal state ──
+  const [deleteConfirm, setDeleteConfirm] = useState<Product | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const getHeaders = () => ({
     "Content-Type": "application/json",
@@ -99,20 +103,21 @@ export default function AdminProductsPage() {
     }
   };
 
-  const handleDelete = async (id: string, label: string) => {
-    if (!confirm(`${label} ce produit ?`)) return;
-    setActionLoading(id + "-delete");
+  // ── Confirmed delete (called from modal) ──
+  const handleDelete = async (id: string) => {
     try {
+      setDeletingId(id);
       const res = await fetch(`${API}/api/products/${id}`, {
         method: "DELETE",
         headers: getHeaders(),
       });
-      if (!res.ok) throw new Error("Échec de la suppression");
-      await fetchProducts();
+      if (!res.ok) throw new Error(`Erreur ${res.status}`);
+      setProducts((prev) => prev.filter((p) => p._id !== id));
+      setDeleteConfirm(null);
     } catch (err: any) {
       alert(err.message);
     } finally {
-      setActionLoading(null);
+      setDeletingId(null);
     }
   };
 
@@ -137,10 +142,72 @@ export default function AdminProductsPage() {
     reported: products.filter((p) => p.isReported).length,
   };
 
-  const isSessionLoading = sessionStatus === "loading" || (!apiToken && sessionStatus === "authenticated");
+  const isSessionLoading =
+    sessionStatus === "loading" || (!apiToken && sessionStatus === "authenticated");
 
   return (
     <div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+      {/* ── Delete confirmation modal ── */}
+      {deleteConfirm && (
+        <div
+          onClick={() => !deletingId && setDeleteConfirm(null)}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
+            zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#fff", borderRadius: 16, padding: 32,
+              maxWidth: 400, width: "100%", textAlign: "center",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+            }}
+          >
+            <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>🗑️</div>
+            <h3 style={{ margin: "0 0 10px", fontSize: "1.1rem", fontWeight: 700 }}>
+              Supprimer le produit ?
+            </h3>
+            <p style={{ fontSize: "0.9rem", color: "#4a5568", marginBottom: 24, lineHeight: 1.5 }}>
+              Cette action est irréversible.{" "}
+              <strong>«&nbsp;{deleteConfirm.title}&nbsp;»</strong> sera définitivement supprimé.
+            </p>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={!!deletingId}
+                style={{
+                  padding: "9px 20px", borderRadius: 8, border: "1px solid #e2e8f0",
+                  background: "#f8fafc", cursor: "pointer", fontWeight: 600, fontSize: "0.875rem",
+                }}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirm._id)}
+                disabled={deletingId === deleteConfirm._id}
+                style={{
+                  padding: "9px 20px", borderRadius: 8, border: "none",
+                  background: "#e53e3e", color: "#fff", cursor: "pointer",
+                  fontWeight: 600, fontSize: "0.875rem",
+                  display: "flex", alignItems: "center", gap: 8,
+                  opacity: deletingId === deleteConfirm._id ? 0.7 : 1,
+                }}
+              >
+                {deletingId === deleteConfirm._id ? (
+                  <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Suppression…</>
+                ) : (
+                  "Supprimer"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Page header ── */}
       <div className="page-header anim-fade-up">
         <div>
           <h1 className="page-title">Gestion des Produits</h1>
@@ -156,14 +223,14 @@ export default function AdminProductsPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <button className="btn btn-secondary">
-            <Download size={16} style={{ marginRight: 8 }} />
-            Exporter
-          </button>
+          <Link href="/dashboard/admin/products/create" className="btn btn-primary">
+            <Plus size={16} style={{ marginRight: 8 }} />
+            Nouveau produit
+          </Link>
         </div>
       </div>
 
-      {/* Stats */}
+      {/* ── Stats ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "16px", marginBottom: "24px" }}>
         {[
           { label: "Total produits", val: counts.total,     color: "#0234AB" },
@@ -178,7 +245,7 @@ export default function AdminProductsPage() {
         ))}
       </div>
 
-      {/* Filter tabs */}
+      {/* ── Filter tabs ── */}
       <div className="tabs">
         {(["Tous", "Publiés", "En attente", "Signalés", "Suspendus"] as FilterTab[]).map((t) => (
           <button key={t} className={`tab${activeTab === t ? " active" : ""}`} onClick={() => setActiveTab(t)}>
@@ -187,7 +254,7 @@ export default function AdminProductsPage() {
         ))}
       </div>
 
-      {/* Table */}
+      {/* ── Table ── */}
       <div className="card anim-fade-up anim-d3">
         <div className="card-header">
           <h2 className="card-title">Catalogue complet</h2>
@@ -199,11 +266,9 @@ export default function AdminProductsPage() {
             Chargement de la session...
           </div>
         )}
-
         {!isSessionLoading && loading && (
           <div style={{ padding: "40px", textAlign: "center", color: "#8B9AB5" }}>Chargement...</div>
         )}
-
         {!isSessionLoading && error && (
           <div style={{ padding: "24px", textAlign: "center", color: "#E53E3E" }}>
             {error}{" "}
@@ -237,8 +302,10 @@ export default function AdminProductsPage() {
                   filtered.map((p, i) => {
                     const status = productStatus(p);
                     const Icon = categoryIcon[p.category] || Package;
+                    const isDeleting = deletingId === p._id;
+
                     return (
-                      <tr key={p._id} style={{ animationDelay: `${i * 0.055}s` }}>
+                      <tr key={p._id} style={{ animationDelay: `${i * 0.055}s`, opacity: isDeleting ? 0.5 : 1 }}>
                         <td>
                           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                             <div style={{
@@ -270,9 +337,10 @@ export default function AdminProductsPage() {
                         </td>
                         <td>
                           <div style={{ display: "flex", gap: "6px" }}>
-                          <Link href={`/dashboard/admin/products/${p._id}`} className="icon-btn" title="Voir">
-                            <Eye size={16} />
-                          </Link>
+                            <Link href={`/dashboard/admin/products/${p._id}`} className="icon-btn" title="Voir">
+                              <Eye size={16} />
+                            </Link>
+
                             {status === "En attente" && (
                               <button
                                 className="btn btn-success btn-sm"
@@ -282,24 +350,33 @@ export default function AdminProductsPage() {
                                 {actionLoading === p._id + "-approve" ? "..." : <Check size={14} />}
                               </button>
                             )}
-                            {p.isReported && (
+
+                            {/* ── All delete paths now open the modal ── */}
+                            {p.isReported ? (
                               <button
                                 className="btn btn-danger btn-sm"
-                                disabled={actionLoading === p._id + "-delete"}
-                                onClick={() => handleDelete(p._id, "Retirer")}
+                                disabled={isDeleting}
+                                onClick={() => setDeleteConfirm(p)}
                               >
-                                {actionLoading === p._id + "-delete" ? "..." : <><X size={14} style={{ marginRight: 4 }} />Retirer</>}
+                                {isDeleting
+                                  ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+                                  : <><X size={14} style={{ marginRight: 4 }} />Retirer</>
+                                }
                               </button>
-                            )}
-                            {!p.isReported && status !== "En attente" && (
-                              <button
-                                className="icon-btn danger"
-                                title="Supprimer"
-                                disabled={actionLoading === p._id + "-delete"}
-                                onClick={() => handleDelete(p._id, "Supprimer")}
-                              >
-                                {actionLoading === p._id + "-delete" ? "..." : <X size={16} />}
-                              </button>
+                            ) : (
+                              status !== "En attente" && (
+                                <button
+                                  className="icon-btn danger"
+                                  title="Supprimer"
+                                  disabled={isDeleting}
+                                  onClick={() => setDeleteConfirm(p)}
+                                >
+                                  {isDeleting
+                                    ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
+                                    : <X size={16} />
+                                  }
+                                </button>
+                              )
                             )}
                           </div>
                         </td>

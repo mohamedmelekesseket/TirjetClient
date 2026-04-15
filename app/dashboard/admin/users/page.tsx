@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { Loader2, Trash2 } from "lucide-react";
+import { showErrorToast, showSuccessToast } from "@/lib/toast";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -30,6 +32,78 @@ const avatarGradient: Record<string, string> = {
   admin:  "linear-gradient(135deg,#8B5CF6,#6D28D9)",
 };
 
+// ── Delete confirmation modal ──────────────────────────────────────
+function DeleteUserModal({
+  user,
+  onClose,
+  onConfirm,
+  loading,
+}: {
+  user: User;
+  onClose: () => void;
+  onConfirm: () => void;
+  loading: boolean;
+}) {
+  return (
+    <div
+      onClick={() => !loading && onClose()}
+      style={{
+        position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
+        zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#fff", borderRadius: 16, padding: 32,
+          maxWidth: 400, width: "100%", textAlign: "center",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+        }}
+      >
+        <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>🗑️</div>
+        <h3 style={{ margin: "0 0 10px", fontSize: "1.1rem", fontWeight: 700 }}>
+          Supprimer l'utilisateur ?
+        </h3>
+        <p style={{ fontSize: "0.9rem", color: "#4a5568", marginBottom: 8, lineHeight: 1.5 }}>
+          Cette action est irréversible.
+        </p>
+        <p style={{ fontSize: "0.9rem", color: "#4a5568", marginBottom: 24, lineHeight: 1.5 }}>
+          <strong>«&nbsp;{user.name}&nbsp;»</strong> ({user.email}) sera définitivement supprimé.
+        </p>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+          <button
+            onClick={onClose}
+            disabled={loading}
+            style={{
+              padding: "9px 20px", borderRadius: 8, border: "1px solid #e2e8f0",
+              background: "#f8fafc", cursor: "pointer", fontWeight: 600, fontSize: "0.875rem",
+            }}
+          >
+            Annuler
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            style={{
+              padding: "9px 20px", borderRadius: 8, border: "none",
+              background: "#e53e3e", color: "#fff", cursor: "pointer",
+              fontWeight: 600, fontSize: "0.875rem",
+              display: "flex", alignItems: "center", gap: 8,
+              opacity: loading ? 0.7 : 1,
+            }}
+          >
+            {loading ? (
+              <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Suppression…</>
+            ) : (
+              "Supprimer"
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Role Change Modal ──────────────────────────────────────────────
 function RoleModal({
   user,
@@ -47,7 +121,7 @@ function RoleModal({
   const roles: { value: User["role"]; label: string; description: string; color: string; gradient: string }[] = [
     { value: "user",   label: "Client",  description: "Peut parcourir et commander des produits", color: "#0234AB", gradient: "linear-gradient(135deg,#0234AB,#1a4fd4)" },
     { value: "vendor", label: "Artisan", description: "Peut créer et gérer des produits à vendre", color: "#0B9E5E", gradient: "linear-gradient(135deg,#0B9E5E,#047857)" },
-    { value: "admin",  label: "Admin",   description: "Accès complet à l'administration", color: "#8B5CF6", gradient: "linear-gradient(135deg,#8B5CF6,#6D28D9)" },
+    { value: "admin",  label: "Admin",   description: "Accès complet à l'administration",           color: "#8B5CF6", gradient: "linear-gradient(135deg,#8B5CF6,#6D28D9)" },
   ];
 
   return (
@@ -61,12 +135,11 @@ function RoleModal({
         background: "#fff", borderRadius: 20, padding: "28px 28px 24px",
         width: "100%", maxWidth: 420, boxShadow: "0 24px 60px rgba(2,52,171,0.18)",
         animation: "modalIn 0.22s cubic-bezier(.34,1.56,.64,1) both",
-      }} onClick={e => e.stopPropagation()}>
+      }} onClick={(e) => e.stopPropagation()}>
         <style>{`
           @keyframes modalIn { from { opacity:0; transform:scale(0.92) translateY(12px); } to { opacity:1; transform:none; } }
         `}</style>
 
-        {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 22 }}>
           <div style={{ width: 48, height: 48, borderRadius: 14, background: avatarGradient[user.role], color: "#fff", fontWeight: 700, fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             {initials(user.name)}
@@ -81,9 +154,8 @@ function RoleModal({
           Choisir un nouveau rôle
         </div>
 
-        {/* Role options */}
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
-          {roles.map(r => {
+          {roles.map((r) => {
             const isActive = selected === r.value;
             return (
               <button key={r.value} onClick={() => setSelected(r.value)} style={{
@@ -117,7 +189,6 @@ function RoleModal({
           })}
         </div>
 
-        {/* Warning if changing to admin */}
         {selected === "admin" && user.role !== "admin" && (
           <div style={{ padding: "10px 14px", background: "#fff5f5", border: "1px solid #fed7d7", borderRadius: 10, fontSize: "0.78rem", color: "#c53030", marginBottom: 16, display: "flex", gap: 8, alignItems: "flex-start" }}>
             <span style={{ flexShrink: 0 }}>⚠️</span>
@@ -125,7 +196,6 @@ function RoleModal({
           </div>
         )}
 
-        {/* Actions */}
         <div style={{ display: "flex", gap: 10 }}>
           <button onClick={onClose} disabled={loading} style={{
             flex: 1, padding: "11px", borderRadius: 10, border: "1.5px solid #E2E8F0",
@@ -177,7 +247,10 @@ export default function AdminUsersPage() {
   // Role modal state
   const [roleModalUser, setRoleModalUser] = useState<User | null>(null);
   const [roleLoading, setRoleLoading] = useState(false);
-  const [roleSuccess, setRoleSuccess] = useState<string | null>(null);
+
+  // ── Delete modal state ──
+  const [deleteConfirm, setDeleteConfirm] = useState<User | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const getHeaders = () => ({
     "Content-Type": "application/json",
@@ -219,7 +292,7 @@ export default function AdminUsersPage() {
       if (!res.ok) throw new Error(`Échec : ${action}`);
       await fetchUsers();
     } catch (err: any) {
-      alert(err.message);
+      showErrorToast(err.message ?? "Échec de mise à jour du statut utilisateur");
     } finally {
       setActionLoading(null);
     }
@@ -236,19 +309,35 @@ export default function AdminUsersPage() {
         body: JSON.stringify({ role: newRole }),
       });
       if (!res.ok) throw new Error("Échec du changement de rôle");
-
-      // Optimistically update local state
-      setUsers(prev => prev.map(u =>
-        u._id === roleModalUser._id ? { ...u, role: newRole } : u
-      ));
-
+      setUsers((prev) =>
+        prev.map((u) => (u._id === roleModalUser._id ? { ...u, role: newRole } : u))
+      );
       setRoleModalUser(null);
-      setRoleSuccess(`Rôle de ${roleModalUser.name} changé en ${roleLabel[newRole]}`);
-      setTimeout(() => setRoleSuccess(null), 3500);
+      showSuccessToast(`Rôle de ${roleModalUser.name} changé en ${roleLabel[newRole]}`);
     } catch (err: any) {
-      alert(err.message);
+      showErrorToast(err.message ?? "Échec du changement de rôle");
     } finally {
       setRoleLoading(false);
+    }
+  };
+
+  // ── Delete user ──
+  const handleDeleteUser = async () => {
+    if (!deleteConfirm) return;
+    setDeletingId(deleteConfirm._id);
+    try {
+      const res = await fetch(`${API}/api/users/${deleteConfirm._id}`, {
+        method: "DELETE",
+        headers: getHeaders(),
+      });
+      if (!res.ok) throw new Error("Échec de la suppression");
+      setUsers((prev) => prev.filter((u) => u._id !== deleteConfirm._id));
+      setDeleteConfirm(null);
+      showSuccessToast(`Utilisateur «\u00a0${deleteConfirm.name}\u00a0» supprimé`);
+    } catch (err: any) {
+      showErrorToast(err.message ?? "Échec de la suppression");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -283,7 +372,7 @@ export default function AdminUsersPage() {
     <div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-      {/* Role modal */}
+      {/* ── Role modal ── */}
       {roleModalUser && (
         <RoleModal
           user={roleModalUser}
@@ -293,22 +382,17 @@ export default function AdminUsersPage() {
         />
       )}
 
-      {/* Success toast */}
-      {roleSuccess && (
-        <div style={{
-          position: "fixed", bottom: 28, right: 28, zIndex: 999,
-          background: "#0B9E5E", color: "#fff", padding: "12px 20px",
-          borderRadius: 12, fontSize: "0.85rem", fontWeight: 600,
-          boxShadow: "0 8px 24px rgba(11,158,94,0.35)",
-          animation: "modalIn 0.22s cubic-bezier(.34,1.56,.64,1) both",
-          display: "flex", alignItems: "center", gap: 8,
-        }}>
-          <style>{`@keyframes modalIn { from { opacity:0; transform:scale(0.92) translateY(12px); } to { opacity:1; transform:none; } }`}</style>
-          ✓ {roleSuccess}
-        </div>
+      {/* ── Delete confirmation modal ── */}
+      {deleteConfirm && (
+        <DeleteUserModal
+          user={deleteConfirm}
+          onClose={() => !deletingId && setDeleteConfirm(null)}
+          onConfirm={handleDeleteUser}
+          loading={deletingId === deleteConfirm._id}
+        />
       )}
 
-      {/* Header */}
+      {/* ── Header ── */}
       <div className="page-header anim-fade-up">
         <div>
           <h1 className="page-title">Gestion des Utilisateurs</h1>
@@ -327,7 +411,7 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      {/* Stats */}
+      {/* ── Stats ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "16px", marginBottom: "24px" }}>
         {[
           { label: "Total comptes", val: counts.total,     color: "#0234AB" },
@@ -342,7 +426,7 @@ export default function AdminUsersPage() {
         ))}
       </div>
 
-      {/* Filter tabs */}
+      {/* ── Filter tabs ── */}
       <div className="tabs">
         {(["Tous", "Clients", "Artisans", "Admins", "Suspendus"] as FilterTab[]).map((t) => (
           <button key={t} className={`tab${activeTab === t ? " active" : ""}`} onClick={() => handleTabChange(t)}>
@@ -351,7 +435,7 @@ export default function AdminUsersPage() {
         ))}
       </div>
 
-      {/* Table */}
+      {/* ── Table ── */}
       <div className="card anim-fade-up anim-d3">
         <div className="card-header">
           <h2 className="card-title">Tous les utilisateurs</h2>
@@ -391,72 +475,92 @@ export default function AdminUsersPage() {
                         Aucun utilisateur trouvé
                       </td>
                     </tr>
-                  ) : paginated.map((u, i) => (
-                    <tr key={u._id} style={{ animationDelay: `${i * 0.055}s` }}>
-                      <td>
-                        <div className="user-cell">
-                          <div className="user-row-avatar" style={{ background: avatarGradient[u.role] }}>
-                            {initials(u.name)}
-                          </div>
-                          <div>
-                            <div className="user-cell-name">{u.name}</div>
-                            <div className="user-cell-email">{u.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        {/* Clickable role badge opens modal */}
-                        <button
-                          onClick={() => setRoleModalUser(u)}
-                          title="Changer le rôle"
-                          style={{
-                            background: "none", border: "none", cursor: "pointer",
-                            padding: 0, display: "inline-flex", alignItems: "center", gap: 5,
-                          }}
-                        >
-                          <span className={`badge ${roleColors[u.role]}`}>{roleLabel[u.role]}</span>
-                          <span style={{ fontSize: "0.68rem", color: "#8B9AB5", fontWeight: 500 }}>✎</span>
-                        </button>
-                      </td>
-                      <td style={{ color: "#8B9AB5", fontSize: "0.82rem" }}>
-                        {new Date(u.createdAt).toLocaleDateString("fr-FR")}
-                      </td>
-                      <td>
-                        <span className={`badge ${u.status === "active" ? "badge-success" : "badge-danger"}`}>
-                          {u.status === "active" ? "Actif" : "Suspendu"}
-                        </span>
-                      </td>
-                      <td>
-                        <div style={{ display: "flex", gap: 6 }}>
-                          {/* Change role button */}
-                          <button
-                            className="icon-btn"
-                            title="Changer le rôle"
-                            onClick={() => setRoleModalUser(u)}
-                            style={{ fontSize: "0.78rem", fontWeight: 600, color: "#0234AB" }}
-                          >
-                            ⇄ Rôle
-                          </button>
-                          {/* Suspend/activate (not for admins) */}
-                          {u.role !== "admin" && (
+                  ) : (
+                    paginated.map((u, i) => {
+                      const isDeleting = deletingId === u._id;
+                      return (
+                        <tr key={u._id} style={{ animationDelay: `${i * 0.055}s`, opacity: isDeleting ? 0.5 : 1 }}>
+                          <td>
+                            <div className="user-cell">
+                              <div className="user-row-avatar" style={{ background: avatarGradient[u.role] }}>
+                                {initials(u.name)}
+                              </div>
+                              <div>
+                                <div className="user-cell-name">{u.name}</div>
+                                <div className="user-cell-email">{u.email}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
                             <button
-                              className={`icon-btn${u.status === "active" ? " danger" : ""}`}
-                              title={u.status === "active" ? "Suspendre" : "Réactiver"}
-                              disabled={actionLoading === u._id}
-                              onClick={() => handleToggleStatus(u)}
+                              onClick={() => setRoleModalUser(u)}
+                              title="Changer le rôle"
+                              style={{
+                                background: "none", border: "none", cursor: "pointer",
+                                padding: 0, display: "inline-flex", alignItems: "center", gap: 5,
+                              }}
                             >
-                              {actionLoading === u._id ? "…" : u.status === "active" ? "⊘" : "✓"}
+                              <span className={`badge ${roleColors[u.role]}`}>{roleLabel[u.role]}</span>
+                              <span style={{ fontSize: "0.68rem", color: "#8B9AB5", fontWeight: 500 }}>✎</span>
                             </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                          </td>
+                          <td style={{ color: "#8B9AB5", fontSize: "0.82rem" }}>
+                            {new Date(u.createdAt).toLocaleDateString("fr-FR")}
+                          </td>
+                          <td>
+                            <span className={`badge ${u.status === "active" ? "badge-success" : "badge-danger"}`}>
+                              {u.status === "active" ? "Actif" : "Suspendu"}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ display: "flex", gap: 6 }}>
+                              {/* Change role */}
+                              <button
+                                className="icon-btn"
+                                title="Changer le rôle"
+                                onClick={() => setRoleModalUser(u)}
+                                style={{ fontSize: "0.78rem", fontWeight: 600, color: "#0234AB" }}
+                              >
+                                ⇄ Rôle
+                              </button>
+
+                              {/* Suspend / activate (not for admins) */}
+                              {u.role !== "admin" && (
+                                <button
+                                  className={`icon-btn${u.status === "active" ? " danger" : ""}`}
+                                  title={u.status === "active" ? "Suspendre" : "Réactiver"}
+                                  disabled={actionLoading === u._id}
+                                  onClick={() => handleToggleStatus(u)}
+                                >
+                                  {actionLoading === u._id ? "…" : u.status === "active" ? "⊘" : "✓"}
+                                </button>
+                              )}
+
+                              {/* Delete (not for admins) */}
+                              {u.role !== "admin" && (
+                                <button
+                                  className="icon-btn danger"
+                                  title="Supprimer"
+                                  disabled={isDeleting}
+                                  onClick={() => setDeleteConfirm(u)}
+                                >
+                                  {isDeleting
+                                    ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+                                    : <Trash2 size={14} />
+                                  }
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
 
-            {/* Pagination */}
+            {/* ── Pagination ── */}
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "16px 22px", borderTop: "1px solid rgba(2,52,171,0.07)",
@@ -467,7 +571,7 @@ export default function AdminUsersPage() {
                 {Math.min(page * ITEMS_PER_PAGE, filtered.length)} sur {filtered.length}
               </span>
               <div style={{ display: "flex", gap: 6 }}>
-                <button className="icon-btn" style={{ fontSize: "0.82rem" }} disabled={page === 1} onClick={() => setPage(p => p - 1)}>←</button>
+                <button className="icon-btn" style={{ fontSize: "0.82rem" }} disabled={page === 1} onClick={() => setPage((p) => p - 1)}>←</button>
                 {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map((p) => (
                   <button key={p} className="icon-btn" style={{
                     background: page === p ? "#0234AB" : "white",
@@ -476,7 +580,7 @@ export default function AdminUsersPage() {
                     fontSize: "0.82rem", fontWeight: page === p ? 700 : 400,
                   }} onClick={() => setPage(p)}>{p}</button>
                 ))}
-                <button className="icon-btn" style={{ fontSize: "0.82rem" }} disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>→</button>
+                <button className="icon-btn" style={{ fontSize: "0.82rem" }} disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>→</button>
               </div>
             </div>
           </>
