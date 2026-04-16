@@ -4,8 +4,10 @@ import { use, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, X, Loader2, Package, Dot } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { showSuccessToast } from "@/lib/toast";
+import { useCart } from "../../context/CartContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -22,7 +24,6 @@ interface Product {
   description: string;
   price: number;
   images: string[];
-  // May be a populated object or a raw ID string
   category: { _id: string; name: string } | string;
   artisan: {
     _id: string;
@@ -44,17 +45,13 @@ interface Comment {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Resolves a category name from either a populated object, a raw ID, or a slug string. */
 function resolveCategoryName(
   category: Product["category"],
   categoriesMap: Map<string, string>
 ): string {
   if (!category) return "";
   if (typeof category === "object") return category.name;
-  // Try ID lookup first
   if (categoriesMap.has(category)) return categoriesMap.get(category)!;
-  // Fall back to displaying the raw value (slug or ID) as-is
   return category;
 }
 
@@ -132,8 +129,8 @@ function Gallery({ images }: { images: string[] }) {
           </AnimatePresence>
           <div className="pd-gallery__zoom-hint">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-              <path d="M11 8v6M8 11h6"/>
+              <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+              <path d="M11 8v6M8 11h6" />
             </svg>
             Agrandir
           </div>
@@ -176,32 +173,36 @@ function Gallery({ images }: { images: string[] }) {
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { data: session } = useSession();
+  const router = useRouter();
+  const { addToCart } = useCart();
 
-  // ── Categories map (id → name) ─────────────────────────────────────────────
+  // ── Categories map ─────────────────────────────────────────────────────────
   const [categoriesMap, setCategoriesMap] = useState<Map<string, string>>(new Map());
 
   // ── Product state ──────────────────────────────────────────────────────────
-  const [product, setProduct]   = useState<Product | null>(null);
-  const [related, setRelated]   = useState<Product[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState<string | null>(null);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [related, setRelated] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // ── UI state ───────────────────────────────────────────────────────────────
-  const [qty, setQty]               = useState(1);
-  const [wish, setWish]             = useState(false);
-  const [added, setAdded]           = useState(false);
-  const [activeTab, setActiveTab]   = useState<"avis" | "details">("avis");
+  const [qty, setQty] = useState(1);
+  const [wish, setWish] = useState(false);
+  const [added, setAdded] = useState(false);
+  const [cartLoading, setCartLoading] = useState(false);
+  const [cartError, setCartError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"avis" | "details">("avis");
 
   // ── Comments state ─────────────────────────────────────────────────────────
-  const [comments, setComments]               = useState<Comment[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
-  const [newRating, setNewRating]             = useState(5);
-  const [newContent, setNewContent]           = useState("");
-  const [submitting, setSubmitting]           = useState(false);
-  const [submitError, setSubmitError]         = useState<string | null>(null);
-  const [editingId, setEditingId]             = useState<string | null>(null);
+  const [newRating, setNewRating] = useState(5);
+  const [newContent, setNewContent] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  // ── Fetch categories → build id→name map ──────────────────────────────────
+  // ── Fetch categories ───────────────────────────────────────────────────────
   useEffect(() => {
     fetch(`${API}/api/categories`)
       .then(r => r.ok ? r.json() : null)
@@ -211,7 +212,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         list.forEach(c => map.set(c._id, c.name));
         setCategoriesMap(map);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // ── Fetch product ──────────────────────────────────────────────────────────
@@ -232,7 +233,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             ? allData
             : allData.products ?? allData.data ?? [];
 
-          // Match by category ID regardless of populated vs raw
           const thisCatId = typeof data.category === "object"
             ? data.category._id
             : data.category;
@@ -255,7 +255,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     fetchProduct();
   }, [id]);
 
-  // ── Fetch comments when avis tab opens ────────────────────────────────────
+  // ── Fetch comments ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (activeTab !== "avis" || !id) return;
     const fetchComments = async () => {
@@ -275,13 +275,34 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const currentUserId = (session as any)?.apiUser?._id as string | undefined;
 
   // ── Handlers ───────────────────────────────────────────────────────────────
-  function handleCart() {
-    setAdded(true);
+
+  // ✅ Real cart integration
+  async function handleCart() {
     if (!product) return;
-    showSuccessToast(
-      `${product.title} ajouté au panier`,
-      `${qty} pièce${qty > 1 ? "s" : ""} sélectionnée${qty > 1 ? "s" : ""}.`
-    );
+
+    // Redirect to login if not authenticated
+    if (!session) {
+      router.push("/connexion");
+      return;
+    }
+
+    setCartLoading(true);
+    setCartError(null);
+
+    try {
+      await addToCart(product._id, qty);
+      setAdded(true);
+      showSuccessToast(
+        `${product.title} ajouté au panier`,
+        `${qty} pièce${qty > 1 ? "s" : ""} sélectionnée${qty > 1 ? "s" : ""}.`
+      );
+      // Reset "added" state after 2.5s so button returns to normal
+      setTimeout(() => setAdded(false), 2500);
+    } catch (err: any) {
+      setCartError(err.message ?? "Erreur lors de l'ajout au panier.");
+    } finally {
+      setCartLoading(false);
+    }
   }
 
   function handleStartEdit(r: Comment) {
@@ -386,8 +407,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     </div>
   );
 
-  const inStock  = product.stock > 0;
-  // ✅ Resolves from populated object, ID lookup, or falls back gracefully
+  const inStock = product.stock > 0;
   const catLabel = resolveCategoryName(product.category, categoriesMap);
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -469,21 +489,29 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             <div className="pd-qty">
               <motion.button className="pd-qty__btn"
                 onClick={() => setQty(q => Math.max(1, q - 1))}
+                disabled={cartLoading}
                 whileTap={{ scale: 0.88 }}>−</motion.button>
               <span className="pd-qty__val">{qty}</span>
               <motion.button className="pd-qty__btn"
                 onClick={() => setQty(q => Math.min(product.stock, q + 1))}
+                disabled={cartLoading}
                 whileTap={{ scale: 0.88 }}>+</motion.button>
             </div>
 
             <motion.button
               className={`pd-cart-btn${added ? " pd-cart-btn--added" : ""}`}
               onClick={handleCart}
-              disabled={!inStock}
-              whileHover={inStock ? { scale: 1.02 } : {}}
-              whileTap={inStock ? { scale: 0.97 } : {}}>
+              disabled={!inStock || cartLoading}
+              whileHover={inStock && !cartLoading ? { scale: 1.02 } : {}}
+              whileTap={inStock && !cartLoading ? { scale: 0.97 } : {}}>
               <AnimatePresence mode="wait">
-                {added ? (
+                {cartLoading ? (
+                  <motion.span key="loading"
+                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+                    <Loader2 size={16} style={{ marginRight: 8, animation: "spin 1s linear infinite" }} />
+                    Ajout…
+                  </motion.span>
+                ) : added ? (
                   <motion.span key="added"
                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
                     <Check size={16} style={{ marginRight: 8 }} aria-hidden="true" />
@@ -505,6 +533,34 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               <HeartIcon filled={wish} />
             </motion.button>
           </div>
+
+          {/* Cart error message */}
+          {cartError && (
+            <motion.p
+              initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+              style={{
+                color: "#c0392b", fontSize: "0.82rem", marginTop: "0.5rem",
+                background: "#fdf0ef", border: "1px solid #f5c6c2",
+                borderRadius: 8, padding: "0.5rem 0.75rem",
+              }}>
+              {cartError}
+            </motion.p>
+          )}
+
+          {/* Go to cart shortcut when item just added */}
+          {added && !cartLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+              style={{ marginTop: "0.5rem", display: "flex", gap: 10 }}>
+              <Link href="/panier" className="pd-artisan-row__link">
+                Voir le panier →
+              </Link>
+              <span style={{ color: "#b8a88a", fontSize: "0.82rem" }}>·</span>
+              <Link href="/commande" className="pd-artisan-row__link">
+                Commander →
+              </Link>
+            </motion.div>
+          )}
 
           {/* Trust badges */}
           <div className="pd-trust">
@@ -544,11 +600,11 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             {activeTab === "details" && (
               <div className="pd-details-grid">
                 {[
-                  ["Catégorie",  catLabel],
-                  ["Origine",    product.artisan?.city ?? "Tunisie"],
-                  ["Stock",      `${product.stock} pièce(s)`],
-                  ["Référence",  product._id.slice(-8).toUpperCase()],
-                  ["Ajouté le",  new Date(product.createdAt).toLocaleDateString("fr-FR")],
+                  ["Catégorie", catLabel],
+                  ["Origine", product.artisan?.city ?? "Tunisie"],
+                  ["Stock", `${product.stock} pièce(s)`],
+                  ["Référence", product._id.slice(-8).toUpperCase()],
+                  ["Ajouté le", new Date(product.createdAt).toLocaleDateString("fr-FR")],
                 ].map(([k, v]) => (
                   <div key={k} className="pd-detail-row">
                     <span className="pd-detail-row__key">{k}</span>
@@ -562,7 +618,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             {activeTab === "avis" && (
               <div className="pd-reviews">
 
-                {/* Add / Edit form */}
                 {session ? (
                   <div className="pd-review-form">
                     <h3 className="pd-review-form__title">
@@ -623,7 +678,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                   </div>
                 )}
 
-                {/* Comments list */}
                 {commentsLoading ? (
                   <div style={{ textAlign: "center", padding: "2rem", opacity: 0.4 }}>
                     <Loader2 size={28} style={{ animation: "spin 1s linear infinite" }} />
@@ -643,7 +697,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                           <div className="pd-review__avatar">
                             {r.user.image
                               ? <img src={r.user.image} alt={r.user.name}
-                                  style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
+                                style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
                               : r.user.name[0]}
                           </div>
                           <div style={{ flex: 1 }}>
@@ -669,8 +723,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                                 whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                                 title="Modifier">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                 </svg>
                               </motion.button>
                               <motion.button
@@ -679,10 +733,10 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                                 whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                                 title="Supprimer">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <polyline points="3 6 5 6 21 6"/>
-                                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                                  <path d="M10 11v6M14 11v6"/>
-                                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                                  <polyline points="3 6 5 6 21 6" />
+                                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                  <path d="M10 11v6M14 11v6" />
+                                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
                                 </svg>
                               </motion.button>
                             </div>
@@ -726,12 +780,14 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                   <div className="pd-rel-card__media">
                     {p.images?.[0]
                       ? <motion.img src={p.images[0]} alt={p.title}
-                          whileHover={{ scale: 1.07 }}
-                          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] as any }} />
-                      : <div style={{ width: "100%", height: "100%", background: "#f0ebe3",
-                          display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <Package size={28} style={{ opacity: 0.4 }} />
-                        </div>
+                        whileHover={{ scale: 1.07 }}
+                        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] as any }} />
+                      : <div style={{
+                        width: "100%", height: "100%", background: "#f0ebe3",
+                        display: "flex", alignItems: "center", justifyContent: "center"
+                      }}>
+                        <Package size={28} style={{ opacity: 0.4 }} />
+                      </div>
                     }
                     <div className="pd-rel-card__shade" />
                     <span className="pd-rel-card__cat">{relCatLabel}</span>

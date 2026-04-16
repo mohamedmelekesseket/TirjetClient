@@ -540,13 +540,14 @@ export default function AdminUsersPage() {
                               {u.role !== "admin" && (
                                 <button
                                   className="icon-btn danger"
+                                  style={{borderColor:"red"}}
                                   title="Supprimer"
                                   disabled={isDeleting}
                                   onClick={() => setDeleteConfirm(u)}
                                 >
                                   {isDeleting
                                     ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
-                                    : <Trash2 size={14} />
+                                    : <Trash2 color="red" size={14} />
                                   }
                                 </button>
                               )}

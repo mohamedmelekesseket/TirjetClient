@@ -133,7 +133,7 @@ const Header = () => {
 
               {/* Desktop actions */}
               <div className="hdr__actions">
-                <button className="hdr__icon-btn" aria-label="Panier">
+                <button onClick={() => router.push("/Panier")} className="hdr__icon-btn" aria-label="Panier">
                   <ShoppingBag size={18} />
                 </button>
 
