@@ -14,7 +14,7 @@ export default function PanierPage() {
   const router = useRouter();
   const [removing, setRemoving] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
-
+  const SHIPPING = 7;
   async function handleRemove(productId: string) {
     setRemoving(productId);
     await removeItem(productId);
@@ -185,12 +185,12 @@ export default function PanierPage() {
             </div>
             <div className="cart-summary__row">
               <span>Livraison</span>
-              <span className="cart-summary__free">Gratuite</span>
+              <span className="cart-summary__free">7 TND</span>
             </div>
             <div className="cart-summary__divider" />
             <div className="cart-summary__row cart-summary__row--total">
               <span>Total</span>
-              <span>{cart.total.toLocaleString("fr-TN")} TND</span>
+              <span>{(cart.total + SHIPPING).toLocaleString("fr-TN")} TND</span>
             </div>
           </div>
 

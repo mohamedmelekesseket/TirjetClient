@@ -452,7 +452,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           </div>
 
           <h1 className="pd-info__title">{product.title}</h1>
-          <StarRow count={avgRating} total={comments.length} />
+          {/* <StarRow count={avgRating} total={comments.length} /> */}
 
           <div className="pd-info__price-row">
             <span className="pd-info__price">{product.price.toLocaleString("fr-TN")} TND</span>
@@ -477,7 +477,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 <span className="pd-artisan-row__loc"><Pin />{product.artisan.city.toUpperCase()}</span>
               )}
             </div>
-            <Link href={`/Artisanprofile/${product.artisan?._id}`} className="pd-artisan-row__link">
+            <Link href={`/Artisanprofile/${product?.artisan}`} className="pd-artisan-row__link">
               Voir le profil →
             </Link>
           </div>

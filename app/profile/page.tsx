@@ -3,6 +3,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
+
 import { useRouter } from "next/navigation";
 import {
   BadgeCheck,
@@ -80,7 +82,8 @@ function FavCard({
 }) {
   const [removing, setRemoving] = useState(false);
 
-  const handleRemove = async () => {
+  const handleRemove = async (e: React.MouseEvent) => {
+    e.preventDefault();
     if (!apiToken || removing) return;
     setRemoving(true);
     try {
@@ -90,66 +93,82 @@ function FavCard({
       });
       if (res.ok) onRemoved(item._id);
     } catch {
-      // silently fail — button re-enables
+      // silently fail
     } finally {
       setRemoving(false);
     }
   };
 
   return (
-    <motion.div
-      className="profile-card"
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.92 }}
-      transition={{ duration: 0.4, delay: index * 0.07, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ y: -4, boxShadow: "0 8px 32px rgba(44,24,16,0.13)" }}
-      layout
-    >
-      {item.images?.[0] ? (
-        <img src={item.images[0]} alt={item.title} className="profile-card-img" />
-      ) : (
-        <div
-          className="profile-card-img"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "#f0ebe3",
-            opacity: 0.6,
-          }}
-        >
-          <Package size={32} />
-        </div>
-      )}
-
-      <motion.button
-        className="profile-heart-btn liked"
-        onClick={handleRemove}
-        disabled={removing}
-        whileTap={{ scale: 0.8 }}
-        whileHover={{ scale: 1.15 }}
-        style={{ opacity: removing ? 0.5 : 1, cursor: removing ? "wait" : "pointer" }}
-        aria-label="Retirer des favoris"
+    <Link href={`/boutique/${item._id}`}>
+      <motion.div
+        className="profileU-card"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.92 }}
+        whileHover={{ y: -6 }}
+        layout
       >
-        {removing ? (
-          <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
-        ) : (
-          <Heart size={16} fill="currentColor" />
-        )}
-      </motion.button>
+        {/* Image */}
+        <div className="boutique__card-img">
+          {item.images?.[0] ? (
+            <motion.img
+              src={item.images[0]}
+              alt={item.title}
+              loading="lazy"
+              whileHover={{ scale: 1.07 }}
+              transition={{ duration: 1.4 }}
+            />
+          ) : (
+            <div style={{
+              width: "100%", height: "100%",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: "#f0ebe3", opacity: 0.6,
+            }}>
+              <Package size={36} />
+            </div>
+          )}
+          <div className="boutique__card-overlay" />
 
-      <div className="profile-card-body">
-        <p className="profile-card-title">{item.title}</p>
-        <p className="profile-card-artisan">{item.description?.slice(0, 60)}…</p>
-        <div className="profile-card-footer">
-          <span className="profile-card-category">{item.category}</span>
-          <span className="profile-card-price">
-            {item.price.toLocaleString("fr-TN")} TND
-          </span>
+          <span className="boutique__card-cat">{item.category}</span>
+
+          {/* Heart button — remove from favourites */}
+          <button
+            className="boutique__card-wish"
+            onClick={handleRemove}
+            disabled={removing}
+            style={{
+              color: "#d4784f",
+              opacity: removing ? 0.5 : 1,
+              cursor: removing ? "wait" : "pointer",
+            }}
+            aria-label="Retirer des favoris"
+          >
+            {removing ? (
+              <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
+            ) : (
+              <Heart size={18} fill="currentColor" />
+            )}
+          </button>
         </div>
-      </div>
-    </motion.div>
+
+        {/* Body */}
+        <div className="boutique__card-body">
+          <div className="boutique__card-top">
+            <h3 className="boutique__card-title">{item.title}</h3>
+            <span className="boutique__card-price">
+              {item.price.toLocaleString("fr-TN")} TND
+            </span>
+          </div>
+          <p className="boutique__card-desc">{item.description?.slice(0, 120)}</p>
+        </div>
+
+        <div className="boutique__card-footer">
+          <span className="boutique__card-loc">{item.location ?? item.category}</span>
+          <span className="boutique__card-cta">Voir la pièce →</span>
+        </div>
+      </motion.div>
+    </Link>
   );
 }
 
@@ -174,6 +193,7 @@ export default function UserProfile() {
   const [user, setUser] = useState<ApiUser | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [imgError, setImgError] = useState(false);
 
   // favourites
   const [favourites, setFavourites] = useState<FavProduct[]>([]);
@@ -269,6 +289,7 @@ export default function UserProfile() {
       cancelled = true;
     };
   }, [apiToken]);
+  useEffect(() => { setImgError(false); }, [user?.image]);
 
   // ── Remove from local list after successful API delete ────────────────────
   const handleRemoved = (productId: string) => {
@@ -309,12 +330,17 @@ export default function UserProfile() {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
         >
-          {user?.image && (
+          {user?.image && !imgError ? (
             <img
               src={user.image}
-              alt={user.name ?? undefined}
+              alt={user?.name ?? undefined}
               className="profile-avatar"
+              onError={() => setImgError(true)}   // ← key fix
             />
+          ) : (
+            <div className="profile-avatar-fallback">
+              {loadingUser ? "…" : getInitials(user?.name || sessionUser?.name)}
+            </div>
           )}
           <div
             className="profile-avatar-fallback"
@@ -447,9 +473,9 @@ export default function UserProfile() {
                   </div>
                 )}
 
-                {/* Grid */}
+                {/* Grid — was profile-grid, now boutique__grid */}
                 {!loadingFavs && !favError && favourites.length > 0 && (
-                  <motion.div className="profile-grid" layout>
+                  <motion.div className="profileU-grid" layout>   {/* ← changed */}
                     <AnimatePresence>
                       {favourites.map((item, i) => (
                         <FavCard

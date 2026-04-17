@@ -54,20 +54,15 @@ export default function ProfilePage() {
     ...(apiToken ? { Authorization: `Bearer ${apiToken}` } : {}),
   };
 
-  // ── Load artisan profile ──────────────────────────────────────
   useEffect(() => {
     if (!apiToken) return;
-
     const load = async () => {
       setLoading(true);
       setError(null);
       try {
         const res = await fetch(`${API}/api/artisans/me`, { headers });
-
-        // 404 = profile doesn't exist yet → start with empty form
         if (res.status === 404) { setLoading(false); return; }
         if (!res.ok) throw new Error('Impossible de charger le profil');
-
         const data = await res.json();
         setIsApproved(data.isApproved ?? false);
         setForm({
@@ -84,16 +79,13 @@ export default function ProfilePage() {
         setLoading(false);
       }
     };
-
     load();
   }, [apiToken]);
 
-  // ── Handle input ──────────────────────────────────────────────
   const handle = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
-  // ── Save ──────────────────────────────────────────────────────
   const handleSave = async () => {
     setSaving(true);
     setError(null);
@@ -102,11 +94,10 @@ export default function ProfilePage() {
       const body = new FormData();
       body.append('phone',       form.phone);
       body.append('region',      form.region);
+      body.append('specialite',  form.specialite);
       body.append('description', form.description);
-      // instagram / website stored in description extension — send as JSON fields
-      // if your ArtisanProfile model has these fields, add them; otherwise omit
-      // body.append('instagram', form.instagram);
-      // body.append('website',   form.website);
+      body.append('instagram',   form.instagram);
+      body.append('website',     form.website);
 
       const res = await fetch(`${API}/api/artisans/me`, {
         method: 'PUT',
@@ -128,11 +119,9 @@ export default function ProfilePage() {
     }
   };
 
-  // ── Derived display values ────────────────────────────────────
   const displayName = user?.name ?? '—';
   const initials    = displayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
 
-  // ── Render ────────────────────────────────────────────────────
   return (
     <div>
       <div className="page-header anim-fade-up">
@@ -142,7 +131,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Global error banner */}
       {error && (
         <div style={{
           background: '#FFF5F5', border: '1px solid #FEB2B2', color: '#C53030',
@@ -152,7 +140,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Success banner */}
       {successMsg && (
         <div style={{
           background: '#F0FFF4', border: '1px solid #9AE6B4', color: '#276749',
@@ -167,18 +154,18 @@ export default function ProfilePage() {
           Chargement du profil…
         </div>
       ) : (
-        <div className="profile-grid">
+        <div className="pda-grid">
 
           {/* ── LEFT: profile card ── */}
-          <div className="profile-card anim-fade-left">
-            <div className="profile-cover" />
+          <div className="pda-card anim-fade-left">
+            <div className="pda-cover" />
             <div style={{ padding: '0 20px' }}>
-              <div className="profile-avatar-wrap">
-                <div className="profile-avatar-large">{initials}</div>
+              <div className="pda-avatar-wrap">
+                <div className="pda-avatar">{initials}</div>
               </div>
-              <div className="profile-info-center">
-                <div className="profile-name-display">{displayName}</div>
-                <div className="profile-role-display">
+              <div className="pda-info-center">
+                <div className="pda-name">{displayName}</div>
+                <div className="pda-role">
                   {isApproved ? 'Artisan Certifié' : 'Candidature en attente'}
                 </div>
                 <span className={`badge ${isApproved ? 'badge-success' : 'badge-warning'}`}>
@@ -187,20 +174,19 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="profile-stats-row">
+            <div className="pda-stats-row">
               {[
                 { num: user?.email?.split('@')[0] ?? '—', lbl: 'Identifiant' },
                 { num: form.region || '—',                lbl: 'Région' },
                 { num: form.phone  || '—',                lbl: 'Téléphone' },
               ].map(s => (
-                <div key={s.lbl} className="profile-stat-item">
-                  <div className="profile-stat-num" style={{ fontSize: '0.8rem' }}>{s.num}</div>
-                  <div className="profile-stat-lbl">{s.lbl}</div>
+                <div key={s.lbl} className="pda-stat-item">
+                  <div className="pda-stat-num" style={{ fontSize: '0.8rem' }}>{s.num}</div>
+                  <div className="pda-stat-label">{s.lbl}</div>
                 </div>
               ))}
             </div>
 
-            {/* Speciality tag */}
             {form.specialite && (
               <div style={{ padding: '16px 20px', borderTop: '1px solid rgba(2,52,171,0.07)' }}>
                 <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#8B9AB5', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '10px' }}>
@@ -210,7 +196,6 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Social */}
             {form.instagram && (
               <div style={{ padding: '16px 20px', borderTop: '1px solid rgba(2,52,171,0.07)' }}>
                 <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#8B9AB5', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '10px' }}>
@@ -224,13 +209,12 @@ export default function ProfilePage() {
           </div>
 
           {/* ── RIGHT: form ── */}
-          <div className="profile-form-card anim-fade-right">
+          <div className="pda-form-card anim-fade-right">
             <div className="card-header">
               <h2 className="card-title">Informations personnelles</h2>
             </div>
             <div className="card-body">
 
-              {/* Name + email come from auth — read only */}
               <div className="form-grid-2">
                 <div className="form-group">
                   <label className="form-label">Nom complet</label>

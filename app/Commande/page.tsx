@@ -23,7 +23,7 @@ export default function CommandePage() {
   const { cart, loading } = useCart();
   const { data: session } = useSession();
   const router = useRouter();
-
+  const SHIPPING = 7;
   const [step, setStep] = useState<"form" | "confirm" | "success">("form");
   const [paymentMethod, setPaymentMethod] = useState<"cash_on_delivery" | "card">("cash_on_delivery");
   const [submitting, setSubmitting] = useState(false);
@@ -352,16 +352,16 @@ export default function CommandePage() {
           <div className="cart-summary__rows">
             <div className="cart-summary__row">
               <span>Sous-total</span>
-              <span>{cart.total.toLocaleString("fr-TN")} TND</span>
+              <span>{(cart.total + SHIPPING).toLocaleString("fr-TN")} TND</span>
             </div>
             <div className="cart-summary__row">
               <span>Livraison</span>
-              <span className="cart-summary__free">Gratuite</span>
+              <span className="cart-summary__free">7 TND</span>
             </div>
             <div className="cart-summary__divider" />
             <div className="cart-summary__row cart-summary__row--total">
               <span>Total</span>
-              <span>{cart.total.toLocaleString("fr-TN")} TND</span>
+              <span>{(cart.total + SHIPPING).toLocaleString("fr-TN")} TND</span>
             </div>
           </div>
 

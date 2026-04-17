@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { Eye, Pencil, X, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
-import { log } from "console";
+import { Eye, X, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -18,14 +17,23 @@ interface Order {
   createdAt: string;
   total: number;
   status: Status;
+  paymentMethod?: "card" | "cash_on_delivery";
+  shippingAddress?: {
+    fullName: string;
+    phone: string;
+    address: string;
+    city: string;
+    postalCode: string;
+    notes?: string;
+  };
 }
 
 const STATUS_CONFIG: Record<Status, { label: string; badgeClass: string; dot: string; desc: string; gradient: string }> = {
-  pending:   { label: "En attente", badgeClass: "badge-warning", dot: "#F59E0B", desc: "Commande reçue, en attente de traitement.", gradient: "linear-gradient(135deg,#F59E0B,#D97706)" },
-  paid:      { label: "Payé",       badgeClass: "badge-primary", dot: "#0234AB", desc: "Paiement confirmé par le client.", gradient: "linear-gradient(135deg,#0234AB,#1a4fd4)" },
-  shipped:   { label: "En cours",   badgeClass: "badge-primary", dot: "#8B5CF6", desc: "Le colis est en préparation ou expédié.", gradient: "linear-gradient(135deg,#8B5CF6,#6D28D9)" },
-  delivered: { label: "Livré",      badgeClass: "badge-success", dot: "#0B9E5E", desc: "Commande reçue par le client.", gradient: "linear-gradient(135deg,#0B9E5E,#047857)" },
-  cancelled: { label: "Annulé",     badgeClass: "badge-danger",  dot: "#E53E3E", desc: "Commande annulée définitivement.", gradient: "linear-gradient(135deg,#E53E3E,#C53030)" },
+  pending:   { label: "En attente", badgeClass: "badge-warning", dot: "#F59E0B", desc: "Commande reçue, en attente de traitement.",  gradient: "linear-gradient(135deg,#F59E0B,#D97706)" },
+  paid:      { label: "Payé",       badgeClass: "badge-primary", dot: "#0234AB", desc: "Paiement confirmé par le client.",            gradient: "linear-gradient(135deg,#0234AB,#1a4fd4)" },
+  shipped:   { label: "En cours",   badgeClass: "badge-primary", dot: "#8B5CF6", desc: "Le colis est en préparation ou expédié.",     gradient: "linear-gradient(135deg,#8B5CF6,#6D28D9)" },
+  delivered: { label: "Livré",      badgeClass: "badge-success", dot: "#0B9E5E", desc: "Commande reçue par le client.",               gradient: "linear-gradient(135deg,#0B9E5E,#047857)" },
+  cancelled: { label: "Annulé",     badgeClass: "badge-danger",  dot: "#E53E3E", desc: "Commande annulée définitivement.",            gradient: "linear-gradient(135deg,#E53E3E,#C53030)" },
 };
 
 const TABS = ["Toutes", "En attente", "En cours", "Livrées", "Annulées"] as const;
@@ -172,12 +180,12 @@ function CancelModal({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NEW: Status Selection Modal (Matching your Role UI Style)
+// Status Selection Modal
 // ─────────────────────────────────────────────────────────────────────────────
 function StatusSelectionModal({
-  order, onClose, onConfirm, loading
+  order, onClose, onConfirm, loading,
 }: {
-  order: Order; onClose: () => void; onConfirm: (newStatus: Status) => void; loading: boolean
+  order: Order; onClose: () => void; onConfirm: (newStatus: Status) => void; loading: boolean;
 }) {
   const [selected, setSelected] = useState<Status>(order.status);
   const displayId = order.orderNumber ?? `#${order._id.slice(-6).toUpperCase()}`;
@@ -188,14 +196,17 @@ function StatusSelectionModal({
         onClick={(e) => e.stopPropagation()}
         style={{
           background: "#fff", borderRadius: 20, padding: "28px",
-          width: "100%", maxWidth: 440, boxShadow: "0 24px 60px rgba(2,52,171,0.18)",
+          width: "100%", maxWidth: 440,
+          boxShadow: "0 24px 60px rgba(2,52,171,0.18)",
           animation: "modalIn 0.22s cubic-bezier(.34,1.56,.64,1) both",
         }}
       >
         <div style={{ marginBottom: 22 }}>
-          <h3 style={{ margin: "0 0 4px", fontSize: "1.1rem", fontWeight: 700, color: "#0A0F2C" }}>Modifier le statut</h3>
+          <h3 style={{ margin: "0 0 4px", fontSize: "1.1rem", fontWeight: 700, color: "#0A0F2C" }}>
+            Modifier le statut
+          </h3>
           <p style={{ fontSize: "0.82rem", color: "#8B9AB5", margin: 0 }}>
-            Commande <strong>{displayId}</strong> • {order.user?.name || "Client anonyme"}
+            Commande <strong>{displayId}</strong> · {order.user?.name || "Client anonyme"}
           </p>
         </div>
 
@@ -208,16 +219,18 @@ function StatusSelectionModal({
                 key={statusKey}
                 onClick={() => setSelected(statusKey)}
                 style={{
-                  display: "flex", alignItems: "center", gap: 14, padding: "12px 16px",
-                  borderRadius: 12, cursor: "pointer", textAlign: "left", width: "100%",
+                  display: "flex", alignItems: "center", gap: 14,
+                  padding: "12px 16px", borderRadius: 12, cursor: "pointer",
+                  textAlign: "left", width: "100%",
                   border: `2px solid ${isActive ? cfg.dot : "#F1F5F9"}`,
                   background: isActive ? `${cfg.dot}08` : "#FAFAFA",
                   transition: "all 0.15s",
                 }}
               >
                 <div style={{
-                  width: 36, height: 36, borderRadius: 10, background: isActive ? cfg.gradient : "#E2E8F0",
-                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
+                  width: 36, height: 36, borderRadius: 10,
+                  background: isActive ? cfg.gradient : "#E2E8F0",
+                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                 }}>
                   <CheckCircle2 size={18} color={isActive ? "#fff" : "#8B9AB5"} />
                 </div>
@@ -225,12 +238,23 @@ function StatusSelectionModal({
                   <div style={{ fontWeight: 700, fontSize: "0.88rem", color: isActive ? cfg.dot : "#2D3748" }}>
                     {cfg.label}
                     {order.status === statusKey && (
-                      <span style={{ marginLeft: 8, fontSize: "0.68rem", background: "#E2E8F0", color: "#8B9AB5", padding: "1px 7px", borderRadius: 10 }}>actuel</span>
+                      <span style={{
+                        marginLeft: 8, fontSize: "0.68rem",
+                        background: "#E2E8F0", color: "#8B9AB5",
+                        padding: "1px 7px", borderRadius: 10,
+                      }}>
+                        actuel
+                      </span>
                     )}
                   </div>
                   <div style={{ fontSize: "0.73rem", color: "#8B9AB5", marginTop: 2 }}>{cfg.desc}</div>
                 </div>
-                <div style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${isActive ? cfg.dot : "#CBD5E0"}`, background: isActive ? cfg.dot : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{
+                  width: 18, height: 18, borderRadius: "50%",
+                  border: `2px solid ${isActive ? cfg.dot : "#CBD5E0"}`,
+                  background: isActive ? cfg.dot : "transparent",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
                   {isActive && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff" }} />}
                 </div>
               </button>
@@ -239,7 +263,15 @@ function StatusSelectionModal({
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={onClose} disabled={loading} style={{ flex: 1, padding: "12px", borderRadius: 10, border: "1.5px solid #E2E8F0", background: "#fff", color: "#4A5568", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer" }}>
+          <button
+            onClick={onClose}
+            disabled={loading}
+            style={{
+              flex: 1, padding: "12px", borderRadius: 10,
+              border: "1.5px solid #E2E8F0", background: "#fff",
+              color: "#4A5568", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer",
+            }}
+          >
             Annuler
           </button>
           <button
@@ -247,14 +279,216 @@ function StatusSelectionModal({
             disabled={loading || selected === order.status}
             style={{
               flex: 2, padding: "12px", borderRadius: 10, border: "none",
-              background: selected === order.status ? "#E2E8F0" : "linear-gradient(135deg,#0234AB,#1a4fd4)",
-              color: "#fff",
-              fontWeight: 700, fontSize: "0.85rem", cursor: (loading || selected === order.status) ? "not-allowed" : "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8
+              background: selected === order.status
+                ? "#E2E8F0"
+                : "linear-gradient(135deg,#0234AB,#1a4fd4)",
+              color: selected === order.status ? "#8B9AB5" : "#fff",
+              fontWeight: 700, fontSize: "0.85rem",
+              cursor: loading || selected === order.status ? "not-allowed" : "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             }}
           >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : "Appliquer le changement"}
+            {loading
+              ? <Loader2 size={16} className="animate-spin" />
+              : "Appliquer le changement"}
           </button>
+        </div>
+      </div>
+    </Backdrop>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Order Detail Modal
+// ─────────────────────────────────────────────────────────────────────────────
+function OrderDetailModal({
+  order,
+  onClose,
+}: {
+  order: Order;
+  onClose: () => void;
+}) {
+  const displayId = order.orderNumber ?? `#${order._id.slice(-6).toUpperCase()}`;
+  const cfg = STATUS_CONFIG[order.status];
+
+  return (
+    <Backdrop onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#fff",
+          borderRadius: 20,
+          width: "100%",
+          maxWidth: 520,
+          boxShadow: "0 24px 60px rgba(2,52,171,0.18)",
+          animation: "modalIn 0.22s cubic-bezier(.34,1.56,.64,1) both",
+          overflow: "hidden",
+        }}
+      >
+        {/* ── Header ── */}
+        <div
+          style={{
+            padding: "20px 24px 16px",
+            borderBottom: "1px solid #F1F5F9",
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            <div style={{
+              fontSize: "0.68rem", fontWeight: 600, color: "#8B9AB5",
+              letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4,
+            }}>
+              Détail commande
+            </div>
+            <div style={{
+              fontSize: "1.1rem", fontWeight: 700, color: "#0234AB",
+              fontFamily: "'Space Mono', monospace",
+            }}>
+              {displayId}
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span className={`badge ${cfg.badgeClass}`}>
+              <span className="order-status-dot" style={{ background: cfg.dot }} />
+              {cfg.label}
+            </span>
+            <button
+              onClick={onClose}
+              style={{
+                width: 28, height: 28, borderRadius: 8,
+                border: "1px solid #E2E8F0", background: "transparent",
+                cursor: "pointer", display: "flex",
+                alignItems: "center", justifyContent: "center", color: "#8B9AB5",
+              }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+
+        {/* ── Body ── */}
+        <div style={{
+          padding: "20px 24px",
+          display: "flex", flexDirection: "column", gap: 14,
+          maxHeight: "70vh", overflowY: "auto",
+        }}>
+
+          {/* Client + Date */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div style={{ background: "#F8FAFC", borderRadius: 10, padding: 12 }}>
+              <div style={{
+                fontSize: "0.68rem", color: "#8B9AB5", fontWeight: 600,
+                textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6,
+              }}>
+                Client
+              </div>
+              <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#0A0F2C" }}>
+                {order.user?.name ?? "—"}
+              </div>
+              <div style={{ fontSize: "0.75rem", color: "#8B9AB5", marginTop: 2 }}>
+                {order.user?.email ?? ""}
+              </div>
+            </div>
+            <div style={{ background: "#F8FAFC", borderRadius: 10, padding: 12 }}>
+              <div style={{
+                fontSize: "0.68rem", color: "#8B9AB5", fontWeight: 600,
+                textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6,
+              }}>
+                Date
+              </div>
+              <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#0A0F2C" }}>
+                {fmtDate(order.createdAt)}
+              </div>
+              <div style={{ fontSize: "0.75rem", color: "#8B9AB5", marginTop: 2 }}>
+                {order.paymentMethod === "cash_on_delivery"
+                  ? "Paiement à la livraison"
+                  : order.paymentMethod === "card"
+                  ? "Carte bancaire"
+                  : "—"}
+              </div>
+            </div>
+          </div>
+
+          {/* Shipping address */}
+          {order.shippingAddress && (
+            <div style={{ background: "#F8FAFC", borderRadius: 10, padding: 12 }}>
+              <div style={{
+                fontSize: "0.68rem", color: "#8B9AB5", fontWeight: 600,
+                textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8,
+              }}>
+                Adresse de livraison
+              </div>
+              <div style={{ fontSize: "0.82rem", color: "#0A0F2C", lineHeight: 1.7 }}>
+                <strong>{order.shippingAddress.fullName}</strong>
+                &nbsp;·&nbsp;
+                {order.shippingAddress.phone}
+                <br />
+                {order.shippingAddress.address}, {order.shippingAddress.city}
+                {order.shippingAddress.postalCode ? ` ${order.shippingAddress.postalCode}` : ""}
+              </div>
+              {order.shippingAddress.notes && (
+                <div style={{
+                  fontSize: "0.75rem", color: "#8B9AB5",
+                  marginTop: 6, fontStyle: "italic",
+                }}>
+                  {order.shippingAddress.notes}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Items */}
+          <div>
+            <div style={{
+              fontSize: "0.68rem", color: "#8B9AB5", fontWeight: 600,
+              textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8,
+            }}>
+              Articles ({order.items.length})
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {order.items.map((item, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex", justifyContent: "space-between",
+                    alignItems: "center", padding: "10px 12px",
+                    background: "#F8FAFC", borderRadius: 10,
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#0A0F2C" }}>
+                      {item.product?.title ?? "Produit supprimé"}
+                    </div>
+                    <div style={{ fontSize: "0.72rem", color: "#8B9AB5", marginTop: 2 }}>
+                      Qté : {item.quantity} &nbsp;·&nbsp; {item.price.toLocaleString("fr-FR")} TND / unité
+                    </div>
+                  </div>
+                  <div style={{
+                    fontFamily: "'Space Mono', monospace",
+                    fontSize: "0.82rem", fontWeight: 700, color: "#0A0F2C",
+                  }}>
+                    {(item.price * item.quantity).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} TND
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Total */}
+          <div style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: "12px 14px", border: "1.5px solid #E2E8F0", borderRadius: 10,
+          }}>
+            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#8B9AB5" }}>Total</span>
+            <span style={{
+              fontFamily: "'Space Mono', monospace",
+              fontSize: "1rem", fontWeight: 700, color: "#0234AB",
+            }}>
+              {(order.total ?? 0).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} TND
+            </span>
+          </div>
         </div>
       </div>
     </Backdrop>
@@ -268,16 +502,17 @@ export default function OrdersPage() {
   const { data: session, status: sessionStatus } = useSession();
   const apiToken = (session as any)?.apiToken as string | undefined;
 
-  const [orders, setOrders]         = useState<Order[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState<string | null>(null);
-  const [activeTab, setActiveTab]   = useState<Tab>("Toutes");
-  const [search, setSearch]         = useState("");
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [orders, setOrders]           = useState<Order[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState<string | null>(null);
+  const [activeTab, setActiveTab]     = useState<Tab>("Toutes");
+  const [search, setSearch]           = useState("");
+  const [updatingId, setUpdatingId]   = useState<string | null>(null);
 
-  const [errorMsg,     setErrorMsg]     = useState<string | null>(null);
-  const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
-  const [statusTarget, setStatusTarget] = useState<Order | null>(null);
+  const [errorMsg,      setErrorMsg]      = useState<string | null>(null);
+  const [cancelTarget,  setCancelTarget]  = useState<Order | null>(null);
+  const [statusTarget,  setStatusTarget]  = useState<Order | null>(null);
+  const [detailTarget,  setDetailTarget]  = useState<Order | null>(null);
 
   const getHeaders = useCallback(
     () => ({ "Content-Type": "application/json", Authorization: `Bearer ${apiToken}` }),
@@ -318,8 +553,6 @@ export default function OrdersPage() {
       setStatusTarget(null);
     } catch (err: any) {
       setErrorMsg(err.message);
-      console.log(err.message);
-      
     } finally {
       setUpdatingId(null);
     }
@@ -357,15 +590,16 @@ export default function OrdersPage() {
   } as Record<Tab, number>;
 
   const miniStats = [
-    { label: "Total commandes", val: orders.length,                                 color: "#0234AB" },
-    { label: "En cours",        val: counts["En cours"],                            color: "#F59E0B" },
-    { label: "Livrées",         val: counts["Livrées"],                             color: "#0B9E5E" },
-    { label: "Annulées",        val: counts["Annulées"],                            color: "#E53E3E" },
+    { label: "Total commandes", val: orders.length,       color: "#0234AB" },
+    { label: "En cours",        val: counts["En cours"],  color: "#F59E0B" },
+    { label: "Livrées",         val: counts["Livrées"],   color: "#0B9E5E" },
+    { label: "Annulées",        val: counts["Annulées"],  color: "#E53E3E" },
   ];
 
   const visibleOrders = orders.filter((o) => {
-    const matchTab    = TAB_STATUS_MAP[activeTab] === null || o.status === TAB_STATUS_MAP[activeTab];
-    const matchSearch = search === "" ||
+    const matchTab = TAB_STATUS_MAP[activeTab] === null || o.status === TAB_STATUS_MAP[activeTab];
+    const matchSearch =
+      search === "" ||
       orderProductLabel(o).toLowerCase().includes(search.toLowerCase()) ||
       o.user?.name?.toLowerCase().includes(search.toLowerCase()) ||
       o._id.toLowerCase().includes(search.toLowerCase());
@@ -375,11 +609,12 @@ export default function OrdersPage() {
   return (
     <div>
       <style>{`
-        @keyframes spin     { to { transform: rotate(360deg); } }
-        .animate-spin      { animation: spin 1s linear infinite; }
-        @keyframes modalIn  { from { opacity:0; transform:scale(0.92) translateY(12px); } to { opacity:1; transform:none; } }
+        @keyframes spin    { to { transform: rotate(360deg); } }
+        .animate-spin     { animation: spin 1s linear infinite; }
+        @keyframes modalIn { from { opacity:0; transform:scale(0.92) translateY(12px); } to { opacity:1; transform:none; } }
       `}</style>
 
+      {/* Modals */}
       {errorMsg && <ErrorModal message={errorMsg} onClose={() => setErrorMsg(null)} />}
 
       {cancelTarget && (
@@ -397,6 +632,13 @@ export default function OrdersPage() {
           loading={updatingId === statusTarget._id}
           onClose={() => setStatusTarget(null)}
           onConfirm={handleStatusUpdate}
+        />
+      )}
+
+      {detailTarget && (
+        <OrderDetailModal
+          order={detailTarget}
+          onClose={() => setDetailTarget(null)}
         />
       )}
 
@@ -455,23 +697,29 @@ export default function OrdersPage() {
         ))}
       </div>
 
-      {/* Loading & Empty States */}
+      {/* Loading */}
       {(isSessionLoading || loading) && (
         <div style={{ display: "flex", justifyContent: "center", padding: "4rem" }}>
           <Loader2 size={32} className="animate-spin" style={{ opacity: 0.4 }} />
         </div>
       )}
 
+      {/* Error */}
       {!isSessionLoading && !loading && error && (
         <div className="card" style={{ padding: "2rem", textAlign: "center", color: "#e53e3e" }}>
           <p>{error}</p>
-          <button className="btn btn-primary" style={{ marginTop: "1rem" }} onClick={fetchOrders}>Réessayer</button>
+          <button className="btn btn-primary" style={{ marginTop: "1rem" }} onClick={fetchOrders}>
+            Réessayer
+          </button>
         </div>
       )}
 
+      {/* Empty */}
       {!isSessionLoading && !loading && !error && visibleOrders.length === 0 && (
         <div className="card" style={{ padding: "4rem", textAlign: "center" }}>
-          <p style={{ color: "#8B9AB5" }}>{search ? `Aucun résultat pour "${search}"` : "Aucune commande trouvée."}</p>
+          <p style={{ color: "#8B9AB5" }}>
+            {search ? `Aucun résultat pour "${search}"` : "Aucune commande trouvée."}
+          </p>
         </div>
       )}
 
@@ -498,15 +746,20 @@ export default function OrdersPage() {
               </thead>
               <tbody>
                 {visibleOrders.map((o, i) => {
-                  const cfg         = STATUS_CONFIG[o.status];
-                  const isBusy      = updatingId === o._id;
-                  const displayId =o.orderNumber ??
-                    (o._id ? `#${o._id.slice(-6).toUpperCase()}` : "#------");
+                  const cfg       = STATUS_CONFIG[o.status];
+                  const isBusy    = updatingId === o._id;
+                  const displayId = o.orderNumber ?? (o._id ? `#${o._id.slice(-6).toUpperCase()}` : "#------");
 
                   return (
-                    <tr key={o._id} style={{ animationDelay: `${i * 0.06}s`, opacity: isBusy ? 0.6 : 1 }}>
+                    <tr
+                      key={o._id}
+                      style={{ animationDelay: `${i * 0.06}s`, opacity: isBusy ? 0.6 : 1 }}
+                    >
                       <td>
-                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.78rem", fontWeight: 700, color: "#0234AB" }}>
+                        <span style={{
+                          fontFamily: "'Space Mono', monospace",
+                          fontSize: "0.78rem", fontWeight: 700, color: "#0234AB",
+                        }}>
                           {displayId}
                         </span>
                       </td>
@@ -517,7 +770,10 @@ export default function OrdersPage() {
                       </td>
                       <td style={{ color: "#8B9AB5", fontSize: "0.82rem" }}>{fmtDate(o.createdAt)}</td>
                       <td>
-                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.82rem", fontWeight: 700 }}>
+                        <span style={{
+                          fontFamily: "'Space Mono', monospace",
+                          fontSize: "0.82rem", fontWeight: 700,
+                        }}>
                           {(o.total ?? 0).toLocaleString("fr-FR")} TND
                         </span>
                       </td>
@@ -532,21 +788,28 @@ export default function OrdersPage() {
                           onClick={() => setStatusTarget(o)}
                           disabled={isBusy}
                           style={{
-                            display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8,
-                            border: "1px solid #E2E8F0", background: "#fff", cursor: "pointer",
-                            fontSize: "0.8rem", fontWeight: 600, color: "#4A5568", transition: "all 0.2s"
+                            display: "flex", alignItems: "center", gap: 6,
+                            padding: "6px 12px", borderRadius: 8,
+                            border: "1px solid #E2E8F0", background: "#fff",
+                            cursor: "pointer", fontSize: "0.8rem",
+                            fontWeight: 600, color: "#4A5568", transition: "all 0.2s",
                           }}
                           onMouseOver={(e) => (e.currentTarget.style.borderColor = "#0234AB")}
-                          onMouseOut={(e) => (e.currentTarget.style.borderColor = "#E2E8F0")}
+                          onMouseOut={(e)  => (e.currentTarget.style.borderColor = "#E2E8F0")}
                         >
-                          {isBusy ? <Loader2 size={14} className="animate-spin" /> :  '⇄' }
-                          
-                           Statut
+                          {isBusy ? <Loader2 size={14} className="animate-spin" /> : "⇄"}
+                          Statut
                         </button>
                       </td>
                       <td>
                         <div className="order-actions-cell">
-                          <button className="icon-btn" title="Voir"><Eye size={16} /></button>
+                          <button
+                            className="icon-btn"
+                            title="Voir"
+                            onClick={() => setDetailTarget(o)}
+                          >
+                            <Eye size={16} />
+                          </button>
                           <button
                             className="icon-btn icon-btn-danger"
                             title="Annuler"
