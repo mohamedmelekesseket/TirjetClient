@@ -4,12 +4,12 @@ import { use, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Plus, Loader2, Package } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { showSuccessToast } from "@/lib/toast";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-// Matches User model
 interface User {
   _id: string;
   name: string;
@@ -21,38 +21,38 @@ interface User {
   createdAt: string;
 }
 
-// Matches ArtisanProfile schema exactly (specialite, not specialty)
 interface ArtisanProfile {
   _id: string;
-  user: User;                  // populated via .populate("user")
+  user: User;
   phone?: string;
   region?: string;
-  specialite?: string;         // ← schema field name
+  specialite?: string;
   description?: string;
   instagram?: string;
   website?: string;
   images: string[];
   isApproved: boolean;
   createdAt: string;
-  products?: Product[];        // joined by the controller
+  products?: Product[];
 }
 
+// ── category can come back as a populated object OR a raw ID string ────────────
 interface Product {
   _id: string;
   title: string;
   description: string;
   price: number;
   images: string[];
-  category: "margoum" | "fokhar" | "bijoux" | "tissage";
+  category: { _id: string; name: string } | string;
   stock: number;
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  margoum: "Margoum",
-  fokhar: "Poterie",
-  bijoux: "Bijoux",
-  tissage: "Tissage",
-};
+// ── Resolve category label from either shape ───────────────────────────────────
+function getCategoryName(category: Product["category"]): string {
+  if (!category) return "";
+  if (typeof category === "object") return category.name;
+  return category; // raw string fallback
+}
 
 // ─── Motion presets ────────────────────────────────────────────────────────────
 const fadeUp = {
@@ -161,6 +161,8 @@ function WorksGallery({ images }: { images: string[] }) {
 }
 
 // ─── Product Card ──────────────────────────────────────────────────────────────
+// Whole card is clickable via router.push (same pattern as boutique page).
+// The only <a> inside is the "Voir la pièce →" Link.
 function ProductCard({
   p,
   index,
@@ -176,12 +178,16 @@ function ProductCard({
   onWishToggle: (id: string) => void;
   onCart: (id: string) => void;
 }) {
+  const router = useRouter();
   const isWished = wishlist.includes(p._id);
   const isAdded = cartAdded.includes(p._id);
+  const catLabel = getCategoryName(p.category);
 
   return (
     <motion.article
       className="artp-prod-card"
+      onClick={() => router.push(`/boutique/${p._id}`)}
+      style={{ cursor: "pointer" }}
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{
@@ -214,22 +220,24 @@ function ProductCard({
           </div>
         )}
         <div className="artp-prod-card__shade" />
-        <span className="artp-prod-card__cat">
-          {CATEGORY_LABELS[p.category] ?? p.category}
-        </span>
+
+        {/* ── category label — now works for both object and string ── */}
+        <span className="artp-prod-card__cat">{catLabel}</span>
+
+        {/* wish button — stopPropagation so card click doesn't fire */}
         <motion.button
-          className={`artp-prod-card__wish${
-            isWished ? " artp-prod-card__wish--on" : ""
-          }`}
-          onClick={() => onWishToggle(p._id)}
+          className={`artp-prod-card__wish${isWished ? " artp-prod-card__wish--on" : ""}`}
+          onClick={e => { e.stopPropagation(); onWishToggle(p._id); }}
           whileTap={{ scale: 0.82 }}
         >
           <HeartIcon filled={isWished} />
         </motion.button>
+
         {p.stock === 1 && (
           <span className="artp-prod-card__last">Dernière pièce</span>
         )}
       </div>
+
       <div className="artp-prod-card__body">
         <div className="artp-prod-card__top">
           <h3 className="artp-prod-card__title">{p.title}</h3>
@@ -239,14 +247,17 @@ function ProductCard({
         </div>
         <p className="artp-prod-card__desc">{p.description}</p>
         <div className="artp-prod-card__foot">
-          <Link href={`/boutique/${p._id}`} className="artp-prod-card__cta">
+          {/* Only <a> inside the card */}
+          <Link
+            href={`/boutique/${p._id}`}
+            className="artp-prod-card__cta"
+            onClick={e => e.stopPropagation()}
+          >
             Voir la pièce →
           </Link>
           <motion.button
-            className={`artp-prod-card__cart${
-              isAdded ? " artp-prod-card__cart--added" : ""
-            }`}
-            onClick={() => onCart(p._id)}
+            className={`artp-prod-card__cart${isAdded ? " artp-prod-card__cart--added" : ""}`}
+            onClick={e => { e.stopPropagation(); onCart(p._id); }}
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.94 }}
           >
@@ -281,14 +292,7 @@ function InfoCard({
         {artisan.phone && (
           <li className="artp-info-card__item">
             <span className="artp-info-card__icon-wrap artp-info-card__icon-wrap--orange">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.56a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
               </svg>
             </span>
@@ -300,14 +304,7 @@ function InfoCard({
         )}
         <li className="artp-info-card__item">
           <span className="artp-info-card__icon-wrap artp-info-card__icon-wrap--orange">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
               <polyline points="22,6 12,13 2,6" />
             </svg>
@@ -320,14 +317,7 @@ function InfoCard({
         {artisan.region && (
           <li className="artp-info-card__item">
             <span className="artp-info-card__icon-wrap artp-info-card__icon-wrap--orange">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
@@ -340,35 +330,20 @@ function InfoCard({
         )}
         <li className="artp-info-card__item">
           <span className="artp-info-card__icon-wrap artp-info-card__icon-wrap--orange">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
           </span>
           <div>
             <span className="artp-info-card__label">Disponibilité</span>
-            {/* availability is not in schema — show static fallback */}
             <span className="artp-info-card__val">Lun - Sam, 9h - 18h</span>
           </div>
         </li>
         {artisan.instagram && (
           <li className="artp-info-card__item">
             <span className="artp-info-card__icon-wrap artp-info-card__icon-wrap--orange">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
                 <circle cx="12" cy="12" r="4" />
                 <circle cx="17.5" cy="6.5" r="1" fill="currentColor" />
@@ -391,14 +366,7 @@ function InfoCard({
         {artisan.website && (
           <li className="artp-info-card__item">
             <span className="artp-info-card__icon-wrap artp-info-card__icon-wrap--orange">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="2" y1="12" x2="22" y2="12" />
                 <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
@@ -442,14 +410,7 @@ function InfoCard({
       <div className="artp-info-card__badges">
         {artisan.user.isVerified && (
           <div className="artp-info-card__badge">
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#2d6a4f"
-              strokeWidth="2"
-            >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2d6a4f" strokeWidth="2">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               <polyline points="9 12 11 14 15 10" />
             </svg>
@@ -458,14 +419,7 @@ function InfoCard({
         )}
         {artisan.isApproved && (
           <div className="artp-info-card__badge">
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#C9A055"
-              strokeWidth="2"
-            >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C9A055" strokeWidth="2">
               <circle cx="12" cy="8" r="4" />
               <path d="M12 12v10M8 22h8" />
             </svg>
@@ -478,10 +432,6 @@ function InfoCard({
 }
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
-// NOTE: The [id] URL param is the USER's _id (not the artisan profile _id).
-// Route: GET /api/artisans/:userId  →  getArtisanByUserId
-// The controller must: find ArtisanProfile by user field, populate "user", and
-// join products (see companion controller fix below).
 export default function ArtisanProfilePage({
   params,
 }: {
@@ -502,7 +452,6 @@ export default function ArtisanProfilePage({
   const { ref: statsRef, visible: statsVisible } = useInView(0.3);
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
-  // GET /api/artisans/:userId  (public, no auth needed)
   useEffect(() => {
     const fetchArtisan = async () => {
       try {
@@ -510,14 +459,10 @@ export default function ArtisanProfilePage({
         setError(null);
 
         const res = await fetch(`${API}/api/artisans/${id}`);
-
         if (res.status === 404) throw new Error("Artisan introuvable.");
         if (!res.ok) throw new Error(`Erreur serveur (${res.status})`);
 
         const data: ArtisanProfile = await res.json();
-
-        // Normalise the specialite field coming from the DB (schema uses "specialite")
-        // so the rest of the component can use data.specialite directly.
         setArtisan(data);
         setProducts(data.products ?? []);
       } catch (err: any) {
@@ -538,7 +483,7 @@ export default function ArtisanProfilePage({
   }
 
   function handleCart(productId: string) {
-    if (cartAdded.includes(productId)) return; // idempotent
+    if (cartAdded.includes(productId)) return;
     setCartAdded((c) => [...c, productId]);
     const prod = products.find((p) => p._id === productId);
     if (prod) showSuccessToast(`${prod.title} ajouté au panier`);
@@ -547,18 +492,8 @@ export default function ArtisanProfilePage({
   // ── Loading ────────────────────────────────────────────────────────────────
   if (loading)
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "60vh",
-        }}
-      >
-        <Loader2
-          size={36}
-          style={{ animation: "spin 1s linear infinite", opacity: 0.4 }}
-        />
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+        <Loader2 size={36} style={{ animation: "spin 1s linear infinite", opacity: 0.4 }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -575,9 +510,21 @@ export default function ArtisanProfilePage({
       </div>
     );
 
-  const categories = Array.from(new Set(products.map((p) => p.category)));
+  // ── Derive unique category labels from actual products ─────────────────────
+  const categoryKeys = Array.from(new Set(products.map((p) => {
+    // use _id for object categories (for filter matching), or raw string
+    if (typeof p.category === "object") return p.category._id;
+    return p.category;
+  })));
+
   const filtered =
-    filter === "all" ? products : products.filter((p) => p.category === filter);
+    filter === "all"
+      ? products
+      : products.filter((p) => {
+          const key = typeof p.category === "object" ? p.category._id : p.category;
+          return key === filter;
+        });
+
   const joinDate = new Date(artisan.createdAt).toLocaleDateString("fr-FR", {
     month: "long",
     year: "numeric",
@@ -615,6 +562,9 @@ export default function ArtisanProfilePage({
                   src={artisan.user.image}
                   alt={artisan.user.name}
                   className="artp-hero__avatar-img"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                  }}
                 />
               ) : (
                 <div className="artp-hero__avatar-fallback">
@@ -623,14 +573,7 @@ export default function ArtisanProfilePage({
               )}
               {artisan.isApproved && (
                 <div className="artp-hero__avatar-badge" title="Artisan vérifié">
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="white"
-                    strokeWidth="2.5"
-                  >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 </div>
@@ -641,24 +584,14 @@ export default function ArtisanProfilePage({
             <div className="artp-hero__meta">
               <div className="artp-hero__name-row">
                 <h1 className="artp-hero__name">{artisan.user.name}</h1>
-                {/* Use specialite (schema field), display as specialty label */}
                 {artisan.specialite && (
-                  <span className="artp-hero__specialty-pill">
-                    {artisan.specialite}
-                  </span>
+                  <span className="artp-hero__specialty-pill">{artisan.specialite}</span>
                 )}
               </div>
               <div className="artp-hero__sub-row">
                 {artisan.region && (
                   <span className="artp-hero__sub-item">
-                    <svg
-                      width="13"
-                      height="13"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z" />
                       <circle cx="12" cy="10" r="3" />
                     </svg>
@@ -666,26 +599,13 @@ export default function ArtisanProfilePage({
                   </span>
                 )}
                 <span className="artp-hero__sub-item">
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="#f5a623"
-                    strokeWidth="0"
-                  >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="#f5a623" strokeWidth="0">
                     <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
                   </svg>
                   4.6 (82 avis)
                 </span>
                 <span className="artp-hero__sub-item">
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="3" y="4" width="18" height="18" rx="2" />
                     <line x1="16" y1="2" x2="16" y2="6" />
                     <line x1="8" y1="2" x2="8" y2="6" />
@@ -698,19 +618,8 @@ export default function ArtisanProfilePage({
 
             {/* CTAs */}
             <div className="artp-hero__ctas">
-              <motion.button
-                className="artp-hero__btn-contact"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
+              <motion.button className="artp-hero__btn-contact" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
                 Contacter
@@ -722,14 +631,7 @@ export default function ArtisanProfilePage({
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.56a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
                   </svg>
                   Appeler
@@ -749,18 +651,11 @@ export default function ArtisanProfilePage({
             {(["creations", "about"] as const).map((t) => (
               <motion.button
                 key={t}
-                className={`artp-tabs__tab${
-                  tab === t ? " artp-tabs__tab--active" : ""
-                }`}
+                className={`artp-tabs__tab${tab === t ? " artp-tabs__tab--active" : ""}`}
                 onClick={() => setTab(t)}
                 whileHover={{ y: -1 }}
               >
-                {
-                  {
-                    creations: `Créations (${products.length})`,
-                    about: "À propos",
-                  }[t]
-                }
+                {{ creations: `Créations (${products.length})`, about: "À propos" }[t]}
               </motion.button>
             ))}
           </div>
@@ -776,26 +671,36 @@ export default function ArtisanProfilePage({
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.38 }}
               >
+                {/* Category filter chips — built from actual product data */}
                 <div className="artp-filters">
-                  {["all", ...categories].map((cat) => (
-                    <motion.button
-                      key={cat}
-                      className={`artp-filter-btn${
-                        filter === cat ? " artp-filter-btn--active" : ""
-                      }`}
-                      onClick={() => setFilter(cat)}
-                      whileHover={{ scale: 1.04 }}
-                      whileTap={{ scale: 0.96 }}
-                    >
-                      {cat === "all" ? "Tout voir" : CATEGORY_LABELS[cat] ?? cat}
-                    </motion.button>
-                  ))}
+                  {["all", ...categoryKeys].map((key) => {
+                    // find a product with this category key to get the display name
+                    const label =
+                      key === "all"
+                        ? "Tout voir"
+                        : getCategoryName(
+                            products.find((p) => {
+                              const k = typeof p.category === "object" ? p.category._id : p.category;
+                              return k === key;
+                            })?.category ?? key
+                          );
+
+                    return (
+                      <motion.button
+                        key={key}
+                        className={`artp-filter-btn${filter === key ? " artp-filter-btn--active" : ""}`}
+                        onClick={() => setFilter(key)}
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.96 }}
+                      >
+                        {label}
+                      </motion.button>
+                    );
+                  })}
                 </div>
 
                 {filtered.length === 0 ? (
-                  <div
-                    style={{ textAlign: "center", padding: "3rem", opacity: 0.5 }}
-                  >
+                  <div style={{ textAlign: "center", padding: "3rem", opacity: 0.5 }}>
                     <Package size={36} style={{ margin: "0 auto 1rem" }} />
                     <p>Aucun produit dans cette catégorie.</p>
                   </div>
@@ -831,55 +736,22 @@ export default function ArtisanProfilePage({
               >
                 <div className="artp-about__split">
                   <div className="artp-about__text">
-                    <motion.p
-                      className="artp-section-eyebrow"
-                      variants={fadeUp}
-                      initial="hidden"
-                      whileInView="visible"
-                      viewport={{ once: true }}
-                    >
+                    <motion.p className="artp-section-eyebrow" variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
                       Son histoire
                     </motion.p>
-                    <motion.h2
-                      className="artp-about__heading"
-                      variants={fadeUp}
-                      custom={1}
-                      initial="hidden"
-                      whileInView="visible"
-                      viewport={{ once: true }}
-                    >
-                      Un savoir-faire
-                      <br />
-                      <em>millénaire</em>
+                    <motion.h2 className="artp-about__heading" variants={fadeUp} custom={1} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+                      Un savoir-faire<br /><em>millénaire</em>
                     </motion.h2>
-                    <motion.p
-                      className="artp-about__bio"
-                      variants={fadeUp}
-                      custom={2}
-                      initial="hidden"
-                      whileInView="visible"
-                      viewport={{ once: true }}
-                    >
+                    <motion.p className="artp-about__bio" variants={fadeUp} custom={2} initial="hidden" whileInView="visible" viewport={{ once: true }}>
                       {artisan.description ?? "Aucune description disponible."}
                     </motion.p>
-                    <motion.div
-                      className="artp-about__details"
-                      variants={fadeUp}
-                      custom={3}
-                      initial="hidden"
-                      whileInView="visible"
-                      viewport={{ once: true }}
-                    >
+                    <motion.div className="artp-about__details" variants={fadeUp} custom={3} initial="hidden" whileInView="visible" viewport={{ once: true }}>
                       {(
                         [
                           ["Région", artisan.region ?? "—"],
-                          // Use the correct schema field name
                           ["Spécialité", artisan.specialite ?? "—"],
                           ["Sur Tirjet depuis", String(joinYear)],
-                          [
-                            "Statut",
-                            artisan.isApproved ? "Artisan vérifié ✓" : "En attente",
-                          ],
+                          ["Statut", artisan.isApproved ? "Artisan vérifié ✓" : "En attente"],
                         ] as [string, string][]
                       ).map(([k, v]) => (
                         <div key={k} className="artp-about__detail-row">
@@ -903,8 +775,8 @@ export default function ArtisanProfilePage({
 
                 <div className="artp-about__stats" ref={statsRef}>
                   {[
-                    { n: "5", lbl: "Générations de savoir" },
-                    { n: "40h", lbl: "Par création" },
+                    { n: "5",    lbl: "Générations de savoir" },
+                    { n: "40h",  lbl: "Par création" },
                     { n: "100%", lbl: "Fait main" },
                     { n: "4.6 ★", lbl: "Note clients" },
                   ].map(({ n, lbl }, i) => (
@@ -926,11 +798,7 @@ export default function ArtisanProfilePage({
         </div>
 
         {/* Sidebar */}
-        <InfoCard
-          artisan={artisan}
-          joinDate={joinDate}
-          totalProducts={products.length}
-        />
+        <InfoCard artisan={artisan} joinDate={joinDate} totalProducts={products.length} />
       </div>
 
       {/* CTA Banner */}
@@ -948,11 +816,7 @@ export default function ArtisanProfilePage({
           Partagez votre savoir-faire avec le monde. Rejoignez notre communauté
           et donnez une vitrine internationale à vos créations.
         </p>
-        <motion.div
-          className="artp-cta-banner__btn"
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-        >
+        <motion.div className="artp-cta-banner__btn" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
           <Link href="/Rejoigneznous">Rejoindre la communauté →</Link>
         </motion.div>
       </motion.section>

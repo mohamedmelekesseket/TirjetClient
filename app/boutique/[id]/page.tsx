@@ -477,7 +477,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 <span className="pd-artisan-row__loc"><Pin />{product.artisan.city.toUpperCase()}</span>
               )}
             </div>
-            <Link href={`/Artisanprofile/${product?.artisan}`} className="pd-artisan-row__link">
+            <Link href={`/Artisanprofile/${product?.artisan?._id}`} className="pd-artisan-row__link">
               Voir le profil →
             </Link>
           </div>

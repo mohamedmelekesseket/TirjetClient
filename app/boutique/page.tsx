@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useCallback } from "react";
 import { Check, Heart, HeartOff, Search, SlidersHorizontal, X, Loader2, Package } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -30,7 +31,6 @@ interface Product {
   description: string;
   price: number;
   images: string[];
-  // May come back as a populated object or a raw ID string
   category: { _id: string; name: string } | string;
   stock: number;
   location?: string;
@@ -43,6 +43,7 @@ type FilterGroup = "cat" | "region" | "mat";
 export default function Boutique() {
   const { data: session } = useSession();
   const apiToken = (session as any)?.apiToken as string | undefined;
+  const router = useRouter();
 
   const [products, setProducts]   = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -67,7 +68,6 @@ export default function Boutique() {
   const getCategoryName = useCallback((category: Product["category"]): string => {
     if (!category) return "";
     if (typeof category === "object") return category.name;
-    // Raw ID — look it up in the fetched categories list
     return categories.find(c => c._id === category)?.name ?? "";
   }, [categories]);
 
@@ -178,7 +178,6 @@ export default function Boutique() {
     filters.cat.length + filters.region.length + filters.mat.length +
     (filters.minPrice > 0 || filters.maxPrice < 5000 ? 1 : 0);
 
-  // Filter by category ID so it works regardless of populated vs raw
   const filteredProducts = products.filter(p => {
     if (filters.cat.length && !filters.cat.includes(getCategoryId(p.category))) return false;
     if (filters.region.length && !filters.region.includes(p.location ?? ""))   return false;
@@ -247,7 +246,7 @@ export default function Boutique() {
         >
           <div className="boutique__filter-panel">
 
-            {/* Category chips — dynamic from API */}
+            {/* Category chips */}
             <div className="boutique__filter-group">
               <div className="boutique__filter-label">Catégorie</div>
               <div className="boutique__chips">
@@ -320,7 +319,7 @@ export default function Boutique() {
           </div>
         </motion.div>
 
-        {/* Active filter tags — show category name not ID */}
+        {/* Active filter tags */}
         <AnimatePresence>
           {activeCount > 0 && (
             <motion.div className="boutique__active-tags"
@@ -408,67 +407,78 @@ export default function Boutique() {
               const catName   = getCategoryName(p.category);
 
               return (
-                <Link href={`/boutique/${p._id}`} key={p._id}>
-                  <motion.div className="boutique__card"
-                    initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.7, delay: 0.8 + index * 0.1, ease: [0.16, 1, 0.3, 1] as any }}
-                    whileHover={{ y: -6 }}>
+                // ── Outer wrapper is now a plain div, not a Link ──────────────
+                <motion.div
+                  key={p._id}
+                  className="boutique__card"
+                  onClick={() => router.push(`/boutique/${p._id}`)}
+                  style={{ cursor: "pointer" }}
+                  initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.7, delay: 0.8 + index * 0.1, ease: [0.16, 1, 0.3, 1] as any }}
+                  whileHover={{ y: -6 }}>
 
-                    {/* Image */}
-                    <div className="boutique__card-img">
-                      {p.images?.[0] ? (
-                        <motion.img
-                          src={p.images[0]}
-                          alt={p.title}
-                          loading="lazy"
-                          whileHover={{ scale: 1.07 }}
-                          transition={{ duration: 1.4 }}
-                        />
-                      ) : (
-                        <div style={{
-                          width: "100%", height: "100%",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          background: "#f0ebe3", opacity: 0.6,
-                        }}>
-                          <Package size={36} />
-                        </div>
-                      )}
-                      <div className="boutique__card-overlay" />
-
-                      {/* ✅ Now shows the human-readable name */}
-                      <span className="boutique__card-cat">{catName}</span>
-
-                      <button
-                        className="boutique__card-wish"
-                        onClick={e => { e.preventDefault(); toggleWish(p._id); }}
-                        disabled={isPending}
-                        style={{
-                          color:   isWished ? "#d4784f" : undefined,
-                          opacity: isPending ? 0.5 : 1,
-                          cursor:  isPending ? "wait" : "pointer",
-                        }}
-                        aria-label={isWished ? "Retirer des favoris" : "Ajouter aux favoris"}
-                      >
-                        {isWished
-                          ? <Heart size={18} fill="currentColor" />
-                          : <HeartOff size={18} />}
-                      </button>
-                    </div>
-
-                    {/* Body */}
-                    <div className="boutique__card-body">
-                      <div className="boutique__card-top">
-                        <h3 className="boutique__card-title">{p.title}</h3>
-                        <span className="boutique__card-price">{p.price.toLocaleString("fr-TN")} TND</span>
+                  {/* Image */}
+                  <div className="boutique__card-img">
+                    {p.images?.[0] ? (
+                      <motion.img
+                        src={p.images[0]}
+                        alt={p.title}
+                        loading="lazy"
+                        whileHover={{ scale: 1.07 }}
+                        transition={{ duration: 1.4 }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: "100%", height: "100%",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        background: "#f0ebe3", opacity: 0.6,
+                      }}>
+                        <Package size={36} />
                       </div>
-                      <p className="boutique__card-desc">{p.description.slice(0, 120)}</p>
+                    )}
+                    <div className="boutique__card-overlay" />
+
+                    <span className="boutique__card-cat">{catName}</span>
+
+                    {/* Wishlist button — stopPropagation so card click doesn't fire */}
+                    <button
+                      className="boutique__card-wish"
+                      onClick={e => { e.preventDefault(); e.stopPropagation(); toggleWish(p._id); }}
+                      disabled={isPending}
+                      style={{
+                        color:   isWished ? "#d4784f" : undefined,
+                        opacity: isPending ? 0.5 : 1,
+                        cursor:  isPending ? "wait" : "pointer",
+                      }}
+                      aria-label={isWished ? "Retirer des favoris" : "Ajouter aux favoris"}
+                    >
+                      {isWished
+                        ? <Heart size={18} fill="currentColor" />
+                        : <HeartOff size={18} />}
+                    </button>
+                  </div>
+
+                  {/* Body */}
+                  <div className="boutique__card-body">
+                    <div className="boutique__card-top">
+                      <h3 className="boutique__card-title">{p.title}</h3>
+                      <span className="boutique__card-price">{p.price.toLocaleString("fr-TN")} TND</span>
                     </div>
-                    <div className="boutique__card-footer">
-                      <span className="boutique__card-loc">{p.location ?? catName}</span>
-                      <Link href={`/boutique/${p._id}`} className="boutique__card-cta">Voir la pièce →</Link>
-                    </div>
-                  </motion.div>
-                </Link>
+                    <p className="boutique__card-desc">{p.description.slice(0, 120)}</p>
+                  </div>
+
+                  <div className="boutique__card-footer">
+                    <span className="boutique__card-loc">{p.location ?? catName}</span>
+                    {/* Only <a> inside the card — no nesting issue */}
+                    <Link
+                      href={`/boutique/${p._id}`}
+                      className="boutique__card-cta"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      Voir la pièce →
+                    </Link>
+                  </div>
+                </motion.div>
               );
             })}
           </div>
