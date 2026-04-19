@@ -1125,6 +1125,30 @@ body {
   }
 }
 
+/* Fix drawer actions stacking nicely */
+.hdr__drawer-actions .hdr__btn {
+  width: 100%;
+  text-align: center;
+  justify-content: center;
+}
+
+/* Fix catbar on tablet — show it but make it scrollable */
+@media (max-width: 900px) {
+  .hdr__catbar {
+    display: none; /* already hidden — categories go in drawer ✓ */
+  }
+}
+
+/* Fix top bar padding on very small screens */
+@media (max-width: 380px) {
+  .hdr__top {
+    padding: 10px 14px;
+  }
+  .hdr__logo-sub {
+    display: none; /* hide tagline on tiny screens to prevent overflow */
+  }
+}
+
 /* ═══════════════════════════════════════════
    PRIVACY PAGE
 ═══════════════════════════════════════════ */

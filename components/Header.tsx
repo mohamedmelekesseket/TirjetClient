@@ -606,16 +606,28 @@ const Header = () => {
                     <button className="hdr__btn hdr__btn--outline" style={{ width: "100%" }}>Connexion</button>
                   </Link>
                 ) : (
-                  <>
+                <>
+                  <button className="hdr__btn hdr__btn--outline"
+                    onClick={() => { setMenuOpen(false); router.push("/profile"); }}>
+                    Mon profil
+                  </button>
+
+                  {/* ADD THIS */}
+                  {(apiUser?.role === "admin" || apiUser?.role === "vendor") && (
                     <button className="hdr__btn hdr__btn--outline"
-                      onClick={() => { setMenuOpen(false); router.push("/profile"); }}>
-                      Mon profil
+                      onClick={() => {
+                        setMenuOpen(false);
+                        router.push(apiUser.role === "admin" ? "/dashboard/admin" : "/dashboard/artisan");
+                      }}>
+                      Dashboard
                     </button>
-                    <button className="hdr__btn hdr__btn--outline"
-                      onClick={() => { setMenuOpen(false); signOut({ callbackUrl: "/" }); }}>
-                      Se déconnecter
-                    </button>
-                  </>
+                  )}
+
+                  <button className="hdr__btn hdr__btn--outline"
+                    onClick={() => { setMenuOpen(false); signOut({ callbackUrl: "/" }); }}>
+                    Se déconnecter
+                  </button>
+                </>
                 )}
                 <Link href="/Rejoigneznous" onClick={() => setMenuOpen(false)}>
                   <button className="hdr__btn hdr__btn--primary" style={{ width: "100%" }}>REJOINDRE</button>
