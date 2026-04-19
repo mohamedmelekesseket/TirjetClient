@@ -203,7 +203,7 @@ export default function ProductsPage() {
       </div>
 
       {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 24 }}>
+      <div className="dash-kpi-4">
         {(TABS).map((t, i) => (
           <div
             key={t}

@@ -346,7 +346,7 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
               </h2>
             </div>
             <div className="card-body">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="dash-inline-2col" style={{ gap: 12 }}>
                 <ToggleRow icon={<ShieldCheck size={16} />} label="Approuvé"       description="Visible sur la plateforme"  active={toggles.isApproved}  activeColor="#0B9E5E" onClick={() => toggle('isApproved')} />
                 <ToggleRow icon={<ShieldOff size={16} />}   label="Suspendu"       description="Masqué & non approuvé"      active={toggles.isSuspended} activeColor="#e53e3e" onClick={() => toggle('isSuspended')} />
                 <ToggleRow icon={<Home size={16} />}         label="Page d'accueil" description="Mis en avant sur le site"   active={toggles.isHome}      activeColor="#0234AB" onClick={() => toggle('isHome')} />

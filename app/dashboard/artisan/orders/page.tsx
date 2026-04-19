@@ -376,7 +376,7 @@ function OrderDetailModal({
         }}>
 
           {/* Client + Date */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div className="dash-inline-2col">
             <div style={{ background: "#F8FAFC", borderRadius: 10, padding: 12 }}>
               <div style={{
                 fontSize: "0.68rem", color: "#8B9AB5", fontWeight: 600,

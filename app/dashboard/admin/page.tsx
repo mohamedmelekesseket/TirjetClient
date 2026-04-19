@@ -361,7 +361,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick nav */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginTop: 0 }} className="anim-fade-up anim-d5">
+      <div className="admin-quick-nav anim-fade-up anim-d5">
         {[
           { href: '/dashboard/admin/artisans', icon: '◈', label: 'Gérer artisans',    sub: `${stats.totalArtisans} artisans`,   color: '#0234AB' },
           { href: '/dashboard/admin/products', icon: '◉', label: 'Gérer produits',    sub: `${stats.totalProducts} produits`,   color: '#0B9E5E' },

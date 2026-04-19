@@ -1,8 +1,29 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(
+    --font-geist-sans,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    "Apple Color Emoji",
+    "Segoe UI Emoji"
+  );
+  --font-mono: var(
+    --font-geist-mono,
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    "Liberation Mono",
+    "Courier New",
+    monospace
+  );
 }
 
 @media (prefers-color-scheme: dark) {
@@ -14,7 +35,11 @@
 
 body {
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   padding: 0;
 }
 
@@ -8073,17 +8098,205 @@ tbody td {
 /* ============================================================
    RESPONSIVE HELPERS
 ============================================================ */
+.admin-quick-nav {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 0;
+}
+
+.dash-kpi-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.dash-two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
 @media (max-width: 1280px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .admin-stats-grid { grid-template-columns: repeat(3, 1fr); }
   .products-grid { grid-template-columns: repeat(2, 1fr); }
   .create-product-grid { grid-template-columns: 1fr; }
   .artisan-home-grid { grid-template-columns: 1fr; }
+  .admin-quick-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-kpi-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 1024px) {
+  .dashboard-inner { padding: 24px; }
+  .admin-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-two-col { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 900px) {
+  .dashboard-inner { padding: 20px; }
+  .navbar-inner { padding: 0 16px; }
+  .navbar-search-input { width: 160px; }
+  .navbar-search-input:focus { width: 190px; }
+
+  .sidebar { width: 220px; }
+  .dashboard-main { margin-left: 220px; }
+
   .products-grid { grid-template-columns: 1fr; }
   .admin-grid { grid-template-columns: 1fr; }
+  .admin-quick-nav { grid-template-columns: 1fr; }
+  .dash-kpi-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-two-col { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .dashboard-inner { padding: 18px; }
+  .page-header { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .header-actions-row { width: 100%; flex-wrap: wrap; }
+  .navbar-search-input { width: 140px; }
+  .navbar-search-input:focus { width: 160px; }
+}
+
+@media (max-width: 640px) {
+  .dashboard-inner { padding: 16px; }
+
+  /* Hide sidebar completely on phone */
+  .sidebar { display: none; }
+  .dashboard-main { margin-left: 0; }
+
+  /* Navbar: keep essentials, avoid overflow */
+  .navbar-right { gap: 10px; }
+  .navbar-search { display: none; }
+  .navbar-profile { padding: 0; border: none; }
+  .navbar-profile > div:last-child { display: none; }
+  .dash-kpi-4 { grid-template-columns: 1fr; }
+
+  /* Common inline 2-col grids inside modals/cards */
+  .dash-inline-2col { display: grid; grid-template-columns: 1fr; gap: 10px; }
+}
+
+@media (max-width: 520px) {
+  .dashboard-inner { padding: 14px; }
+  .navbar-inner { padding: 0 12px; }
+  .page-title { font-size: 1.6rem; }
+  thead th, tbody td { padding-left: 12px; padding-right: 12px; }
+}
+
+@media (max-width: 380px) {
+  .dashboard-inner { padding: 12px; }
+  .navbar-icon-btn { width: 34px; height: 34px; border-radius: 10px; }
+  .navbar-avatar { width: 32px; height: 32px; border-radius: 10px; }
+  .dash-mobile-nav-label { font-size: 0.9rem; }
+}
+
+/* ============================================================
+   DASHBOARD — MOBILE NAV DRAWER (Navbar)
+============================================================ */
+.navbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+.navbar-mobile-menu-btn {
+  display: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(2,52,171,0.1);
+  background: rgba(238,242,255,0.8);
+  color: #0A0F2C;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.navbar-mobile-menu-btn:hover { background: #fff; border-color: rgba(2,52,171,0.2); }
+
+.dash-mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 44, 0.35);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+}
+
+.dash-mobile-drawer {
+  position: fixed;
+  top:0%;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  background: rgba(255,255,255,0.96);
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  box-shadow: 0 -16px 46px rgba(10,15,44,0.22);
+  padding: 10px 14px 18px;
+  animation: slideUpDash 0.22s ease both;
+}
+
+.dash-mobile-drawer-handle {
+  width: 44px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(10,15,44,0.12);
+  margin: 6px auto 10px;
+}
+
+.dash-mobile-drawer-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(10,15,44,0.65);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 6px 10px;
+}
+
+.dash-mobile-nav { display: flex; flex-direction: column; gap: 8px; }
+
+.dash-mobile-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(2,52,171,0.08);
+  background: #fff;
+  color: #0A0F2C;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.dash-mobile-nav-link:hover {
+  transform: translateY(-1px);
+  border-color: rgba(2,52,171,0.18);
+  box-shadow: 0 8px 18px rgba(2,52,171,0.08);
+}
+.dash-mobile-nav-link.active {
+  border-color: rgba(2,52,171,0.25);
+  box-shadow: 0 10px 24px rgba(2,52,171,0.12);
+}
+.dash-mobile-nav-icon { width: 26px; height: 26px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: rgba(2,52,171,0.08); color: #0234AB; flex-shrink: 0; }
+.dash-mobile-nav-label { font-size: 0.95rem; font-weight: 650; }
+
+@keyframes slideUpDash {
+  from { transform: translateY(14px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+@media (max-width: 640px) {
+  .navbar-mobile-menu-btn { display: inline-flex; }
+  .navbar-breadcrumb { min-width: 0; }
+  .navbar-breadcrumb-current { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+
+/* Utility: inline grids that should stack on mobile */
+@media (max-width: 640px) {
+  .dash-two-col,
+  .create-product-grid,
+  .create-product-side,
+  .create-product-main {
+    min-width: 0;
+  }
 }
 
 

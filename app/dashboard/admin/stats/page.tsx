@@ -47,7 +47,7 @@ export default function AdminStatsPage() {
       </div>
 
       {/* KPI row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
+      <div className="dash-kpi-4" style={{ marginBottom: '28px' }}>
         {[
           { label: 'Revenu total',    val: '284 200 MAD', delta: '+12%',  color: '#F5A623' },
           { label: 'Commandes',       val: '837',         delta: '+18%',  color: '#0234AB' },
@@ -65,7 +65,7 @@ export default function AdminStatsPage() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+      <div className="dash-two-col" style={{ marginBottom: '24px' }}>
 
         {/* Bar chart — Commandes par mois */}
         <div className="card anim-fade-up anim-d2">
@@ -142,7 +142,7 @@ export default function AdminStatsPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+      <div className="dash-two-col">
 
         {/* Top artisans */}
         <div className="card anim-fade-up anim-d4">
