@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Package, Search, Plus, Pencil, X, Loader2 } from 'lucide-react';
+import { showErrorToast, showSuccessToast } from '@/lib/toast';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -12,7 +13,9 @@ interface Product {
   description: string;
   price: number;
   images: string[];
-  category: string;
+  category:
+    | string
+    | { _id: string; name: string; slug?: string; mainCategory?: string };
   subcategory?: { slug: string; name: string };
   stock: number;
   isApproved: boolean;
@@ -88,8 +91,9 @@ export default function ProductsPage() {
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
       setProducts(prev => prev.filter(p => p._id !== id));
       setDeleteConfirm(null);
+      showSuccessToast('Produit supprimé');
     } catch (err: any) {
-      alert(err.message);
+      showErrorToast('Suppression impossible', err?.message);
     } finally {
       setDeletingId(null);
     }
@@ -280,7 +284,10 @@ export default function ProductsPage() {
           {filtered.map((p, i) => {
             const label      = statusLabel(p);
             const isDeleting = deletingId === p._id;
-            const catName    = categoryMap[p.category] ?? p.category;
+            const catName =
+              typeof p.category === 'object'
+                ? p.category.name
+                : categoryMap[p.category] ?? p.category;
 
             return (
               <div

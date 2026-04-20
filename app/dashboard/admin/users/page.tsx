@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Loader2, Trash2 } from "lucide-react";
 import { showErrorToast, showSuccessToast } from "@/lib/toast";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -244,6 +245,15 @@ export default function AdminUsersPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
+  const [confirmState, setConfirmState] = useState<{
+    open: boolean;
+    title: string;
+    description?: string;
+    confirmLabel?: string;
+    danger?: boolean;
+    onConfirm?: () => void;
+  }>({ open: false, title: "" });
+
   // Role modal state
   const [roleModalUser, setRoleModalUser] = useState<User | null>(null);
   const [roleLoading, setRoleLoading] = useState(false);
@@ -281,7 +291,6 @@ export default function AdminUsersPage() {
   const handleToggleStatus = async (user: User) => {
     const newStatus = user.status === "active" ? "blocked" : "active";
     const action = newStatus === "blocked" ? "Suspendre" : "Réactiver";
-    if (!confirm(`${action} cet utilisateur ?`)) return;
     setActionLoading(user._id);
     try {
       const res = await fetch(`${API}/api/users/${user._id}/status`, {
@@ -291,6 +300,7 @@ export default function AdminUsersPage() {
       });
       if (!res.ok) throw new Error(`Échec : ${action}`);
       await fetchUsers();
+      showSuccessToast(`${action} ✓`);
     } catch (err: any) {
       showErrorToast(err.message ?? "Échec de mise à jour du statut utilisateur");
     } finally {
@@ -371,6 +381,21 @@ export default function AdminUsersPage() {
   return (
     <div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        description={confirmState.description}
+        confirmLabel={confirmState.confirmLabel}
+        danger={confirmState.danger}
+        loading={false}
+        onClose={() => setConfirmState({ open: false, title: "" })}
+        onConfirm={() => {
+          const cb = confirmState.onConfirm;
+          setConfirmState({ open: false, title: "" });
+          cb?.();
+        }}
+      />
 
       {/* ── Role modal ── */}
       {roleModalUser && (
@@ -530,7 +555,21 @@ export default function AdminUsersPage() {
                                   className={`icon-btn${u.status === "active" ? " danger" : ""}`}
                                   title={u.status === "active" ? "Suspendre" : "Réactiver"}
                                   disabled={actionLoading === u._id}
-                                  onClick={() => handleToggleStatus(u)}
+                                  onClick={() => {
+                                    const newStatus = u.status === "active" ? "blocked" : "active";
+                                    const action = newStatus === "blocked" ? "Suspendre" : "Réactiver";
+                                    setConfirmState({
+                                      open: true,
+                                      title: `${action} cet utilisateur ?`,
+                                      description:
+                                        newStatus === "blocked"
+                                          ? "L’utilisateur ne pourra plus se connecter tant qu’il est suspendu."
+                                          : "L’utilisateur pourra se reconnecter immédiatement.",
+                                      confirmLabel: action,
+                                      danger: newStatus === "blocked",
+                                      onConfirm: () => void handleToggleStatus(u),
+                                    });
+                                  }}
                                 >
                                   {actionLoading === u._id ? "…" : u.status === "active" ? "⊘" : "✓"}
                                 </button>

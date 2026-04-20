@@ -41,6 +41,10 @@ export default function CommandePage() {
 
   const token = () => (session as any)?.apiToken as string | undefined;
 
+  // Filter out any cart items whose product was deleted / not populated
+  const validItems = cart.items.filter((item) => item.product != null);
+  const subtotal = validItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
   }
@@ -97,7 +101,7 @@ export default function CommandePage() {
     </div>
   );
 
-  if (cart.items.length === 0 && step !== "success") return (
+  if (validItems.length === 0 && step !== "success") return (
     <motion.div className="cart-empty"
       initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
       <div className="cart-empty__icon"><ShoppingBag size={48} strokeWidth={1.1} /></div>
@@ -225,7 +229,6 @@ export default function CommandePage() {
                 <div className="cmd-payment-opts">
                   {([
                     { value: "cash_on_delivery", label: "💵 Paiement à la livraison", sub: "Payez en espèces à la réception" },
-                    // { value: "card",             label: "💳 Carte bancaire",          sub: "Visa, Mastercard, CIB" },
                   ] as const).map(opt => (
                     <motion.label key={opt.value}
                       className={`cmd-pay-opt${paymentMethod === opt.value ? " cmd-pay-opt--active" : ""}`}
@@ -284,7 +287,7 @@ export default function CommandePage() {
                 </div>
 
                 <div className="cmd-items-recap">
-                  {cart.items.map(item => (
+                  {validItems.map(item => (
                     <div key={item.product._id} className="cmd-recap-item">
                       {item.product.images?.[0] && (
                         <img src={item.product.images[0]} alt={item.product.title}
@@ -329,7 +332,7 @@ export default function CommandePage() {
           <h2 className="cart-summary__title">Votre commande</h2>
 
           <div style={{ marginBottom: "1rem" }}>
-            {cart.items.map(item => (
+            {validItems.map(item => (
               <div key={item.product._id} className="cmd-recap-item"
                 style={{ padding: "0.55rem 0", borderBottom: "1px solid var(--border-soft)" }}>
                 {item.product.images?.[0] && (
@@ -352,7 +355,7 @@ export default function CommandePage() {
           <div className="cart-summary__rows">
             <div className="cart-summary__row">
               <span>Sous-total</span>
-              <span>{(cart.total + SHIPPING).toLocaleString("fr-TN")} TND</span>
+              <span>{subtotal.toLocaleString("fr-TN")} TND</span>
             </div>
             <div className="cart-summary__row">
               <span>Livraison</span>
@@ -361,7 +364,7 @@ export default function CommandePage() {
             <div className="cart-summary__divider" />
             <div className="cart-summary__row cart-summary__row--total">
               <span>Total</span>
-              <span>{(cart.total + SHIPPING).toLocaleString("fr-TN")} TND</span>
+              <span>{(subtotal + SHIPPING).toLocaleString("fr-TN")} TND</span>
             </div>
           </div>
 

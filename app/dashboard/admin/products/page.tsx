@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { Check, Plus, Eye, Flag, Gem, Package, Search, Shirt, Lamp, X, Loader2 } from "lucide-react";
 import type { ComponentType } from "react";
 import Link from "next/link";
+import { showErrorToast, showSuccessToast } from "@/lib/toast";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -12,17 +13,42 @@ interface Product {
   _id: string;
   title: string;
   price: number;
-  category: string;
+  // category can come back as a string key OR a populated object
+  category: string | { _id: string; name: string; slug?: string; mainCategory?: any };
   stock: number;
   isApproved: boolean;
   isReported?: boolean;
   images: string[];
-  artisan: { _id: string; name: string };
+  // artisan can come back as a populated object with extra keys
+  artisan: { _id: string; name: string; slug?: string; mainCategory?: any } | null;
   createdAt: string;
   isSuspended?: boolean;
 }
 
 type FilterTab = "Tous" | "Publiés" | "En attente" | "Signalés" | "Suspendus";
+
+// ── Safe field extractors ───────────────────────────────────────────────────
+/** Always returns a plain string key for category lookups */
+const getCategoryKey = (category: Product["category"]): string => {
+  if (!category) return "";
+  if (typeof category === "string") return category;
+  return category.slug || category.name || "";
+};
+
+/** Always returns a displayable string for the artisan name */
+const getArtisanName = (artisan: Product["artisan"]): string => {
+  if (!artisan) return "—";
+  if (typeof artisan === "string") return artisan as string;
+  return artisan.name || "—";
+};
+
+/** Always returns a safe numeric price */
+const getPrice = (price: any): number => {
+  if (typeof price === "number") return price;
+  if (typeof price === "object" && price !== null) return 0; // guard
+  return Number(price) || 0;
+};
+// ───────────────────────────────────────────────────────────────────────────
 
 const categoryIcon: Record<string, ComponentType<{ size?: number }>> = {
   fokhar: Package,
@@ -96,14 +122,14 @@ export default function AdminProductsPage() {
       });
       if (!res.ok) throw new Error("Échec de la validation");
       await fetchProducts();
+      showSuccessToast("Produit validé");
     } catch (err: any) {
-      alert(err.message);
+      showErrorToast("Validation impossible", err?.message);
     } finally {
       setActionLoading(null);
     }
   };
 
-  // ── Confirmed delete (called from modal) ──
   const handleDelete = async (id: string) => {
     try {
       setDeletingId(id);
@@ -114,8 +140,9 @@ export default function AdminProductsPage() {
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
       setProducts((prev) => prev.filter((p) => p._id !== id));
       setDeleteConfirm(null);
+      showSuccessToast("Produit supprimé");
     } catch (err: any) {
-      alert(err.message);
+      showErrorToast("Suppression impossible", err?.message);
     } finally {
       setDeletingId(null);
     }
@@ -129,9 +156,10 @@ export default function AdminProductsPage() {
       (activeTab === "En attente" && status === "En attente") ||
       (activeTab === "Signalés" && p.isReported) ||
       (activeTab === "Suspendus" && status === "Suspendu");
+    const artisanName = getArtisanName(p.artisan);
     const matchSearch =
       p.title.toLowerCase().includes(search.toLowerCase()) ||
-      (p.artisan?.name || "").toLowerCase().includes(search.toLowerCase());
+      artisanName.toLowerCase().includes(search.toLowerCase());
     return matchTab && matchSearch;
   });
 
@@ -301,7 +329,11 @@ export default function AdminProductsPage() {
                 ) : (
                   filtered.map((p, i) => {
                     const status = productStatus(p);
-                    const Icon = categoryIcon[p.category] || Package;
+                    // Use safe extractors for all potentially-object fields
+                    const catKey = getCategoryKey(p.category);
+                    const artisanName = getArtisanName(p.artisan);
+                    const price = getPrice(p.price);
+                    const Icon = categoryIcon[catKey] || Package;
                     const isDeleting = deletingId === p._id;
 
                     return (
@@ -318,11 +350,17 @@ export default function AdminProductsPage() {
                             <span style={{ fontWeight: 500, fontSize: "0.875rem" }}>{p.title}</span>
                           </div>
                         </td>
-                        <td style={{ color: "#4A5568", fontSize: "0.875rem" }}>{p.artisan?.name || "—"}</td>
-                        <td><span className="badge badge-primary">{categoryLabel[p.category] || p.category}</span></td>
+                        {/* artisan: always render the extracted string */}
+                        <td style={{ color: "#4A5568", fontSize: "0.875rem" }}>{artisanName}</td>
+                        {/* category: always render the label string */}
+                        <td>
+                          <span className="badge badge-primary">
+                            {categoryLabel[catKey] || catKey || "—"}
+                          </span>
+                        </td>
                         <td>
                           <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.8rem", fontWeight: 700 }}>
-                            {p.price.toLocaleString("fr-FR")} TND
+                            {price.toLocaleString("fr-FR")} TND
                           </span>
                         </td>
                         <td className="td-mono">{p.stock}</td>
@@ -351,7 +389,6 @@ export default function AdminProductsPage() {
                               </button>
                             )}
 
-                            {/* ── All delete paths now open the modal ── */}
                             {p.isReported ? (
                               <button
                                 className="btn btn-danger btn-sm"

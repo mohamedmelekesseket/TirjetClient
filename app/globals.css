@@ -1,8 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(
     --font-geist-sans,
+    Inter,
     ui-sans-serif,
     system-ui,
     -apple-system,
@@ -26,21 +29,53 @@
   );
 }
 
+:root {
+  --background: #f4efeb;
+  --foreground: #2b2018;
+  color-scheme: light;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    color-scheme: dark;
   }
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  font-kerning: normal;
 }
 
 body {
   color: var(--foreground);
   font-family: var(--font-sans);
-  line-height: 1.5;
-  text-rendering: optimizeLegibility;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+p, li {
+  text-wrap: pretty;
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: from-font;
 }
 
 /* ─── Fonts ──────────────────────────────────────────────────────────────────
@@ -134,7 +169,7 @@ body {
 }
 
 .hdr__logo-name {
-  font-family: "Playfair Display", serif;
+  font-family: "Inter", sans-serif;
   font-size: 19px;
   font-weight: 700;
   color: #2b2018;
@@ -1824,8 +1859,8 @@ img  { display: block; max-width: 100%; }
 
 .pg-hero__imgwrap {
   position: absolute;
-  inset: -10% 0;
-  z-index: 0;
+  /* inset: -10% 0; */
+  z-index: 1;
   will-change: transform;
 }
 
@@ -1833,6 +1868,7 @@ img  { display: block; max-width: 100%; }
   width: 100%;
   height: 100%;
   object-fit: cover;
+  background-size: cover;
   object-position: center 30%;
   filter: saturate(0.65) brightness(0.6);
 }
@@ -1842,14 +1878,14 @@ img  { display: block; max-width: 100%; }
   position: absolute;
   inset: 0;
   z-index: 1;
-  background:
+  /* background:
     linear-gradient(110deg,
       rgba(30, 20, 12, 0.45) 0%,
       rgba(30, 20, 12, 0.45) 42%,
       rgba(30, 20, 12, 0.45) 70%,
       rgba(20, 13, 7, 0.20) 100%
     ),
-    linear-gradient(to top, rgba(10,6,2,0.55) 0%, transparent 50%);
+    linear-gradient(to top, rgba(10,6,2,0.55) 0%, transparent 50%); */
 }
 
 /* Tifinagh script watermark */
@@ -2465,7 +2501,7 @@ img  { display: block; max-width: 100%; }
 
 
 /* --- FONTS --- */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap');
+/* (moved to top) */
 
 /* --- RESET & BASE --- */
 * {
@@ -2484,7 +2520,7 @@ body {
 
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@200;300;400;500&display=swap');
+/* (removed — using Inter only) */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -3531,7 +3567,7 @@ background-size: 250px 250px;
 /* ── artisans-page ── */
 /* ----------------------------------------------------------- */
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;500&display=swap');
+/* (removed — using Inter only) */
 
 .artisans-page {
   background-color: #ffffff;
@@ -3793,7 +3829,7 @@ background-size: 250px 250px;
    Fonts: Cormorant Garamond (display) · DM Sans (body)
 ══════════════════════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
+/* (removed — using Inter only) */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 img { display: block; max-width: 100%; }
@@ -4717,7 +4753,7 @@ img { display: block; max-width: 100%; }
    Rejoignez Nous
 ══════════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+/* (removed — using Inter only) */
 
 /* ── PAGE ── */
 .rj-page {
@@ -5279,7 +5315,7 @@ img { display: block; max-width: 100%; }
    Fonts: Cormorant Garamond (display) + DM Sans (body)
 ══════════════════════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
+/* (removed — using Inter only) */
 
 /* ── Reset ────────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

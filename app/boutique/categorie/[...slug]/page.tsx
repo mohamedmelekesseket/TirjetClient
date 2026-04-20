@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronRight, SlidersHorizontal, X, Search,
@@ -34,47 +34,29 @@ const SORT_OPTIONS = [
   { value: "price_desc", label: "Prix décroissant" },
 ];
 
-// Pure helper — derives active sub-levels from the tree + current URL slugs.
-// Keeping this outside state eliminates the effect-chain that caused re-fetch loops.
-function resolveLevels(tree: Category | null, slugs: string[]) {
-  const [, l2Slug, l3Slug, l4Slug] = slugs;
-  const l2 = l2Slug ? (tree?.subcategories?.find((c) => c.slug === l2Slug) ?? null) : null;
-  const l3 = l3Slug && l2 ? (l2.subcategories?.find((c) => c.slug === l3Slug) ?? null) : null;
-  const l4 = l4Slug && l3 ? (l3.subcategories?.find((c) => c.slug === l4Slug) ?? null) : null;
-  return { l2, l3, l4 };
-}
-
 export default function CategoryPage() {
-  const params   = useParams();
-  const router   = useRouter();
+  const params = useParams();
   const { data: session } = useSession();
   const apiToken = (session as any)?.apiToken as string | undefined;
 
-  const rawSlug = params?.slug;
-  const slugs: string[] = Array.isArray(rawSlug)
-    ? rawSlug
-    : typeof rawSlug === "string" ? [rawSlug] : [];
-  const [l1Slug, l2Slug, l3Slug, l4Slug] = slugs;
+  const l1Slug = Array.isArray(params?.slug)
+    ? params.slug[0]
+    : typeof params?.slug === "string" ? params.slug : "";
 
-  // ── Category tree ─────────────────────────────────────────────────────────
-  // Fetched once per L1 slug; sub-navigation reuses the cached tree.
   const [categoryTree, setCategoryTree] = useState<Category | null>(null);
   const treeSlugRef = useRef<string | null>(null);
 
-  // Active levels derived inline from tree + URL — no extra state, no loops.
-  const { l2: activeL2, l3: activeL3, l4: activeL4 } = resolveLevels(categoryTree, slugs);
-  const activeL1 = categoryTree;
+  const [activeL2, setActiveL2] = useState<Level2 | null>(null);
+  const [activeL3, setActiveL3] = useState<Level3 | null>(null);
+  const [activeL4, setActiveL4] = useState<Level4 | null>(null);
 
-  // ── Products ──────────────────────────────────────────────────────────────
   const [products, setProducts] = useState<Product[]>([]);
   const [fetching, setFetching] = useState(false);
   const [error, setError]       = useState<string | null>(null);
 
-  // ── Wishlist — use Set for O(1) lookups ───────────────────────────────────
   const [wishlist, setWishlist]       = useState<string[]>([]);
   const [wishPending, setWishPending] = useState<Set<string>>(new Set());
 
-  // ── UI ────────────────────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy]           = useState("newest");
   const [priceRange, setPriceRange]   = useState<[number, number]>([0, 5000]);
@@ -82,24 +64,32 @@ export default function CategoryPage() {
   const [viewMode, setViewMode]       = useState<"grid" | "list">("grid");
   const [sortOpen, setSortOpen]       = useState(false);
 
-  // ── 1. Fetch category tree — only when L1 slug changes ───────────────────
+  // ── 1. Fetch category tree ────────────────────────────────────────────────
   useEffect(() => {
-    if (!l1Slug) return;
-    if (treeSlugRef.current === l1Slug) return; // already loaded, skip
+    if (!l1Slug || treeSlugRef.current === l1Slug) return;
     treeSlugRef.current = l1Slug;
-
     fetch(`${API}/api/categories?mainCategory=artisanat`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         const list: Category[] = data?.data ?? [];
         setCategoryTree(list.find((c) => c.slug === l1Slug) ?? null);
       })
-      .catch(() => {
-        treeSlugRef.current = null; // allow retry on next render
-      });
+      .catch(() => { treeSlugRef.current = null; });
   }, [l1Slug]);
 
-  // ── 2. Fetch products — keyed on deepest active slug to avoid over-fetching
+  // ── 2. Selection helpers ──────────────────────────────────────────────────
+  const selectL2 = useCallback((l2: Level2 | null) => {
+    setActiveL2(l2);
+    setActiveL3(null);
+    setActiveL4(null);
+  }, []);
+
+  const selectL3 = useCallback((l3: Level3 | null) => {
+    setActiveL3(l3);
+    setActiveL4(null);
+  }, []);
+
+  // ── 3. Fetch products ─────────────────────────────────────────────────────
   const activeCategoryKey = [
     categoryTree?._id,
     activeL4?.slug ?? activeL3?.slug ?? activeL2?.slug ?? "root",
@@ -108,7 +98,6 @@ export default function CategoryPage() {
   useEffect(() => {
     if (!categoryTree) return;
     const controller = new AbortController();
-
     const load = async () => {
       setFetching(true);
       setError(null);
@@ -117,7 +106,6 @@ export default function CategoryPage() {
         if (activeL4?.slug)      qs.set("subcategoryL4", activeL4.slug);
         else if (activeL3?.slug) qs.set("subcategoryL3", activeL3.slug);
         else if (activeL2?.slug) qs.set("subcategoryL2", activeL2.slug);
-
         const res  = await fetch(`${API}/api/products?${qs}`, { signal: controller.signal });
         if (!res.ok) throw new Error("Erreur serveur");
         const data = await res.json();
@@ -134,7 +122,7 @@ export default function CategoryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCategoryKey]);
 
-  // ── 3. Wishlist IDs ───────────────────────────────────────────────────────
+  // ── 4. Wishlist ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!apiToken) return;
     fetch(`${API}/api/favourites/ids`, { headers: { Authorization: `Bearer ${apiToken}` } })
@@ -143,17 +131,11 @@ export default function CategoryPage() {
       .catch(() => {});
   }, [apiToken]);
 
-  // ── 4. Toggle wishlist — fixed stale-closure bug via functional updater ───
   const toggleWish = useCallback(async (id: string) => {
     if (!apiToken || wishPending.has(id)) return;
-
     let wasIn = false;
-    setWishlist((prev) => {
-      wasIn = prev.includes(id);
-      return wasIn ? prev.filter((i) => i !== id) : [...prev, id];
-    });
+    setWishlist((prev) => { wasIn = prev.includes(id); return wasIn ? prev.filter((i) => i !== id) : [...prev, id]; });
     setWishPending((prev) => new Set(prev).add(id));
-
     try {
       const res = await fetch(`${API}/api/favourites/${id}`, {
         method: wasIn ? "DELETE" : "POST",
@@ -185,82 +167,60 @@ export default function CategoryPage() {
 
   // ── 6. Breadcrumb ─────────────────────────────────────────────────────────
   const breadcrumbs = [
-    { label: "Boutique", href: "/boutique" },
-    activeL1 && { label: activeL1.name, href: `/boutique/categorie/${activeL1.slug}` },
-    activeL2 && { label: activeL2.name, href: `/boutique/categorie/${l1Slug}/${activeL2.slug}` },
-    activeL3 && { label: activeL3.name, href: `/boutique/categorie/${l1Slug}/${l2Slug}/${activeL3.slug}` },
-    activeL4 && { label: activeL4.name, href: null as string | null },
-  ].filter(Boolean) as { label: string; href: string | null }[];
+    { label: "Boutique",          onClick: null as null | (() => void), isHome: true },
+    categoryTree && { label: categoryTree.name, onClick: () => selectL2(null),      isHome: false },
+    activeL2     && { label: activeL2.name,     onClick: () => selectL3(null),      isHome: false },
+    activeL3     && { label: activeL3.name,     onClick: () => setActiveL4(null),   isHome: false },
+    activeL4     && { label: activeL4.name,     onClick: null,                      isHome: false },
+  ].filter(Boolean) as { label: string; onClick: (() => void) | null; isHome: boolean }[];
 
-  const activeName = activeL4?.name ?? activeL3?.name ?? activeL2?.name ?? activeL1?.name ?? "Catégorie";
+  const activeName = activeL4?.name ?? activeL3?.name ?? activeL2?.name ?? categoryTree?.name ?? "Catégorie";
+  const showError  = !fetching && !!error  && products.length === 0;
+  const showEmpty  = !fetching && !error   && products.length === 0 && !!categoryTree;
 
-  // memoised so pill buttons don't recreate this on every render
-  const navTo = useCallback(
-    (newSlugs: string[]) =>
-      router.push(`/boutique/categorie/${newSlugs.join("/")}`, { scroll: false }),
-    [router]
-  );
-
-  const showError    = !fetching && !!error  && products.length === 0;
-  const showEmpty    = !fetching && !error   && products.length === 0 && !!categoryTree;
-
-  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="cat__page">
 
-      {/* ── HERO ─────────────────────────────────────────────────────── */}
+      {/* ── HERO ──────────────────────────────────────────────────────── */}
       <div className="cat__hero">
         <div className="cat__hero-bg" />
         <div className="cat__hero-inner">
 
-          {/* Breadcrumb fades in */}
-          <motion.nav
-            className="cat__breadcrumb"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-          >
+          <motion.nav className="cat__breadcrumb"
+            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}>
             {breadcrumbs.map((bc, i) => (
               <span key={i} className="cat__breadcrumb-item">
                 {i > 0 && <ChevronRight size={11} className="cat__breadcrumb-sep" />}
-                {bc.href
-                  ? <Link href={bc.href} scroll={false} className="cat__breadcrumb-link">{bc.label}</Link>
-                  : <span className="cat__breadcrumb-current">{bc.label}</span>}
+                {bc.isHome
+                  ? <Link href="/boutique" className="cat__breadcrumb-link">{bc.label}</Link>
+                  : bc.onClick
+                    ? <a role="button" onClick={bc.onClick} className="cat__breadcrumb-link" style={{ cursor: "pointer" }}>{bc.label}</a>
+                    : <span className="cat__breadcrumb-current">{bc.label}</span>}
               </span>
             ))}
           </motion.nav>
 
-          {/* Title slides up */}
-          <motion.h1
-            className="cat__hero-title"
-            key={activeName}
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, ease: "easeOut", delay: 0.08 }}
-          >
+          <motion.h1 className="cat__hero-title" key={activeName}
+            initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: "easeOut", delay: 0.08 }}>
             {activeName}
           </motion.h1>
 
-          {activeL1?.description && !activeL2 && (
-            <motion.p
-              className="cat__hero-desc"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: "easeOut", delay: 0.16 }}
-            >
-              {activeL1.description}
+          {categoryTree?.description && !activeL2 && (
+            <motion.p className="cat__hero-desc"
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut", delay: 0.16 }}>
+              {categoryTree.description}
             </motion.p>
           )}
 
-          {!activeL2 && (activeL1?.subcategories?.length ?? 0) > 0 && (
-            <motion.div
-              className="cat__level-pills"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: "easeOut", delay: 0.22 }}
-            >
-              {activeL1!.subcategories.map((l2) => (
-                <button key={l2._id} className="cat__pill" onClick={() => navTo([l1Slug, l2.slug])}>
+          {!activeL2 && (categoryTree?.subcategories?.length ?? 0) > 0 && (
+            <motion.div className="cat__level-pills"
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut", delay: 0.22 }}>
+              {categoryTree!.subcategories.map((l2) => (
+                <button key={l2._id} className="cat__pill" onClick={() => selectL2(l2)}>
                   {l2.name}
                   {l2.subcategories.length > 0 && (
                     <span className="cat__pill-count">{l2.subcategories.length} sous-cat.</span>
@@ -272,14 +232,11 @@ export default function CategoryPage() {
           )}
 
           {activeL2 && !activeL3 && (activeL2.subcategories?.length ?? 0) > 0 && (
-            <motion.div
-              className="cat__level-pills"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: "easeOut", delay: 0.22 }}
-            >
+            <motion.div className="cat__level-pills"
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut", delay: 0.22 }}>
               {activeL2.subcategories.map((l3) => (
-                <button key={l3._id} className="cat__pill" onClick={() => navTo([l1Slug, l2Slug, l3.slug])}>
+                <button key={l3._id} className="cat__pill" onClick={() => selectL3(l3)}>
                   {l3.name}
                   {l3.subcategories.length > 0 && (
                     <span className="cat__pill-count">{l3.subcategories.length} pièces</span>
@@ -291,15 +248,11 @@ export default function CategoryPage() {
           )}
 
           {activeL3 && !activeL4 && (activeL3.subcategories?.length ?? 0) > 0 && (
-            <motion.div
-              className="cat__level-pills"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: "easeOut", delay: 0.22 }}
-            >
+            <motion.div className="cat__level-pills"
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut", delay: 0.22 }}>
               {activeL3.subcategories.map((l4) => (
-                <button key={l4._id} className="cat__pill cat__pill--leaf"
-                  onClick={() => navTo([l1Slug, l2Slug, l3Slug, l4.slug])}>
+                <button key={l4._id} className="cat__pill cat__pill--leaf" onClick={() => setActiveL4(l4)}>
                   <span className="cat__pill-dot" />
                   {l4.name}
                   {(l4.productCount ?? 0) > 0 && (
@@ -322,7 +275,7 @@ export default function CategoryPage() {
         </div>
       </div>
 
-      {/* ── TOOLBAR ──────────────────────────────────────────────────── */}
+      {/* ── TOOLBAR ───────────────────────────────────────────────────── */}
       <div className="cat__toolbar">
         <div className="cat__toolbar-inner">
           <div className="cat__search">
@@ -331,18 +284,13 @@ export default function CategoryPage() {
               value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
               className="cat__search-input" />
             {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="cat__search-clear">
-                <X size={13} />
-              </button>
+              <button onClick={() => setSearchQuery("")} className="cat__search-clear"><X size={13} /></button>
             )}
           </div>
 
           <div className="cat__toolbar-right">
-            <span className="cat__count">
-              {`${filtered.length} pièce${filtered.length !== 1 ? "s" : ""}`}
-            </span>
+            <span className="cat__count">{`${filtered.length} pièce${filtered.length !== 1 ? "s" : ""}`}</span>
 
-            {/* Sort dropdown — backdrop has correct z-index so clicks don't fall through */}
             <div className="cat__sort-wrap" style={{ position: "relative" }}>
               <button className="cat__sort-btn" onClick={() => setSortOpen((v) => !v)}>
                 {SORT_OPTIONS.find((o) => o.value === sortBy)?.label}
@@ -351,19 +299,14 @@ export default function CategoryPage() {
               <AnimatePresence>
                 {sortOpen && (
                   <>
-                    <div
-                      className="cat__sort-backdrop"
+                    <div className="cat__sort-backdrop"
                       style={{ position: "fixed", inset: 0, zIndex: 10 }}
-                      onClick={() => setSortOpen(false)}
-                    />
-                    <motion.div
-                      className="cat__sort-dd"
-                      style={{ position: "absolute", zIndex: 11 }}
+                      onClick={() => setSortOpen(false)} />
+                    <motion.div className="cat__sort-dd" style={{ position: "absolute", zIndex: 11 }}
                       initial={{ opacity: 0, y: -8, scale: 0.97 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                      transition={{ duration: 0.15 }}
-                    >
+                      transition={{ duration: 0.15 }}>
                       {SORT_OPTIONS.map((opt) => (
                         <button key={opt.value}
                           className={`cat__sort-opt${sortBy === opt.value ? " cat__sort-opt--active" : ""}`}
@@ -392,44 +335,48 @@ export default function CategoryPage() {
         </div>
       </div>
 
-      {/* ── BODY ─────────────────────────────────────────────────────── */}
+      {/* ── BODY ──────────────────────────────────────────────────────── */}
       <div className="cat__body">
 
+        {/* ── SIDEBAR ─────────────────────────────────────────────────── */}
         <aside className={`cat__sidebar${sidebarOpen ? " cat__sidebar--mobile-open" : ""}`}>
-          <button className="cat__sidebar-close" onClick={() => setSidebarOpen(false)}>
-            <X size={18} />
-          </button>
+          <button className="cat__sidebar-close" onClick={() => setSidebarOpen(false)}><X size={18} /></button>
 
           {categoryTree && (
             <div className="cat__sidebar-section">
               <div className="cat__sidebar-label">Navigation</div>
 
-              <Link href={`/boutique/categorie/${categoryTree.slug}`} scroll={false}
+              {/* L1 */}
+              <a role="button" onClick={() => selectL2(null)} style={{ cursor: "pointer" }}
                 className={`cat__sidebar-cat${!activeL2 ? " cat__sidebar-cat--active" : ""}`}>
                 {categoryTree.name}
-              </Link>
+              </a>
 
+              {/* L2 */}
               {categoryTree.subcategories?.map((l2) => (
                 <div key={l2._id}>
-                  <Link href={`/boutique/categorie/${l1Slug}/${l2.slug}`} scroll={false}
+                  <a role="button" onClick={() => selectL2(l2)} style={{ cursor: "pointer" }}
                     className={`cat__sidebar-l2${activeL2?._id === l2._id ? " cat__sidebar-l2--active" : ""}`}>
                     <ChevronRight size={10} /> {l2.name}
-                  </Link>
+                  </a>
+
+                  {/* L3 — only shown when this L2 is active */}
                   {activeL2?._id === l2._id && l2.subcategories?.map((l3) => (
                     <div key={l3._id}>
-                      <Link href={`/boutique/categorie/${l1Slug}/${l2.slug}/${l3.slug}`} scroll={false}
+                      <a role="button" onClick={() => selectL3(l3)} style={{ cursor: "pointer" }}
                         className={`cat__sidebar-l3${activeL3?._id === l3._id ? " cat__sidebar-l3--active" : ""}`}>
                         <span className="cat__sidebar-dot" /> {l3.name}
-                      </Link>
+                      </a>
+
+                      {/* L4 — only shown when this L3 is active */}
                       {activeL3?._id === l3._id && l3.subcategories?.map((l4) => (
-                        <Link key={l4._id} scroll={false}
-                          href={`/boutique/categorie/${l1Slug}/${l2.slug}/${l3.slug}/${l4.slug}`}
+                        <a key={l4._id} role="button" onClick={() => setActiveL4(l4)} style={{ cursor: "pointer" }}
                           className={`cat__sidebar-l4${activeL4?._id === l4._id ? " cat__sidebar-l4--active" : ""}`}>
                           {l4.name}
                           {(l4.productCount ?? 0) > 0 && (
                             <span className="cat__sidebar-l4-count">{l4.productCount}</span>
                           )}
-                        </Link>
+                        </a>
                       ))}
                     </div>
                   ))}
@@ -438,6 +385,7 @@ export default function CategoryPage() {
             </div>
           )}
 
+          {/* Price filter */}
           <div className="cat__sidebar-section">
             <div className="cat__sidebar-label">Prix (TND)</div>
             <div className="cat__price-vals">
@@ -469,26 +417,15 @@ export default function CategoryPage() {
           )}
         </aside>
 
-        {/* Products — grid stays mounted; only a subtle overlay shows during refetch */}
+        {/* ── PRODUCTS ────────────────────────────────────────────────── */}
         <div className="cat__products" style={{ position: "relative" }}>
-
-          {/* Overlay spinner — fades over existing cards while new ones load.
-              Never unmounts the grid, so there's no full-page reload feel. */}
           <AnimatePresence>
             {fetching && (
-              <motion.div
-                className="cat__center"
-                style={{
-                  position: "absolute", inset: 0, zIndex: 5,
-                  backdropFilter: "blur(2px)",
-                  backgroundColor: "rgba(255,255,255,0.55)",
-                  pointerEvents: "none",
-                }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
+              <motion.div className="cat__center"
+                style={{ position: "absolute", inset: 0, zIndex: 5, backdropFilter: "blur(2px)",
+                  backgroundColor: "rgba(255,255,255,0.55)", pointerEvents: "none" }}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}>
                 <Loader2 size={28} className="cat__spin" />
               </motion.div>
             )}
@@ -511,31 +448,23 @@ export default function CategoryPage() {
             </div>
           )}
 
-          {/* Grid is ALWAYS mounted once products exist — category changes only
-              swap cards in/out via AnimatePresence, never tear down the grid. */}
           <div className={viewMode === "grid" ? "cat__grid" : "cat__list"}>
             <AnimatePresence mode="popLayout" initial={false}>
               {filtered.map((p) => {
                 const wished  = wishlist.includes(p._id);
                 const pending = wishPending.has(p._id);
                 return (
-                  <motion.article
-                    key={p._id}
-                    layout
+                  <motion.article key={p._id} layout
                     className={`cat__card${viewMode === "list" ? " cat__card--list" : ""}`}
-                    onClick={() => router.push(`/boutique/${p._id}`)}
+                    onClick={() => window.location.href = `/boutique/${p._id}`}
                     initial={{ opacity: 0, scale: 0.96, y: 16 }}
-                    animate={{ opacity: 1, scale: 1,    y: 0,
-                      transition: { duration: 0.32, ease: [0.25, 0.1, 0.25, 1] } }}
-                    exit={{    opacity: 0, scale: 0.96, y: -8,
-                      transition: { duration: 0.18 } }}
-                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                  >
+                    animate={{ opacity: 1, scale: 1, y: 0, transition: { duration: 0.32, ease: [0.25, 0.1, 0.25, 1] } }}
+                    exit={{ opacity: 0, scale: 0.96, y: -8, transition: { duration: 0.18 } }}
+                    whileHover={{ y: -4, transition: { duration: 0.2 } }}>
                     <div className="cat__card-img">
                       {p.images?.[0]
                         ? <img src={p.images[0]} alt={p.title} loading="lazy" />
-                        : <div className="cat__card-placeholder"><Package size={32} /></div>
-                      }
+                        : <div className="cat__card-placeholder"><Package size={32} /></div>}
                       {p.subcategoryL2?.name && (
                         <span className="cat__card-badge">{p.subcategoryL2.name}</span>
                       )}
@@ -548,7 +477,6 @@ export default function CategoryPage() {
                       </button>
                       <div className="cat__card-grad" />
                     </div>
-
                     <div className="cat__card-body">
                       <div className="cat__card-trail">
                         {[p.subcategoryL2?.name, p.subcategoryL3?.name, p.subcategoryL4?.name]

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { showErrorToast, showSuccessToast } from "@/lib/toast";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -46,6 +48,14 @@ export default function AdminArtisansPage() {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<FilterTab>("Tous");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    open: boolean;
+    title: string;
+    description?: string;
+    confirmLabel?: string;
+    danger?: boolean;
+    onConfirm?: () => void;
+  }>({ open: false, title: "" });
 
   const getHeaders = () => ({
     "Content-Type": "application/json",
@@ -81,15 +91,15 @@ export default function AdminArtisansPage() {
       });
       if (!res.ok) throw new Error("Échec de la validation");
       await fetchArtisans();
+      showSuccessToast("Artisan validé");
     } catch (err: any) {
-      alert(err.message);
+      showErrorToast("Validation impossible", err?.message);
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleReject = async (artisanId: string) => {
-    if (!confirm("Rejeter cet artisan ?")) return;
     setActionLoading(artisanId + "-reject");
     try {
       const res = await fetch(`${API}/api/artisans/${artisanId}/reject`, {
@@ -98,15 +108,15 @@ export default function AdminArtisansPage() {
       });
       if (!res.ok) throw new Error("Échec du rejet");
       await fetchArtisans();
+      showSuccessToast("Artisan rejeté");
     } catch (err: any) {
-      alert(err.message);
+      showErrorToast("Rejet impossible", err?.message);
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleSuspend = async (userId: string, artisanId: string) => {
-    if (!confirm("Suspendre cet artisan ?")) return;
     setActionLoading(artisanId + "-suspend");
     try {
       const res = await fetch(`${API}/api/users/${userId}/status`, {
@@ -116,8 +126,9 @@ export default function AdminArtisansPage() {
       });
       if (!res.ok) throw new Error("Échec de la suspension");
       await fetchArtisans();
+      showSuccessToast("Artisan suspendu");
     } catch (err: any) {
-      alert(err.message);
+      showErrorToast("Suspension impossible", err?.message);
     } finally {
       setActionLoading(null);
     }
@@ -147,6 +158,20 @@ export default function AdminArtisansPage() {
 
   return (
     <div>
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        description={confirmState.description}
+        confirmLabel={confirmState.confirmLabel}
+        danger={confirmState.danger}
+        loading={false}
+        onClose={() => setConfirmState({ open: false, title: "" })}
+        onConfirm={() => {
+          const cb = confirmState.onConfirm;
+          setConfirmState({ open: false, title: "" });
+          cb?.();
+        }}
+      />
       <div className="page-header anim-fade-up">
         <div>
           <h1 className="page-title">Gestion des Artisans</h1>
@@ -273,7 +298,16 @@ export default function AdminArtisansPage() {
                                 <button
                                   className="btn btn-danger btn-sm"
                                   disabled={actionLoading === a._id + "-reject"}
-                                  onClick={() => handleReject(a._id)}
+                                  onClick={() =>
+                                    setConfirmState({
+                                      open: true,
+                                      title: "Rejeter cet artisan ?",
+                                      description: "Cette action refusera la demande de l’artisan.",
+                                      confirmLabel: "Rejeter",
+                                      danger: true,
+                                      onConfirm: () => void handleReject(a._id),
+                                    })
+                                  }
                                 >
                                   {actionLoading === a._id + "-reject" ? "..." : "✕"}
                                 </button>
@@ -287,7 +321,16 @@ export default function AdminArtisansPage() {
                                     className="icon-btn danger"
                                     title="Suspendre"
                                     disabled={actionLoading === a._id + "-suspend"}
-                                    onClick={() => handleSuspend(a.user._id, a._id)}
+                                    onClick={() =>
+                                      setConfirmState({
+                                        open: true,
+                                        title: "Suspendre cet artisan ?",
+                                        description: "L’artisan ne pourra plus se connecter ni vendre tant qu’il est suspendu.",
+                                        confirmLabel: "Suspendre",
+                                        danger: true,
+                                        onConfirm: () => void handleSuspend(a.user._id, a._id),
+                                      })
+                                    }
                                   >
                                     {actionLoading === a._id + "-suspend" ? "..." : "⊘"}
                                   </button>

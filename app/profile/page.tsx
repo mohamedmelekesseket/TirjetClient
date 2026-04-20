@@ -39,7 +39,8 @@ type FavProduct = {
   description: string;
   price: number;
   images: string[];
-  category: string;
+  // category may be a string key OR a populated object
+  category: string | { _id: string; name: string; slug?: string; mainCategory?: any };
   location?: string;
   material?: string;
 };
@@ -67,6 +68,22 @@ function getInitials(name?: string) {
   );
 }
 
+/** Always returns a displayable string for category */
+function getCategoryLabel(
+  category: FavProduct["category"]
+): string {
+  if (!category) return "";
+  if (typeof category === "string") return category;
+  return category.name || category.slug || "";
+}
+
+/** Always returns a safe number for price */
+function safePrice(price: any): number {
+  if (typeof price === "number") return price;
+  if (typeof price === "object" && price !== null) return 0;
+  return Number(price) || 0;
+}
+
 // ─── FavCard ──────────────────────────────────────────────────────────────────
 
 function FavCard({
@@ -81,6 +98,9 @@ function FavCard({
   onRemoved: (id: string) => void;
 }) {
   const [removing, setRemoving] = useState(false);
+
+  const categoryLabel = getCategoryLabel(item.category);
+  const price = safePrice(item.price);
 
   const handleRemove = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -130,7 +150,8 @@ function FavCard({
           )}
           <div className="boutique__card-overlay" />
 
-          <span className="boutique__card-cat">{item.category}</span>
+          {/* Always render a string */}
+          <span className="boutique__card-cat">{categoryLabel}</span>
 
           {/* Heart button — remove from favourites */}
           <button
@@ -157,14 +178,15 @@ function FavCard({
           <div className="boutique__card-top">
             <h3 className="boutique__card-title">{item.title}</h3>
             <span className="boutique__card-price">
-              {item.price.toLocaleString("fr-TN")} TND
+              {price.toLocaleString("fr-TN")} TND
             </span>
           </div>
           <p className="boutique__card-desc">{item.description?.slice(0, 120)}</p>
         </div>
 
         <div className="boutique__card-footer">
-          <span className="boutique__card-loc">{item.location ?? item.category}</span>
+          {/* Use categoryLabel as fallback too */}
+          <span className="boutique__card-loc">{item.location ?? categoryLabel}</span>
           <span className="boutique__card-cta">Voir la pièce →</span>
         </div>
       </motion.div>
@@ -277,7 +299,11 @@ export default function UserProfile() {
         });
         if (!resp.ok) throw new Error(`/api/favourites returned ${resp.status}`);
         const data = await resp.json();
-        if (!cancelled) setFavourites(data.favourites ?? []);
+        // Filter out any favourites whose product was deleted (null)
+        const items: FavProduct[] = (data.favourites ?? []).filter(
+          (f: any) => f != null && f._id != null
+        );
+        if (!cancelled) setFavourites(items);
       } catch {
         if (!cancelled) setFavError("Impossible de charger vos favoris.");
       } finally {
@@ -289,6 +315,7 @@ export default function UserProfile() {
       cancelled = true;
     };
   }, [apiToken]);
+
   useEffect(() => { setImgError(false); }, [user?.image]);
 
   // ── Remove from local list after successful API delete ────────────────────
@@ -335,7 +362,7 @@ export default function UserProfile() {
               src={user.image}
               alt={user?.name ?? undefined}
               className="profile-avatar"
-              onError={() => setImgError(true)}   // ← key fix
+              onError={() => setImgError(true)}
             />
           ) : (
             <div className="profile-avatar-fallback">
@@ -473,9 +500,9 @@ export default function UserProfile() {
                   </div>
                 )}
 
-                {/* Grid — was profile-grid, now boutique__grid */}
+                {/* Grid */}
                 {!loadingFavs && !favError && favourites.length > 0 && (
-                  <motion.div className="profileU-grid" layout>   {/* ← changed */}
+                  <motion.div className="profileU-grid" layout>
                     <AnimatePresence>
                       {favourites.map((item, i) => (
                         <FavCard

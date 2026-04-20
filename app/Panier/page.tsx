@@ -15,6 +15,7 @@ export default function PanierPage() {
   const [removing, setRemoving] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
   const SHIPPING = 7;
+
   async function handleRemove(productId: string) {
     setRemoving(productId);
     await removeItem(productId);
@@ -28,7 +29,9 @@ export default function PanierPage() {
     setUpdating(null);
   }
 
-  const isEmpty = cart.items.length === 0;
+  // Filter out items whose product was deleted / not populated
+  const validItems = cart.items.filter((item) => item.product != null);
+  const isEmpty = validItems.length === 0;
 
   if (!session) return (
     <div className="cart-empty">
@@ -61,6 +64,9 @@ export default function PanierPage() {
     </motion.div>
   );
 
+  // Recompute total from valid items only (avoids stale cart.total)
+  const subtotal = validItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+
   return (
     <div className="cart-root">
       {/* Header */}
@@ -70,7 +76,7 @@ export default function PanierPage() {
         <div>
           <h1 className="cart-header__title">Mon Panier</h1>
           <p className="cart-header__count">
-            {cart.items.reduce((s, i) => s + i.quantity, 0)} article{cart.items.reduce((s, i) => s + i.quantity, 0) > 1 ? "s" : ""}
+            {validItems.reduce((s, i) => s + i.quantity, 0)} article{validItems.reduce((s, i) => s + i.quantity, 0) > 1 ? "s" : ""}
           </p>
         </div>
         <Link href="/boutique" className="cart-continue-link">
@@ -82,8 +88,8 @@ export default function PanierPage() {
         {/* ── Items list ── */}
         <div className="cart-items">
           <AnimatePresence>
-            {cart.items.map((item, idx) => {
-              const p = item.product;
+            {validItems.map((item, idx) => {
+              const p = item.product; // guaranteed non-null here
               const isRemoving = removing === p._id;
               const isUpdating = updating === p._id;
 
@@ -110,7 +116,8 @@ export default function PanierPage() {
                     <Link href={`/boutique/${p._id}`} className="cart-item__name">{p.title}</Link>
                     {p.artisan && (
                       <span className="cart-item__artisan">
-                        par {p.artisan.name}{p.artisan.city ? ` · ${p.artisan.city}` : ""}
+                        par {typeof p.artisan === "object" ? p.artisan.name : p.artisan}
+                        {typeof p.artisan === "object" && p.artisan.city ? ` · ${p.artisan.city}` : ""}
                       </span>
                     )}
                     <span className="cart-item__unit-price">
@@ -181,7 +188,7 @@ export default function PanierPage() {
           <div className="cart-summary__rows">
             <div className="cart-summary__row">
               <span>Sous-total</span>
-              <span>{cart.total.toLocaleString("fr-TN")} TND</span>
+              <span>{subtotal.toLocaleString("fr-TN")} TND</span>
             </div>
             <div className="cart-summary__row">
               <span>Livraison</span>
@@ -190,7 +197,7 @@ export default function PanierPage() {
             <div className="cart-summary__divider" />
             <div className="cart-summary__row cart-summary__row--total">
               <span>Total</span>
-              <span>{(cart.total + SHIPPING).toLocaleString("fr-TN")} TND</span>
+              <span>{(subtotal + SHIPPING).toLocaleString("fr-TN")} TND</span>
             </div>
           </div>
 

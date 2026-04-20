@@ -142,7 +142,7 @@ function Hero() {
   }, []);
 
   return (
-    <section className="pg-hero" ref={containerRef}>
+<section className="pg-hero" ref={containerRef}>
       <motion.div className="pg-hero__imgwrap" style={{ y: imgY }}>
         <img src={Image1.src} alt="" aria-hidden className="pg-hero__img" />
       </motion.div>
@@ -406,7 +406,7 @@ function Products({ categories }: ProductsProps) {
       </motion.div>
 
       <div className="pg-products__grid">
-        {products.map((p, i) => (
+        {products.filter((p) => p.isHome === true).map((p, i) => (
           <motion.article
             key={p._id}
             className="pg-prod-card"
