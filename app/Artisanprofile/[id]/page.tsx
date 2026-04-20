@@ -10,6 +10,7 @@ import { showSuccessToast } from "@/lib/toast";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
+
 interface User {
   _id: string;
   name: string;
@@ -36,25 +37,103 @@ interface ArtisanProfile {
   products?: Product[];
 }
 
-// ── category can come back as a populated object OR a raw ID string ────────────
 interface Product {
   _id: string;
   title: string;
   description: string;
   price: number;
   images: string[];
-  category: { _id: string; name: string } | string;
+  // category can be a populated object OR a raw _id string
+  category: { _id: string; name: string; slug?: string } | string;
   stock: number;
 }
 
-// ── Resolve category label from either shape ───────────────────────────────────
-function getCategoryName(category: Product["category"]): string {
+// ─── Category helpers ──────────────────────────────────────────────────────────
+
+/** Returns true if the string looks like a MongoDB ObjectId */
+function isObjectId(str: string): boolean {
+  return /^[a-f\d]{24}$/i.test(str);
+}
+
+/**
+ * Returns a human-readable category name.
+ * - Populated object  → use object.name directly
+ * - Raw string in map → resolved name from categoryMap
+ * - Raw ObjectId not in map yet → "" (blank while resolving, never shows an ID)
+ * - Raw non-ObjectId string → display as-is (it's already a slug/name)
+ */
+function getCategoryName(
+  category: Product["category"],
+  map: Record<string, string> = {}
+): string {
   if (!category) return "";
-  if (typeof category === "object") return category.name;
-  return category; // raw string fallback
+  if (typeof category === "object") return category.name || category.slug || "";
+  if (map[category]) return map[category];
+  if (isObjectId(category)) return ""; // still resolving — show nothing
+  return category; // it's already a readable string
+}
+
+/**
+ * Returns the stable key used for filter comparison.
+ * Uses _id for populated objects, raw string for everything else.
+ */
+function getCategoryFilterKey(category: Product["category"]): string {
+  if (!category) return "";
+  if (typeof category === "object") return category._id;
+  return category;
+}
+
+// ─── Resolve category IDs → names (2-strategy) ────────────────────────────────
+// Strategy 1: GET /api/categories?ids=id1,id2,id3   (batch — preferred)
+// Strategy 2: GET /api/categories/:id               (per-ID fallback)
+// If both fail for an ID, it simply stays blank rather than showing a raw ID.
+
+async function resolveCategoryIds(
+  ids: string[]
+): Promise<Record<string, string>> {
+  if (!ids.length) return {};
+  const map: Record<string, string> = {};
+
+  // ── Strategy 1: batch ──────────────────────────────────────────────────────
+  try {
+    const res = await fetch(`${API}/api/categories?ids=${ids.join(",")}`);
+    if (res.ok) {
+      const data = await res.json();
+      // Support { categories: [...] }, { data: [...] }, or plain [...]
+      const list: any[] = Array.isArray(data)
+        ? data
+        : data.categories ?? data.data ?? [];
+      list.forEach((c: any) => {
+        if (c._id && c.name) map[c._id] = c.name;
+      });
+      if (ids.every((id) => map[id])) return map; // all resolved ✓
+    }
+  } catch {
+    // fall through
+  }
+
+  // ── Strategy 2: per-ID fallback ───────────────────────────────────────────
+  const missing = ids.filter((id) => !map[id]);
+  await Promise.allSettled(
+    missing.map(async (id) => {
+      try {
+        const res = await fetch(`${API}/api/categories/${id}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        // Support { category: {...} } or plain {...}
+        const cat = data.category ?? data;
+        if (cat?._id && cat?.name) map[cat._id] = cat.name;
+      } catch {
+        // silently skip — ID stays blank, never shows as raw hex
+      }
+    })
+  );
+
+  return map;
 }
 
 // ─── Motion presets ────────────────────────────────────────────────────────────
+
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
   visible: (i = 0) => ({
@@ -68,7 +147,8 @@ const fadeUp = {
   }),
 };
 
-// ─── Hook ──────────────────────────────────────────────────────────────────────
+// ─── useInView hook ────────────────────────────────────────────────────────────
+
 function useInView(threshold = 0.1) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -77,10 +157,7 @@ function useInView(threshold = 0.1) {
     if (!el) return;
     const obs = new IntersectionObserver(
       ([e]) => {
-        if (e.isIntersecting) {
-          setVisible(true);
-          obs.disconnect();
-        }
+        if (e.isIntersecting) { setVisible(true); obs.disconnect(); }
       },
       { threshold }
     );
@@ -90,39 +167,28 @@ function useInView(threshold = 0.1) {
   return { ref, visible };
 }
 
-// ─── Icons ─────────────────────────────────────────────────────────────────────
+// ─── HeartIcon ─────────────────────────────────────────────────────────────────
+
 function HeartIcon({ filled }: { filled: boolean }) {
   return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill={filled ? "currentColor" : "none"}
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
+    <svg width="16" height="16" viewBox="0 0 24 24"
+      fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8">
       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
     </svg>
   );
 }
 
-// ─── Works Gallery ─────────────────────────────────────────────────────────────
+// ─── WorksGallery ──────────────────────────────────────────────────────────────
+
 function WorksGallery({ images }: { images: string[] }) {
   const [active, setActive] = useState(0);
 
   if (!images.length)
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#f0ebe3",
-          borderRadius: 12,
-          aspectRatio: "4/3",
-          opacity: 0.5,
-        }}
-      >
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "center",
+        background: "#f0ebe3", borderRadius: 12, aspectRatio: "4/3", opacity: 0.5,
+      }}>
         <Package size={40} />
       </div>
     );
@@ -145,9 +211,7 @@ function WorksGallery({ images }: { images: string[] }) {
         {images.map((img, i) => (
           <motion.button
             key={i}
-            className={`artp-works-gallery__thumb${
-              active === i ? " artp-works-gallery__thumb--on" : ""
-            }`}
+            className={`artp-works-gallery__thumb${active === i ? " artp-works-gallery__thumb--on" : ""}`}
             onClick={() => setActive(i)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.96 }}
@@ -160,28 +224,23 @@ function WorksGallery({ images }: { images: string[] }) {
   );
 }
 
-// ─── Product Card ──────────────────────────────────────────────────────────────
-// Whole card is clickable via router.push (same pattern as boutique page).
-// The only <a> inside is the "Voir la pièce →" Link.
+// ─── ProductCard ───────────────────────────────────────────────────────────────
+
 function ProductCard({
-  p,
-  index,
-  wishlist,
-  cartAdded,
-  onWishToggle,
-  onCart,
+  p, index, wishlist, cartAdded, categoryMap, onWishToggle, onCart,
 }: {
   p: Product;
   index: number;
   wishlist: string[];
   cartAdded: string[];
+  categoryMap: Record<string, string>;
   onWishToggle: (id: string) => void;
   onCart: (id: string) => void;
 }) {
   const router = useRouter();
   const isWished = wishlist.includes(p._id);
   const isAdded = cartAdded.includes(p._id);
-  const catLabel = getCategoryName(p.category);
+  const catLabel = getCategoryName(p.category, categoryMap);
 
   return (
     <motion.article
@@ -190,11 +249,7 @@ function ProductCard({
       style={{ cursor: "pointer" }}
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: 0.7,
-        delay: 0.6 + index * 0.09,
-        ease: [0.16, 1, 0.3, 1],
-      }}
+      transition={{ duration: 0.7, delay: 0.6 + index * 0.09, ease: [0.16, 1, 0.3, 1] }}
       whileHover={{ y: -6 }}
     >
       <div className="artp-prod-card__media">
@@ -206,58 +261,43 @@ function ProductCard({
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
           />
         ) : (
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              background: "#f0ebe3",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
+          <div style={{
+            width: "100%", height: "100%", background: "#f0ebe3",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
             <Package size={28} style={{ opacity: 0.4 }} />
           </div>
         )}
         <div className="artp-prod-card__shade" />
 
-        {/* ── category label — now works for both object and string ── */}
-        <span className="artp-prod-card__cat">{catLabel}</span>
+        {/* Only render the badge if the name resolved — never shows a raw ID */}
+        {catLabel && <span className="artp-prod-card__cat">{catLabel}</span>}
 
-        {/* wish button — stopPropagation so card click doesn't fire */}
         <motion.button
           className={`artp-prod-card__wish${isWished ? " artp-prod-card__wish--on" : ""}`}
-          onClick={e => { e.stopPropagation(); onWishToggle(p._id); }}
+          onClick={(e) => { e.stopPropagation(); onWishToggle(p._id); }}
           whileTap={{ scale: 0.82 }}
         >
           <HeartIcon filled={isWished} />
         </motion.button>
 
-        {p.stock === 1 && (
-          <span className="artp-prod-card__last">Dernière pièce</span>
-        )}
+        {p.stock === 1 && <span className="artp-prod-card__last">Dernière pièce</span>}
       </div>
 
       <div className="artp-prod-card__body">
         <div className="artp-prod-card__top">
           <h3 className="artp-prod-card__title">{p.title}</h3>
-          <span className="artp-prod-card__price">
-            {p.price.toLocaleString("fr-TN")} TND
-          </span>
+          <span className="artp-prod-card__price">{p.price.toLocaleString("fr-TN")} TND</span>
         </div>
         <p className="artp-prod-card__desc">{p.description}</p>
         <div className="artp-prod-card__foot">
-          {/* Only <a> inside the card */}
-          <Link
-            href={`/boutique/${p._id}`}
-            className="artp-prod-card__cta"
-            onClick={e => e.stopPropagation()}
-          >
+          <Link href={`/boutique/${p._id}`} className="artp-prod-card__cta"
+            onClick={(e) => e.stopPropagation()}>
             Voir la pièce →
           </Link>
           <motion.button
             className={`artp-prod-card__cart${isAdded ? " artp-prod-card__cart--added" : ""}`}
-            onClick={e => { e.stopPropagation(); onCart(p._id); }}
+            onClick={(e) => { e.stopPropagation(); onCart(p._id); }}
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.94 }}
           >
@@ -269,12 +309,9 @@ function ProductCard({
   );
 }
 
-// ─── Info Sidebar ──────────────────────────────────────────────────────────────
-function InfoCard({
-  artisan,
-  joinDate,
-  totalProducts,
-}: {
+// ─── InfoCard sidebar ──────────────────────────────────────────────────────────
+
+function InfoCard({ artisan, joinDate, totalProducts }: {
   artisan: ArtisanProfile;
   joinDate: string;
   totalProducts: number;
@@ -302,6 +339,7 @@ function InfoCard({
             </div>
           </li>
         )}
+
         <li className="artp-info-card__item">
           <span className="artp-info-card__icon-wrap artp-info-card__icon-wrap--orange">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -314,6 +352,7 @@ function InfoCard({
             <span className="artp-info-card__val">{artisan.user.email}</span>
           </div>
         </li>
+
         {artisan.region && (
           <li className="artp-info-card__item">
             <span className="artp-info-card__icon-wrap artp-info-card__icon-wrap--orange">
@@ -328,6 +367,7 @@ function InfoCard({
             </div>
           </li>
         )}
+
         <li className="artp-info-card__item">
           <span className="artp-info-card__icon-wrap artp-info-card__icon-wrap--orange">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -340,6 +380,7 @@ function InfoCard({
             <span className="artp-info-card__val">Lun - Sam, 9h - 18h</span>
           </div>
         </li>
+
         {artisan.instagram && (
           <li className="artp-info-card__item">
             <span className="artp-info-card__icon-wrap artp-info-card__icon-wrap--orange">
@@ -351,18 +392,14 @@ function InfoCard({
             </span>
             <div>
               <span className="artp-info-card__label">Instagram</span>
-              <a
-                href={artisan.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="artp-info-card__val"
-                style={{ color: "inherit" }}
-              >
+              <a href={artisan.instagram} target="_blank" rel="noopener noreferrer"
+                className="artp-info-card__val" style={{ color: "inherit" }}>
                 {artisan.instagram.replace(/^https?:\/\/(www\.)?instagram\.com\//, "@")}
               </a>
             </div>
           </li>
         )}
+
         {artisan.website && (
           <li className="artp-info-card__item">
             <span className="artp-info-card__icon-wrap artp-info-card__icon-wrap--orange">
@@ -374,13 +411,8 @@ function InfoCard({
             </span>
             <div>
               <span className="artp-info-card__label">Site web</span>
-              <a
-                href={artisan.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="artp-info-card__val"
-                style={{ color: "inherit" }}
-              >
+              <a href={artisan.website} target="_blank" rel="noopener noreferrer"
+                className="artp-info-card__val" style={{ color: "inherit" }}>
                 {artisan.website.replace(/^https?:\/\//, "")}
               </a>
             </div>
@@ -432,6 +464,7 @@ function InfoCard({
 }
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
+
 export default function ArtisanProfilePage({
   params,
 }: {
@@ -443,6 +476,7 @@ export default function ArtisanProfilePage({
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
 
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [cartAdded, setCartAdded] = useState<string[]>([]);
@@ -451,7 +485,6 @@ export default function ArtisanProfilePage({
 
   const { ref: statsRef, visible: statsVisible } = useInView(0.3);
 
-  // ── Fetch ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchArtisan = async () => {
       try {
@@ -464,7 +497,20 @@ export default function ArtisanProfilePage({
 
         const data: ArtisanProfile = await res.json();
         setArtisan(data);
-        setProducts(data.products ?? []);
+
+        const prods = data.products ?? [];
+        setProducts(prods);
+
+        // Collect only raw ObjectId strings — ignore already-populated objects
+        const rawIds = prods
+          .map((p) => p.category)
+          .filter((c): c is string => typeof c === "string" && isObjectId(c));
+        const uniqueIds = [...new Set(rawIds)];
+
+        if (uniqueIds.length > 0) {
+          const map = await resolveCategoryIds(uniqueIds);
+          setCategoryMap(map);
+        }
       } catch (err: any) {
         setError(err.message ?? "Une erreur est survenue.");
       } finally {
@@ -475,7 +521,6 @@ export default function ArtisanProfilePage({
     fetchArtisan();
   }, [id]);
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
   function toggleWish(productId: string) {
     setWishlist((w) =>
       w.includes(productId) ? w.filter((x) => x !== productId) : [...w, productId]
@@ -489,7 +534,7 @@ export default function ArtisanProfilePage({
     if (prod) showSuccessToast(`${prod.title} ajouté au panier`);
   }
 
-  // ── Loading ────────────────────────────────────────────────────────────────
+  // ── Loading state ──────────────────────────────────────────────────────────
   if (loading)
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
@@ -498,56 +543,41 @@ export default function ArtisanProfilePage({
       </div>
     );
 
-  // ── Error ──────────────────────────────────────────────────────────────────
+  // ── Error state ────────────────────────────────────────────────────────────
   if (error || !artisan)
     return (
       <div style={{ textAlign: "center", padding: "4rem", opacity: 0.6 }}>
         <Package size={40} style={{ margin: "0 auto 1rem" }} />
         <p style={{ marginBottom: "1rem" }}>{error ?? "Artisan introuvable."}</p>
-        <Link href="/Artisans" className="artp-prod-card__cta">
-          ← Retour aux artisans
-        </Link>
+        <Link href="/Artisans" className="artp-prod-card__cta">← Retour aux artisans</Link>
       </div>
     );
 
-  // ── Derive unique category labels from actual products ─────────────────────
-  const categoryKeys = Array.from(new Set(products.map((p) => {
-    // use _id for object categories (for filter matching), or raw string
-    if (typeof p.category === "object") return p.category._id;
-    return p.category;
-  })));
+  // Unique filter keys (stable, won't change as categoryMap resolves)
+  const categoryKeys = Array.from(
+    new Set(products.map((p) => getCategoryFilterKey(p.category)))
+  );
 
   const filtered =
     filter === "all"
       ? products
-      : products.filter((p) => {
-          const key = typeof p.category === "object" ? p.category._id : p.category;
-          return key === filter;
-        });
+      : products.filter((p) => getCategoryFilterKey(p.category) === filter);
 
   const joinDate = new Date(artisan.createdAt).toLocaleDateString("fr-FR", {
-    month: "long",
-    year: "numeric",
+    month: "long", year: "numeric",
   });
   const joinYear = new Date(artisan.createdAt).getFullYear();
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="artp-root">
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-      {/* HERO */}
+      {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <section className="artp-hero">
         <div className="artp-hero__bg-gradient" />
         <div className="artp-hero__inner">
 
-          <motion.div
-            className="artp-hero__back"
-            initial={{ opacity: 0, x: -12 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Link href="/Artisans">← Retour</Link>
-          </motion.div>
+          
 
           <motion.div
             className="artp-hero__profile-row"
@@ -562,14 +592,10 @@ export default function ArtisanProfilePage({
                   src={artisan.user.image}
                   alt={artisan.user.name}
                   className="artp-hero__avatar-img"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.display = "none";
-                  }}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                 />
               ) : (
-                <div className="artp-hero__avatar-fallback">
-                  {artisan.user.name[0]}
-                </div>
+                <div className="artp-hero__avatar-fallback">{artisan.user.name[0]}</div>
               )}
               {artisan.isApproved && (
                 <div className="artp-hero__avatar-badge" title="Artisan vérifié">
@@ -580,7 +606,7 @@ export default function ArtisanProfilePage({
               )}
             </div>
 
-            {/* Name + meta */}
+            {/* Meta */}
             <div className="artp-hero__meta">
               <div className="artp-hero__name-row">
                 <h1 className="artp-hero__name">{artisan.user.name}</h1>
@@ -625,12 +651,8 @@ export default function ArtisanProfilePage({
                 Contacter
               </motion.button>
               {artisan.phone && (
-                <motion.a
-                  href={`tel:${artisan.phone}`}
-                  className="artp-hero__btn-call"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                >
+                <motion.a href={`tel:${artisan.phone}`} className="artp-hero__btn-call"
+                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.56a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
                   </svg>
@@ -642,7 +664,7 @@ export default function ArtisanProfilePage({
         </div>
       </section>
 
-      {/* MAIN LAYOUT */}
+      {/* ── MAIN LAYOUT ──────────────────────────────────────────────────── */}
       <div className="artp-layout">
         <div className="artp-layout__main">
 
@@ -662,7 +684,7 @@ export default function ArtisanProfilePage({
 
           <AnimatePresence mode="wait">
 
-            {/* CRÉATIONS */}
+            {/* ── CREATIONS TAB ─────────────────────────────────────────── */}
             {tab === "creations" && (
               <motion.div
                 key="creations"
@@ -671,19 +693,17 @@ export default function ArtisanProfilePage({
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.38 }}
               >
-                {/* Category filter chips — built from actual product data */}
+                {/* Filter chips — show "…" while names are resolving, never raw IDs */}
                 <div className="artp-filters">
                   {["all", ...categoryKeys].map((key) => {
-                    // find a product with this category key to get the display name
-                    const label =
+                    const resolvedLabel =
                       key === "all"
                         ? "Tout voir"
                         : getCategoryName(
-                            products.find((p) => {
-                              const k = typeof p.category === "object" ? p.category._id : p.category;
-                              return k === key;
-                            })?.category ?? key
+                            products.find((p) => getCategoryFilterKey(p.category) === key)?.category ?? key,
+                            categoryMap
                           );
+                    const label = resolvedLabel || "…";
 
                     return (
                       <motion.button
@@ -714,6 +734,7 @@ export default function ArtisanProfilePage({
                           index={i}
                           wishlist={wishlist}
                           cartAdded={cartAdded}
+                          categoryMap={categoryMap}
                           onWishToggle={toggleWish}
                           onCart={handleCart}
                         />
@@ -724,7 +745,7 @@ export default function ArtisanProfilePage({
               </motion.div>
             )}
 
-            {/* ABOUT */}
+            {/* ── ABOUT TAB ─────────────────────────────────────────────── */}
             {tab === "about" && (
               <motion.div
                 key="about"
@@ -736,22 +757,26 @@ export default function ArtisanProfilePage({
               >
                 <div className="artp-about__split">
                   <div className="artp-about__text">
-                    <motion.p className="artp-section-eyebrow" variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+                    <motion.p className="artp-section-eyebrow"
+                      variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
                       Son histoire
                     </motion.p>
-                    <motion.h2 className="artp-about__heading" variants={fadeUp} custom={1} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+                    <motion.h2 className="artp-about__heading"
+                      variants={fadeUp} custom={1} initial="hidden" whileInView="visible" viewport={{ once: true }}>
                       Un savoir-faire<br /><em>millénaire</em>
                     </motion.h2>
-                    <motion.p className="artp-about__bio" variants={fadeUp} custom={2} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+                    <motion.p className="artp-about__bio"
+                      variants={fadeUp} custom={2} initial="hidden" whileInView="visible" viewport={{ once: true }}>
                       {artisan.description ?? "Aucune description disponible."}
                     </motion.p>
-                    <motion.div className="artp-about__details" variants={fadeUp} custom={3} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+                    <motion.div className="artp-about__details"
+                      variants={fadeUp} custom={3} initial="hidden" whileInView="visible" viewport={{ once: true }}>
                       {(
                         [
-                          ["Région", artisan.region ?? "—"],
-                          ["Spécialité", artisan.specialite ?? "—"],
+                          ["Région",            artisan.region ?? "—"],
+                          ["Spécialité",        artisan.specialite ?? "—"],
                           ["Sur Tirjet depuis", String(joinYear)],
-                          ["Statut", artisan.isApproved ? "Artisan vérifié ✓" : "En attente"],
+                          ["Statut",            artisan.isApproved ? "Artisan vérifié ✓" : "En attente"],
                         ] as [string, string][]
                       ).map(([k, v]) => (
                         <div key={k} className="artp-about__detail-row">
@@ -775,9 +800,9 @@ export default function ArtisanProfilePage({
 
                 <div className="artp-about__stats" ref={statsRef}>
                   {[
-                    { n: "5",    lbl: "Générations de savoir" },
-                    { n: "40h",  lbl: "Par création" },
-                    { n: "100%", lbl: "Fait main" },
+                    { n: "5",     lbl: "Générations de savoir" },
+                    { n: "40h",   lbl: "Par création" },
+                    { n: "100%",  lbl: "Fait main" },
                     { n: "4.6 ★", lbl: "Note clients" },
                   ].map(({ n, lbl }, i) => (
                     <motion.div
@@ -797,11 +822,10 @@ export default function ArtisanProfilePage({
           </AnimatePresence>
         </div>
 
-        {/* Sidebar */}
         <InfoCard artisan={artisan} joinDate={joinDate} totalProducts={products.length} />
       </div>
 
-      {/* CTA Banner */}
+      {/* ── CTA Banner ───────────────────────────────────────────────────── */}
       <motion.section
         className="artp-cta-banner"
         initial={{ opacity: 0, y: 24 }}
@@ -820,8 +844,6 @@ export default function ArtisanProfilePage({
           <Link href="/Rejoigneznous">Rejoindre la communauté →</Link>
         </motion.div>
       </motion.section>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

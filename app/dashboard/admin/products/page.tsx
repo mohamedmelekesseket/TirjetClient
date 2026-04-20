@@ -13,14 +13,12 @@ interface Product {
   _id: string;
   title: string;
   price: number;
-  // category can come back as a string key OR a populated object
   category: string | { _id: string; name: string; slug?: string; mainCategory?: any };
   stock: number;
   isApproved: boolean;
   isReported?: boolean;
   images: string[];
-  // artisan can come back as a populated object with extra keys
-  artisan: { _id: string; name: string; slug?: string; mainCategory?: any } | null;
+  artisan: { _id: string; name: string; slug?: string } | string | null;
   createdAt: string;
   isSuspended?: boolean;
 }
@@ -28,26 +26,39 @@ interface Product {
 type FilterTab = "Tous" | "Publiés" | "En attente" | "Signalés" | "Suspendus";
 
 // ── Safe field extractors ───────────────────────────────────────────────────
-/** Always returns a plain string key for category lookups */
-const getCategoryKey = (category: Product["category"]): string => {
+
+/** Returns the best display label for a category (object or raw string) */
+const getCategoryDisplay = (category: Product["category"]): string => {
+  if (!category) return "—";
+  if (typeof category === "object") {
+    // Populated object from API → use name directly
+    return category.name || category.slug || "—";
+  }
+  // Raw string: could be a slug we know, or a raw MongoDB _id
+  return categoryLabel[category] || category || "—";
+};
+
+/** Returns a slug/key for icon lookup — only meaningful when category is a known slug */
+const getCategoryIconKey = (category: Product["category"]): string => {
   if (!category) return "";
-  if (typeof category === "string") return category;
-  return category.slug || category.name || "";
+  if (typeof category === "object") return category.slug || "";
+  return category;
 };
 
 /** Always returns a displayable string for the artisan name */
 const getArtisanName = (artisan: Product["artisan"]): string => {
   if (!artisan) return "—";
-  if (typeof artisan === "string") return artisan as string;
+  if (typeof artisan === "string") return artisan;
   return artisan.name || "—";
 };
 
 /** Always returns a safe numeric price */
 const getPrice = (price: any): number => {
   if (typeof price === "number") return price;
-  if (typeof price === "object" && price !== null) return 0; // guard
+  if (typeof price === "object" && price !== null) return 0;
   return Number(price) || 0;
 };
+
 // ───────────────────────────────────────────────────────────────────────────
 
 const categoryIcon: Record<string, ComponentType<{ size?: number }>> = {
@@ -84,7 +95,6 @@ export default function AdminProductsPage() {
   const [activeTab, setActiveTab] = useState<FilterTab>("Tous");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // ── Delete confirmation modal state ──
   const [deleteConfirm, setDeleteConfirm] = useState<Product | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -329,11 +339,11 @@ export default function AdminProductsPage() {
                 ) : (
                   filtered.map((p, i) => {
                     const status = productStatus(p);
-                    // Use safe extractors for all potentially-object fields
-                    const catKey = getCategoryKey(p.category);
+                    const catDisplay = getCategoryDisplay(p.category);
+                    const iconKey = getCategoryIconKey(p.category);
                     const artisanName = getArtisanName(p.artisan);
                     const price = getPrice(p.price);
-                    const Icon = categoryIcon[catKey] || Package;
+                    const Icon = categoryIcon[iconKey] || Package;
                     const isDeleting = deletingId === p._id;
 
                     return (
@@ -350,13 +360,10 @@ export default function AdminProductsPage() {
                             <span style={{ fontWeight: 500, fontSize: "0.875rem" }}>{p.title}</span>
                           </div>
                         </td>
-                        {/* artisan: always render the extracted string */}
                         <td style={{ color: "#4A5568", fontSize: "0.875rem" }}>{artisanName}</td>
-                        {/* category: always render the label string */}
                         <td>
-                          <span className="badge badge-primary">
-                            {categoryLabel[catKey] || catKey || "—"}
-                          </span>
+                          {/* ✅ Always shows name in prod and localhost */}
+                          <span className="badge badge-primary">{catDisplay}</span>
                         </td>
                         <td>
                           <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.8rem", fontWeight: 700 }}>

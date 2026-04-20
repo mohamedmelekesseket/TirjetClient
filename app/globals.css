@@ -3921,7 +3921,7 @@ img { display: block; max-width: 100%; }
 .artp-hero__meta { flex: 1; min-width: 0; }
 .artp-hero__name-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
 .artp-hero__name { font-family: "Cormorant Garamond", serif; font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 600; color: #16110C; line-height: 1; }
-.artp-hero__specialty-pill { display: inline-flex; align-items: center; background: #E8724A; color: #fff; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; padding: 4px 14px; border-radius: 50px; }
+.artp-hero__specialty-pill { display: inline-flex; align-items: center; background: #000000; color: #fff; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; padding: 4px 14px; border-radius: 50px; }
 .artp-hero__sub-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 .artp-hero__sub-item { display: flex; align-items: center; gap: 5px; font-size: 13px; color: #7A6F66; }
 
@@ -3933,7 +3933,7 @@ img { display: block; max-width: 100%; }
   border: none; border-radius: 50px; padding: 11px 22px;
   cursor: pointer; transition: transform 0.2s, box-shadow 0.2s, background 0.2s; white-space: nowrap;
 }
-.artp-hero__btn-contact { background: #E8724A; color: #fff; box-shadow: 0 3px 14px rgba(232,114,74,0.32); }
+.artp-hero__btn-contact { background: #000000; color: #fff; box-shadow: 0 3px 14px rgba(232,114,74,0.32); }
 .artp-hero__btn-contact:hover { background: #d4643d; box-shadow: 0 5px 18px rgba(232,114,74,0.42); }
 .artp-hero__btn-call { background: #fff; color: #16110C; border: 1.5px solid #EDE6DB; box-shadow: 0 2px 8px rgba(22,17,12,0.05); }
 .artp-hero__btn-call:hover { border-color: #d0c9c0; }
@@ -3976,7 +3976,7 @@ img { display: block; max-width: 100%; }
   width: 36px; height: 36px; border-radius: 10px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-.artp-info-card__icon-wrap--orange { background: rgba(232,114,74,0.1); color: #E8724A; }
+.artp-info-card__icon-wrap--orange { background: rgb(0, 0, 0); color:white; }
 .artp-info-card__label { display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #9A8E85; margin-bottom: 2px; }
 .artp-info-card__val   { display: block; font-size: 13.5px; font-weight: 500; color: #16110C; }
 

@@ -4,12 +4,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-
 import { useRouter } from "next/navigation";
 import {
   BadgeCheck,
   Calendar,
-  Heart,
   HeartOff,
   Lock,
   Loader2,
@@ -39,8 +37,7 @@ type FavProduct = {
   description: string;
   price: number;
   images: string[];
-  // category may be a string key OR a populated object
-  category: string | { _id: string; name: string; slug?: string; mainCategory?: any };
+  category: string | { _id: string; name: string; slug?: string };
   location?: string;
   material?: string;
 };
@@ -68,42 +65,60 @@ function getInitials(name?: string) {
   );
 }
 
-/** Always returns a displayable string for category */
 function getCategoryLabel(
-  category: FavProduct["category"]
+  category: FavProduct["category"],
+  map: Record<string, string> = {}
 ): string {
   if (!category) return "";
-  if (typeof category === "string") return category;
-  return category.name || category.slug || "";
+  if (typeof category === "object") return category.name || category.slug || "";
+  // raw string: check map first, then fall back to raw value
+  return map[category] || category;
 }
 
-/** Always returns a safe number for price */
 function safePrice(price: any): number {
   if (typeof price === "number") return price;
   if (typeof price === "object" && price !== null) return 0;
   return Number(price) || 0;
 }
 
-// ─── FavCard ──────────────────────────────────────────────────────────────────
+// ─── Heart SVG ────────────────────────────────────────────────────────────────
+
+function HeartFilled() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+    </svg>
+  );
+}
+
+// ─── FavCard (styled like ProductCard from ArtisanProfilePage) ────────────────
 
 function FavCard({
   item,
-  index,
   apiToken,
+  categoryMap,
   onRemoved,
 }: {
   item: FavProduct;
-  index: number;
   apiToken?: string;
+  categoryMap: Record<string, string>;
   onRemoved: (id: string) => void;
 }) {
   const [removing, setRemoving] = useState(false);
 
-  const categoryLabel = getCategoryLabel(item.category);
+  const categoryLabel = getCategoryLabel(item.category, categoryMap);
   const price = safePrice(item.price);
 
   const handleRemove = async (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!apiToken || removing) return;
     setRemoving(true);
     try {
@@ -121,75 +136,77 @@ function FavCard({
 
   return (
     <Link href={`/boutique/${item._id}`}>
-      <motion.div
-        className="profileU-card"
+      <motion.article
+        className="artp-prod-card"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.92 }}
         whileHover={{ y: -6 }}
         layout
       >
-        {/* Image */}
-        <div className="boutique__card-img">
+        {/* Media */}
+        <div className="artp-prod-card__media">
           {item.images?.[0] ? (
             <motion.img
               src={item.images[0]}
               alt={item.title}
               loading="lazy"
               whileHover={{ scale: 1.07 }}
-              transition={{ duration: 1.4 }}
+              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
             />
           ) : (
-            <div style={{
-              width: "100%", height: "100%",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              background: "#f0ebe3", opacity: 0.6,
-            }}>
-              <Package size={36} />
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                background: "#f0ebe3",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Package size={28} style={{ opacity: 0.4 }} />
             </div>
           )}
-          <div className="boutique__card-overlay" />
+          <div className="artp-prod-card__shade" />
+          <span className="artp-prod-card__cat">{categoryLabel}</span>
 
-          {/* Always render a string */}
-          <span className="boutique__card-cat">{categoryLabel}</span>
-
-          {/* Heart button — remove from favourites */}
-          <button
-            className="boutique__card-wish"
+          {/* Heart button — always filled (it's a fav), click removes */}
+          <motion.button
+            className="artp-prod-card__wish artp-prod-card__wish--on"
             onClick={handleRemove}
             disabled={removing}
-            style={{
-              color: "#d4784f",
-              opacity: removing ? 0.5 : 1,
-              cursor: removing ? "wait" : "pointer",
-            }}
+            whileTap={{ scale: 0.82 }}
             aria-label="Retirer des favoris"
+            style={{ opacity: removing ? 0.5 : 1, cursor: removing ? "wait" : "pointer" }}
           >
             {removing ? (
-              <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
+              <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
             ) : (
-              <Heart size={18} fill="currentColor" />
+              <HeartFilled />
             )}
-          </button>
+          </motion.button>
         </div>
 
         {/* Body */}
-        <div className="boutique__card-body">
-          <div className="boutique__card-top">
-            <h3 className="boutique__card-title">{item.title}</h3>
-            <span className="boutique__card-price">
+        <div className="artp-prod-card__body">
+          <div className="artp-prod-card__top">
+            <h3 className="artp-prod-card__title">{item.title}</h3>
+            <span className="artp-prod-card__price">
               {price.toLocaleString("fr-TN")} TND
             </span>
           </div>
-          <p className="boutique__card-desc">{item.description?.slice(0, 120)}</p>
+          <p className="artp-prod-card__desc">
+            {item.description?.slice(0, 120)}
+          </p>
+          <div className="artp-prod-card__foot">
+            <span className="artp-prod-card__loc">
+              {item.location ?? categoryLabel}
+            </span>
+            <span className="artp-prod-card__cta">Voir la pièce →</span>
+          </div>
         </div>
-
-        <div className="boutique__card-footer">
-          {/* Use categoryLabel as fallback too */}
-          <span className="boutique__card-loc">{item.location ?? categoryLabel}</span>
-          <span className="boutique__card-cta">Voir la pièce →</span>
-        </div>
-      </motion.div>
+      </motion.article>
     </Link>
   );
 }
@@ -211,23 +228,24 @@ export default function UserProfile() {
 
   const [activeTab, setActiveTab] = useState("favoris");
 
-  // user profile
   const [user, setUser] = useState<ApiUser | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [imgError, setImgError] = useState(false);
 
-  // favourites
   const [favourites, setFavourites] = useState<FavProduct[]>([]);
   const [loadingFavs, setLoadingFavs] = useState(false);
   const [favError, setFavError] = useState<string | null>(null);
+
+  // map: categoryId → categoryName (for raw-id categories)
+  const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
 
   // ── Redirect if unauthenticated ────────────────────────────────────────────
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/connexion");
   }, [status, router]);
 
-  // ── Step 1: sync-token (no apiToken yet) ──────────────────────────────────
+  // ── Step 1: sync-token ────────────────────────────────────────────────────
   useEffect(() => {
     if (status !== "authenticated") return;
     if (apiToken) return;
@@ -299,11 +317,34 @@ export default function UserProfile() {
         });
         if (!resp.ok) throw new Error(`/api/favourites returned ${resp.status}`);
         const data = await resp.json();
-        // Filter out any favourites whose product was deleted (null)
         const items: FavProduct[] = (data.favourites ?? []).filter(
           (f: any) => f != null && f._id != null
         );
         if (!cancelled) setFavourites(items);
+
+        // ── Step 4: resolve raw category IDs → names ──────────────────────
+        const rawIds = items
+          .map((f) => f.category)
+          .filter((c): c is string => typeof c === "string");
+        const uniqueIds = [...new Set(rawIds)];
+
+        if (uniqueIds.length > 0) {
+          try {
+            const catRes = await fetch(
+              `${API}/api/categories?ids=${uniqueIds.join(",")}`
+            );
+            if (catRes.ok) {
+              const catData = await catRes.json();
+              const map: Record<string, string> = {};
+              (catData.categories ?? catData ?? []).forEach((c: any) => {
+                map[c._id] = c.name;
+              });
+              if (!cancelled) setCategoryMap(map);
+            }
+          } catch {
+            // silently fail — raw IDs will show as fallback
+          }
+        }
       } catch {
         if (!cancelled) setFavError("Impossible de charger vos favoris.");
       } finally {
@@ -316,9 +357,10 @@ export default function UserProfile() {
     };
   }, [apiToken]);
 
-  useEffect(() => { setImgError(false); }, [user?.image]);
+  useEffect(() => {
+    setImgError(false);
+  }, [user?.image]);
 
-  // ── Remove from local list after successful API delete ────────────────────
   const handleRemoved = (productId: string) => {
     setFavourites((prev) => prev.filter((f) => f._id !== productId));
   };
@@ -328,6 +370,7 @@ export default function UserProfile() {
 
   return (
     <div className="profile-page">
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* ── ERROR BANNER ── */}
       {loadError && (
@@ -369,12 +412,6 @@ export default function UserProfile() {
               {loadingUser ? "…" : getInitials(user?.name || sessionUser?.name)}
             </div>
           )}
-          <div
-            className="profile-avatar-fallback"
-            style={{ display: user?.image ? "none" : "flex" }}
-          >
-            {loadingUser ? "…" : getInitials(user?.name || sessionUser?.name)}
-          </div>
           {user?.isVerified && (
             <motion.div
               className="profile-verified-badge"
@@ -416,7 +453,8 @@ export default function UserProfile() {
                       ? "f"
                       : "•"}
                   </span>
-                  {user.provider.charAt(0).toUpperCase() + user.provider.slice(1)}
+                  {user.provider.charAt(0).toUpperCase() +
+                    user.provider.slice(1)}
                 </span>
               )}
             </div>
@@ -459,7 +497,9 @@ export default function UserProfile() {
         <main>
           <div className="profile-tabs">
             <button
-              className={`profile-tab-btn${activeTab === "favoris" ? " active" : ""}`}
+              className={`profile-tab-btn${
+                activeTab === "favoris" ? " active" : ""
+              }`}
               onClick={() => setActiveTab("favoris")}
             >
               Favoris ({loadingFavs ? "…" : favourites.length})
@@ -475,41 +515,58 @@ export default function UserProfile() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3 }}
               >
-                {/* Loading */}
                 {loadingFavs && (
-                  <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      padding: "3rem",
+                    }}
+                  >
                     <Loader2
                       size={28}
-                      style={{ animation: "spin 1s linear infinite", opacity: 0.5 }}
+                      style={{
+                        animation: "spin 1s linear infinite",
+                        opacity: 0.5,
+                      }}
                     />
                   </div>
                 )}
 
-                {/* Error */}
                 {!loadingFavs && favError && (
-                  <div style={{ textAlign: "center", padding: "2rem", opacity: 0.7 }}>
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: "2rem",
+                      opacity: 0.7,
+                    }}
+                  >
                     <p>{favError}</p>
                   </div>
                 )}
 
-                {/* Empty */}
                 {!loadingFavs && !favError && favourites.length === 0 && (
-                  <div style={{ textAlign: "center", padding: "3rem", opacity: 0.5 }}>
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: "3rem",
+                      opacity: 0.5,
+                    }}
+                  >
                     <HeartOff size={36} style={{ margin: "0 auto 1rem" }} />
                     <p>Vous n'avez pas encore de favoris.</p>
                   </div>
                 )}
 
-                {/* Grid */}
                 {!loadingFavs && !favError && favourites.length > 0 && (
-                  <motion.div className="profileU-grid" layout>
+                  <motion.div className="artp-prod-grid" layout>
                     <AnimatePresence>
-                      {favourites.map((item, i) => (
+                      {favourites.map((item) => (
                         <FavCard
                           key={item._id}
                           item={item}
-                          index={i}
                           apiToken={apiToken}
+                          categoryMap={categoryMap}
                           onRemoved={handleRemoved}
                         />
                       ))}
@@ -539,7 +596,8 @@ export default function UserProfile() {
                 icon: <Lock size={16} />,
                 label: "Connexion via",
                 value: user?.provider
-                  ? user.provider.charAt(0).toUpperCase() + user.provider.slice(1)
+                  ? user.provider.charAt(0).toUpperCase() +
+                    user.provider.slice(1)
                   : "-",
               },
               {
@@ -564,8 +622,6 @@ export default function UserProfile() {
           </motion.div>
         </aside>
       </div>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
