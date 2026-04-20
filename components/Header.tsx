@@ -306,8 +306,9 @@ const Header = () => {
                     <button
                       key={cat._id}
                       className={`hdr__catbar-item${activeL1?._id === cat._id && megaOpen ? " hdr__catbar-item--active" : ""}`}
-                      onMouseEnter={() => openMega(cat)}
-                      onClick={() => navigate(catUrl(cat))}
+                      // onMouseEnter={() => openMega(cat)}
+                      // onClick={() => navigate(catUrl(cat))}
+                      onClick={() => openMega(cat)}
                     >
                       {cat.name}
                       {cat.subcategories.length > 0 && (

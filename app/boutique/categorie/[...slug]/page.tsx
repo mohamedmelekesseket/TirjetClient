@@ -478,11 +478,11 @@ export default function CategoryPage() {
                       <div className="cat__card-grad" />
                     </div>
                     <div className="cat__card-body">
-                      <div className="cat__card-trail">
+                      <h3 className="cat__card-title">{p.title}</h3>
+                       <div className="cat__card-trail">
                         {[p.subcategoryL2?.name, p.subcategoryL3?.name, p.subcategoryL4?.name]
                           .filter(Boolean).join(" › ")}
                       </div>
-                      <h3 className="cat__card-title">{p.title}</h3>
                       {viewMode === "list" && (
                         <p className="cat__card-desc">{p.description?.slice(0, 140)}</p>
                       )}

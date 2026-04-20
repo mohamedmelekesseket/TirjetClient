@@ -176,6 +176,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const router = useRouter();
   const { addToCart } = useCart();
 
+  // ── Current product ID (can change when clicking related) ──────────────────
+  const [currentId, setCurrentId] = useState(id);
+
   // ── Categories map ─────────────────────────────────────────────────────────
   const [categoriesMap, setCategoriesMap] = useState<Map<string, string>>(new Map());
 
@@ -215,13 +218,13 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       .catch(() => { });
   }, []);
 
-  // ── Fetch product ──────────────────────────────────────────────────────────
+  // ── Fetch product (reacts to currentId) ───────────────────────────────────
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`${API}/api/products/${id}`);
+        const res = await fetch(`${API}/api/products/${currentId}`);
         if (!res.ok) throw new Error(`Erreur ${res.status}`);
         const data = await res.json();
         setProduct(data);
@@ -253,28 +256,44 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       }
     };
     fetchProduct();
-  }, [id]);
+  }, [currentId]); // ← reacts to currentId changes
 
   // ── Fetch comments ─────────────────────────────────────────────────────────
   useEffect(() => {
-    if (activeTab !== "avis" || !id) return;
+    if (activeTab !== "avis" || !currentId) return;
     const fetchComments = async () => {
       setCommentsLoading(true);
       try {
-        const res = await fetch(`${API}/api/products/${id}/comments`);
+        const res = await fetch(`${API}/api/products/${currentId}/comments`);
         if (res.ok) setComments(await res.json());
       } finally {
         setCommentsLoading(false);
       }
     };
     fetchComments();
-  }, [activeTab, id]);
+  }, [activeTab, currentId]);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   const getToken = () => (session as any)?.apiToken as string | undefined;
   const currentUserId = (session as any)?.apiUser?._id as string | undefined;
 
   // ── Handlers ───────────────────────────────────────────────────────────────
+
+  // Navigate to a related product without a page reload
+  function handleRelatedClick(productId: string) {
+    setCurrentId(productId);
+    setActiveTab("avis");
+    setComments([]);
+    setQty(1);
+    setAdded(false);
+    setWish(false);
+    setCartError(null);
+    setEditingId(null);
+    setNewContent("");
+    setNewRating(5);
+    setSubmitError(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   // ✅ Real cart integration
   async function handleCart() {
@@ -329,7 +348,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       const token = getToken();
       if (!token) { setSubmitError("Vous devez être connecté pour laisser un avis."); return; }
 
-      const res = await fetch(`${API}/api/products/${id}/comments`, {
+      const res = await fetch(`${API}/api/products/${currentId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ rating: newRating, content: newContent }),
@@ -353,7 +372,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     setSubmitError(null);
     try {
       const token = getToken();
-      const res = await fetch(`${API}/api/products/${id}/comments/${editingId}`, {
+      const res = await fetch(`${API}/api/products/${currentId}/comments/${editingId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ rating: newRating, content: newContent }),
@@ -374,7 +393,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     if (!confirm("Supprimer cet avis ?")) return;
     try {
       const token = getToken();
-      const res = await fetch(`${API}/api/products/${id}/comments/${commentId}`, {
+      const res = await fetch(`${API}/api/products/${currentId}/comments/${commentId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -392,7 +411,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) return (
-    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
       <Loader2 size={36} style={{ animation: "spin 1s linear infinite", opacity: 0.4 }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
@@ -561,20 +580,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               </Link>
             </motion.div>
           )}
-
-          {/* Trust badges */}
-          {/* <div className="pd-trust">
-            {[
-              { icon: <Dot />, text: "Paiement sécurisé" },
-              { icon: <Dot />, text: "Livraison 3–5 jours" },
-              { icon: <Dot />, text: "Retour 14 jours" },
-            ].map(b => (
-              <div key={b.text} className="pd-trust__item">
-                <span className="pd-trust__icon">{b.icon}</span>
-                <span>{b.text}</span>
-              </div>
-            ))}
-          </div> */}
         </motion.div>
       </section>
 
@@ -776,7 +781,10 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                   initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.2 }}
                   transition={{ duration: 0.6, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] as any }}
-                  whileHover={{ y: -6 }}>
+                  whileHover={{ y: -6 }}
+                  onClick={() => handleRelatedClick(p._id)}
+                  style={{ cursor: "pointer" }}
+                >
                   <div className="pd-rel-card__media">
                     {p.images?.[0]
                       ? <motion.img src={p.images[0]} alt={p.title}
@@ -800,9 +808,13 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                       </span>
                       <span className="pd-rel-card__price">{p.price.toLocaleString("fr-TN")} TND</span>
                     </div>
-                    <Link href={`/boutique/${p._id}`} className="pd-rel-card__cta">
+                    <span
+                      className="pd-rel-card__cta"
+                      onClick={e => { e.stopPropagation(); handleRelatedClick(p._id); }}
+                      style={{ cursor: "pointer" }}
+                    >
                       Voir la pièce →
-                    </Link>
+                    </span>
                   </div>
                 </motion.article>
               );

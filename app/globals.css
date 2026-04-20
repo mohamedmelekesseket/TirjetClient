@@ -5329,7 +5329,7 @@ img { display: block; max-width: 100%; }
   min-height: 100vh;
   padding-bottom: 100px;
   width: 100%;
-  padding-top: 4%;
+  padding-top: 6%;
 }
 
 /* ── Shared ───────────────────────────────────────────────────────────────── */
@@ -7919,7 +7919,12 @@ tbody td {
   overflow: hidden;
   animation: fadeInRight 0.5s ease both 0.1s;
 }
-
+@media (max-width: 768px) {
+  .anim-fade-left {
+    width: 90%;
+    margin: 0 auto; 
+  }
+}
 /* ============================================================
    ADMIN DASHBOARD
 ============================================================ */
@@ -9394,7 +9399,10 @@ tbody td {
 .acp-vendor-search .search-bar-input {
   width: 100%;
 }
-
+.search-bar-input{
+  
+  color: #0C2D87;
+}
 /* ── Vendor scrollable list ──────────────────────────── */
 .acp-vendor-list {
   max-height: 230px;
@@ -10425,6 +10433,7 @@ tbody td {
   padding: 56px 64px 48px;
   position: relative;
   overflow: hidden;
+  padding-top: 9%;
 }
 .cat__hero-bg {
   position: absolute;
@@ -10779,7 +10788,7 @@ tbody td {
   font-size: 8px;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: var(--c-gold);
+  color: black;
   font-weight: 400;
   margin-bottom: 16px;
 }
@@ -10892,7 +10901,7 @@ tbody td {
 .cat__range-fill {
   position: absolute;
   height: 1px;
-  background: var(--c-gold);
+  background: black;
   pointer-events: none;
 }
 input[type="range"].cat__range-input {
@@ -10909,7 +10918,7 @@ input[type="range"].cat__range-input::-webkit-slider-thumb {
   width: 13px;
   height: 13px;
   border-radius: 50%;
-  background: var(--c-gold);
+  background: black;
   border: 2px solid var(--c-cream);
   box-shadow: 0 0 0 1px var(--c-gold);
   pointer-events: all;
@@ -10919,7 +10928,7 @@ input[type="range"].cat__range-input::-webkit-slider-thumb {
   display: flex;
   justify-content: space-between;
   font-size: 9px;
-  color: var(--c-muted);
+  color: black;
   opacity: 0.6;
   letter-spacing: 1px;
 }
@@ -11035,8 +11044,8 @@ input[type="range"].cat__range-input::-webkit-slider-thumb {
   position: absolute;
   top: 14px;
   left: 14px;
-  background: rgba(17, 16, 14, 0.7);
-  color: var(--c-gold);
+  background:black;
+  color: white;
   font-size: 7.5px;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -11083,15 +11092,14 @@ input[type="range"].cat__range-input::-webkit-slider-thumb {
   font-size: 8px;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: var(--c-gold);
+  color: #22292F;
   opacity: 0.7;
   margin-bottom: 8px;
   min-height: 12px;
 }
 .cat__card-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 21px;
-  font-weight: 400;
+  font-size: 15px;
+  font-weight: 500;
   line-height: 1.15;
   color: var(--c-ink);
   margin-bottom: 10px;
