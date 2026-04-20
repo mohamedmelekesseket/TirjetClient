@@ -1,64 +1,40 @@
 "use client";
 
-import { motion,Variants  } from "framer-motion";
+import { useEffect, useState } from "react";
+import { motion, Variants } from "framer-motion";
 import { MapPin } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react"; // adjust to your auth setup
 
-const artisans = [
-  {
-    id: 1,
-    name: "Fatma Ben Amor",
-    role: "Tisseuse de Margoum",
-    location: "Gafsa, Tunisie",
-    quote: "Chaque fil raconte l'histoire de nos ancêtres.",
-    bio: "Fatma tisse depuis l'âge de 12 ans. Formée par sa grand-mère, elle perpétue un savoir-faire familial vieux de plus de cinq générations. Ses margoums mêlent motifs ancestraux et sensibilité contemporaine.",
-    img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&q=80&w=900",
-    imgLeft: true,
-  },
-  {
-    id: 2,
-    name: "Khaled Amazigh",
-    role: "Maître Potier",
-    location: "Sejnane, Tunisie",
-    quote: "La terre prend forme entre mes mains comme un poème.",
-    bio: "Khaled est l'un des rares potiers hommes de Sejnane. Il a appris l'art de la poterie auprès des femmes de son village et a développé un style unique alliant tradition et modernité.",
-    img: "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?auto=format&fit=crop&q=80&w=900",
-    imgLeft: false,
-  },
-  {
-    id: 3,
-    name: "Zahra Tmazight",
-    role: "Joaillère traditionnelle",
-    location: "Matmata, Tunisie",
-    quote: "L'argent garde la mémoire de notre peuple.",
-    bio: "Zahra crée des bijoux en argent depuis plus de 30 ans. Chaque pièce est ciselée à la main avec une précision remarquable, perpétuant les symboles identitaires amazighs.",
-    img: "https://images.unsplash.com/photo-1509130872995-86c1159b0afe?auto=format&fit=crop&q=80&w=900",
-    imgLeft: true,
-  },
-  {
-    id: 4,
-    name: "Mokhtar Sellami",
-    role: "Brodeur d'art",
-    location: "Monastir, Tunisie",
-    quote: "Chaque point est une prière, chaque motif un symbole.",
-    bio: "Mokhtar perpétue la broderie traditionnelle tunisienne depuis 25 ans. Ses œuvres ornent aussi bien les costumes de mariée que les collections de haute couture internationale.",
-    img: "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=900",
-    imgLeft: false,
-  },
-];
+// ─── Types ─────────────────────────────────────────────────────────────────────
+
+interface Artisan {
+  _id: string;
+  user: {
+    _id: string;
+    name: string;
+    image?: string;
+  };
+  specialite?: string;
+  region?: string;
+  description?: string;
+  images?: string[];
+  isApproved: boolean;
+}
+
+// ─── Animation variants ────────────────────────────────────────────────────────
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 30 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: {
-      duration: 0.7,
-      ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
-    },
+    transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
   },
 };
 
-const fadeLeft = {
+const fadeLeft: Variants = {
   hidden: { opacity: 0, x: -40 },
   visible: {
     opacity: 1,
@@ -67,15 +43,46 @@ const fadeLeft = {
   },
 };
 
-const fadeRight = {
+const fadeRight: Variants = {
   hidden: { opacity: 0, x: 40 },
   visible: {
     opacity: 1,
     x: 0,
-    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as [number, number, number, number]  },
+    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
   },
 };
+
+// ─── Page ──────────────────────────────────────────────────────────────────────
+
 export default function ArtisansPage() {
+  const router = useRouter();
+  const { data: session } = useSession(); // remove if not using next-auth
+  const [artisans, setArtisans] = useState<Artisan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+useEffect(() => {
+  const fetchArtisans = async () => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/artisans/public` // ← /public, no auth
+      );
+
+      if (!res.ok) throw new Error("Impossible de charger les artisans.");
+
+      const data = await res.json();
+      const list: Artisan[] = Array.isArray(data) ? data : data.artisans ?? [];
+      setArtisans(list); // already filtered to isApproved on the backend
+    } catch (err: any) {
+      setError(err.message ?? "Erreur inconnue");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchArtisans();
+}, []); // no session dependency needed
+
   return (
     <div className="artisans-page">
       {/* HERO */}
@@ -98,51 +105,88 @@ export default function ArtisansPage() {
         </motion.p>
       </motion.section>
 
-      {/* ARTISAN ROWS */}
-      <section className="artisans-list">
-        {artisans.map((a) => (
-          <motion.div
-            key={a.id}
-            className={`artisan-row ${a.imgLeft ? "img-left" : "img-right"}`}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-80px" }}
-            variants={{ visible: { transition: { staggerChildren: 0.12 } } }}
-          >
-            {/* Image */}
-            <motion.div
-              className="artisan-img-wrap"
-              variants={a.imgLeft ? fadeLeft : fadeRight}
-            >
-              <img src={a.img} alt={a.name} />
-            </motion.div>
+      {/* STATES */}
+      {loading && (
+        <p style={{ textAlign: "center", padding: "4rem 0" }}>Chargement…</p>
+      )}
+      {error && (
+        <p style={{ textAlign: "center", padding: "4rem 0", color: "red" }}>{error}</p>
+      )}
 
-            {/* Content */}
-            <motion.div
-              className="artisan-content"
-              variants={a.imgLeft ? fadeRight : fadeLeft}
-            >
-              <h2 className="artisan-name">{a.name}</h2>
-              <p className="artisan-role">{a.role}</p>
-              <p className="artisan-location">
-                <span className="pin" aria-hidden="true">
-                  <MapPin size={16} />
-                </span>{" "}
-                {a.location}
-              </p>
-              <blockquote className="artisan-quote">"{a.quote}"</blockquote>
-              <p className="artisan-bio">{a.bio}</p>
-              <motion.button
-                className="artisan-btn"
-                whileHover={{ x: 4 }}
-                transition={{ duration: 0.2 }}
+      {/* ARTISAN ROWS */}
+      {!loading && !error && (
+        <section className="artisans-list">
+          {artisans.length === 0 && (
+            <p style={{ textAlign: "center", padding: "4rem 0" }}>
+              Aucun artisan approuvé pour le moment.
+            </p>
+          )}
+
+          {artisans.map((a, index) => {
+            const imgLeft = index % 2 === 0;
+            const coverImg =
+              a.images && a.images.length > 0
+                ? a.images[0]
+                : a.user?.image ?? "/placeholder-artisan.jpg";
+
+            return (
+              <motion.div
+                key={a._id}
+                className={`artisan-row ${imgLeft ? "img-left" : "img-right"}`}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-80px" }}
+                variants={{ visible: { transition: { staggerChildren: 0.12 } } }}
+                onClick={() => router.push(`/Artisans/${a.user._id}`)}
+                style={{ cursor: "pointer" }}
               >
-                Voir ses créations →
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        ))}
-      </section>
+                {/* Image */}
+                <motion.div
+                  className="artisan-img-wrap"
+                  variants={imgLeft ? fadeLeft : fadeRight}
+                >
+                  <img src={coverImg} alt={a.user?.name} />
+                </motion.div>
+
+                {/* Content */}
+                <motion.div
+                  className="artisan-content"
+                  variants={imgLeft ? fadeRight : fadeLeft}
+                >
+                  <h2 className="artisan-name">{a.user?.name}</h2>
+                  {a.specialite && (
+                    <p className="artisan-role">{a.specialite}</p>
+                  )}
+                  {a.region && (
+                    <p className="artisan-location">
+                      <span className="pin" aria-hidden="true">
+                        <MapPin size={16} />
+                      </span>{" "}
+                      {a.region}, Tunisie
+                    </p>
+                  )}
+                  {a.description && (
+                    <p className="artisan-bio">{a.description}</p>
+                  )}
+                  <Link
+                    href={`/Artisans/${a.user._id}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <motion.span
+                      className="artisan-btn"
+                      whileHover={{ x: 4 }}
+                      transition={{ duration: 0.2 }}
+                      style={{ display: "inline-block" }}
+                    >
+                      Voir ses créations →
+                    </motion.span>
+                  </Link>
+                </motion.div>
+              </motion.div>
+            );
+          })}
+        </section>
+      )}
 
       {/* CTA BANNER */}
       <motion.section
@@ -158,13 +202,15 @@ export default function ArtisansPage() {
           Partagez votre savoir-faire avec le monde. Rejoignez notre communauté
           d'artisans et donnez une vitrine internationale à vos créations.
         </p>
-        <motion.button
-          className="cta-btn"
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-        >
-          Rejoindre la communauté
-        </motion.button>
+        <Link href="/Rejoigneznous">
+          <motion.button
+            className="cta-btn"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            Rejoindre la communauté
+          </motion.button>
+        </Link>
       </motion.section>
     </div>
   );

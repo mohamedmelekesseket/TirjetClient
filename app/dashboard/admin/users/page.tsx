@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { Loader2, Trash2 } from "lucide-react";
+import { Ban, Check, Loader2, Trash2 } from "lucide-react";
 import { showErrorToast, showSuccessToast } from "@/lib/toast";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
@@ -571,7 +571,7 @@ export default function AdminUsersPage() {
                                     });
                                   }}
                                 >
-                                  {actionLoading === u._id ? "…" : u.status === "active" ? "⊘" : "✓"}
+                                  {actionLoading === u._id ? "…" : u.status === "active" ? <Ban color="red" style={{borderColor:"red"}} size={14}/>  : <Check size={14} color="green"/>}
                                 </button>
                               )}
 

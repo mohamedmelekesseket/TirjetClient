@@ -563,7 +563,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           )}
 
           {/* Trust badges */}
-          <div className="pd-trust">
+          {/* <div className="pd-trust">
             {[
               { icon: <Dot />, text: "Paiement sécurisé" },
               { icon: <Dot />, text: "Livraison 3–5 jours" },
@@ -574,7 +574,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 <span>{b.text}</span>
               </div>
             ))}
-          </div>
+          </div> */}
         </motion.div>
       </section>
 

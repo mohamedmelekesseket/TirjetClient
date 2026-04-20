@@ -2033,8 +2033,8 @@ img  { display: block; max-width: 100%; }
 }
 
 .pg-val-card {
-  background: #F8F3EC;
-  border: 1px solid rgba(201,160,85,0.12);
+  background: transparent;
+  border: 1px solid #f7e4c9;
   padding: 36px 28px;
   transition: box-shadow 0.3s ease, border-color 0.3s ease;
   cursor: default;
@@ -2216,7 +2216,7 @@ img  { display: block; max-width: 100%; }
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 600px;
-  background: #F8F3EC;
+  background: white;
   overflow: hidden;
 }
 
@@ -5650,15 +5650,15 @@ img { display: block; max-width: 100%; }
   height: 46px;
   border-radius: 50%;
   overflow: hidden;
-  border: 2px solid rgba(201,160,85,0.3);
-  background: #EDE6DB;
+  border: 2px solid black;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: "Cormorant Garamond", serif;
   font-size: 20px;
-  color: #C9A055;
+  color: white;
   flex-shrink: 0;
+  background-color: black;
 }
 .pd-artisan-row__avatar img { width: 100%; height: 100%; object-fit: cover; }
 .pd-artisan-row__text {
@@ -6662,6 +6662,7 @@ img { display: block; max-width: 100%; }
   border-color: #0234AB;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(2,52,171,0.1);
+  color: black;
 }
 
 .navbar-notif-badge {
