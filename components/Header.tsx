@@ -9,7 +9,8 @@ import {
   ChevronDown, ShieldUser, ChevronRight, ArrowUpRight,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
-import logo from "../images/tirjet_app_icon (1).png";
+// import logo from "../images/tirjet_app_icon (1).png";
+import logo from "../images/logo2 (2).png";
 
 const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/categories?mainCategory=artisanat`;
 
@@ -225,11 +226,11 @@ const Header = () => {
             {/* ══ TOP BAR ══════════════════════════════════════════════════════ */}
             <div className="hdr__top">
               <Link href="/" className="hdr__logo">
-                <img src={logo.src} width="44" alt="Tirjet" />
-                <div className="hdr__logo-text">
+                <img src={logo.src} width="144" alt="Tirjet" />
+                {/* <div className="hdr__logo-text">
                   <span className="hdr__logo-name">Tirjet</span>
                   <span className="hdr__logo-sub">Culture &amp; Amazigh</span>
-                </div>
+                </div> */}
               </Link>
 
               <nav className="hdr__nav">

@@ -23,8 +23,9 @@ interface User {
 }
 
 interface ArtisanProfile {
-  _id: string;
+ _id: string;
   user: User;
+  profilePhoto?: string;  // ← add this
   phone?: string;
   region?: string;
   specialite?: string;
@@ -587,9 +588,9 @@ export default function ArtisanProfilePage({
           >
             {/* Avatar */}
             <div className="artp-hero__avatar-wrap">
-              {artisan.user.image ? (
+              {(artisan.profilePhoto || artisan.user.image) ? (
                 <img
-                  src={artisan.user.image}
+                  src={artisan.profilePhoto || artisan.user.image}
                   alt={artisan.user.name}
                   className="artp-hero__avatar-img"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}

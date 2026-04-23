@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useSession } from "next-auth/react";
 import { Eye, X, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-const ALL_STATUSES = ["pending", "paid", "shipped", "delivered", "cancelled"] as const;
+const ALL_STATUSES = ["pending",  "shipped", "delivered","paid", "cancelled"] as const;
 type Status = (typeof ALL_STATUSES)[number];
 
 interface Order {
@@ -30,10 +31,10 @@ interface Order {
 
 const STATUS_CONFIG: Record<Status, { label: string; badgeClass: string; dot: string; desc: string; gradient: string }> = {
   pending:   { label: "En attente", badgeClass: "badge-warning", dot: "#F59E0B", desc: "Commande reçue, en attente de traitement.",  gradient: "linear-gradient(135deg,#F59E0B,#D97706)" },
-  paid:      { label: "Payé",       badgeClass: "badge-primary", dot: "#0234AB", desc: "Paiement confirmé par le client.",            gradient: "linear-gradient(135deg,#0234AB,#1a4fd4)" },
   shipped:   { label: "En cours",   badgeClass: "badge-primary", dot: "#8B5CF6", desc: "Le colis est en préparation ou expédié.",     gradient: "linear-gradient(135deg,#8B5CF6,#6D28D9)" },
   delivered: { label: "Livré",      badgeClass: "badge-success", dot: "#0B9E5E", desc: "Commande reçue par le client.",               gradient: "linear-gradient(135deg,#0B9E5E,#047857)" },
   cancelled: { label: "Annulé",     badgeClass: "badge-danger",  dot: "#E53E3E", desc: "Commande annulée définitivement.",            gradient: "linear-gradient(135deg,#E53E3E,#C53030)" },
+  paid:      { label: "Payé",       badgeClass: "badge-primary", dot: "#0234AB", desc: "Paiement confirmé par le client.",            gradient: "linear-gradient(135deg,#0234AB,#1a4fd4)" },
 };
 
 const TABS = ["Toutes", "En attente", "En cours", "Livrées", "Annulées"] as const;
@@ -60,20 +61,27 @@ function fmtDate(iso: string): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Shared backdrop
+// Shared backdrop — rendered via portal directly into document.body
+// so it's never clipped by a parent overflow:hidden layout container
 // ─────────────────────────────────────────────────────────────────────────────
 function Backdrop({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       onClick={onClick}
       style={{
-        position: "fixed", inset: 0, zIndex: 1000,
+        position: "fixed", inset: 0, zIndex: 9999,
         background: "rgba(10,15,44,0.55)", backdropFilter: "blur(4px)",
-        display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 20, overflowY: "auto",
       }}
     >
       {children}
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -223,12 +231,13 @@ function StatusSelectionModal({
                   padding: "12px 16px", borderRadius: 12, cursor: "pointer",
                   textAlign: "left", width: "100%",
                   border: `2px solid ${isActive ? cfg.dot : "#F1F5F9"}`,
-                  background: isActive ? `${cfg.dot}08` : "#FAFAFA",
+                  background: isActive ? `${cfg.dot}12` : "#FAFAFA",
                   transition: "all 0.15s",
                 }}
               >
+                {/* FIX: use borderRadius 50% for a proper circle icon */}
                 <div style={{
-                  width: 36, height: 36, borderRadius: 10,
+                  width: 36, height: 36, borderRadius: "50%",
                   background: isActive ? cfg.gradient : "#E2E8F0",
                   display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                 }}>
@@ -254,6 +263,7 @@ function StatusSelectionModal({
                   border: `2px solid ${isActive ? cfg.dot : "#CBD5E0"}`,
                   background: isActive ? cfg.dot : "transparent",
                   display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
                 }}>
                   {isActive && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff" }} />}
                 </div>
@@ -319,7 +329,7 @@ function OrderDetailModal({
           background: "#fff",
           borderRadius: 20,
           width: "100%",
-          maxWidth: 520,
+          maxWidth: 720,
           boxShadow: "0 24px 60px rgba(2,52,171,0.18)",
           animation: "modalIn 0.22s cubic-bezier(.34,1.56,.64,1) both",
           overflow: "hidden",
@@ -372,11 +382,15 @@ function OrderDetailModal({
         <div style={{
           padding: "20px 24px",
           display: "flex", flexDirection: "column", gap: 14,
-          maxHeight: "70vh", overflowY: "auto",
+          maxHeight: "calc(90vh - 80px)", overflowY: "auto",
         }}>
 
-          {/* Client + Date */}
-          <div className="dash-inline-2col">
+          {/* FIX: Client + Date — replaced className="dash-inline-2col" with inline grid */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 12,
+          }}>
             <div style={{ background: "#F8FAFC", borderRadius: 10, padding: 12 }}>
               <div style={{
                 fontSize: "0.68rem", color: "#8B9AB5", fontWeight: 600,
@@ -577,6 +591,13 @@ export default function OrdersPage() {
       setUpdatingId(null);
     }
   }
+
+  // Lock body scroll when any modal is open
+  useEffect(() => {
+    const anyOpen = !!(errorMsg || cancelTarget || statusTarget || detailTarget);
+    document.body.style.overflow = anyOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [errorMsg, cancelTarget, statusTarget, detailTarget]);
 
   const isSessionLoading =
     sessionStatus === "loading" || (!apiToken && sessionStatus === "authenticated");

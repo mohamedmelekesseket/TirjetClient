@@ -58,29 +58,33 @@ export default function CommandePage() {
     setStep("confirm");
   }
 
-  async function handleConfirm() {
-    setSubmitting(true);
-    setError(null);
-    try {
-      const t = token();
-      if (!t) throw new Error("Vous devez être connecté.");
+async function handleConfirm() {
+  setSubmitting(true);
+  setError(null);
+  try {
+    const t = token();
+    console.log("TOKEN:", t); // ← is this a string or undefined?
 
-      const res = await fetch(`${API}/api/orders/checkout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
-        body: JSON.stringify({ shippingAddress: form, paymentMethod }),
-      });
+    if (!t) throw new Error("Vous devez être connecté.");
 
-      if (!res.ok) throw new Error((await res.json()).message);
-      const order = await res.json();
-      setOrderId(order._id);
-      setStep("success");
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
+    const res = await fetch(`${API}/api/orders/checkout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+      body: JSON.stringify({ shippingAddress: form, paymentMethod }),
+    });
+
+    const body = await res.json();
+    console.log("SERVER RESPONSE:", body); // ← this shows the exact error
+
+    if (!res.ok) throw new Error(body.message);
+    setOrderId(body._id);
+    setStep("success");
+  } catch (err: any) {
+    setError(err.message);
+  } finally {
+    setSubmitting(false);
   }
+}
 
   // ── Guards ──
   if (!session) return (
