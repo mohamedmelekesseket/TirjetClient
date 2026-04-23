@@ -336,18 +336,21 @@ const Header = () => {
 
                       <div className="mega__inner">
 
-                        {/* ── Col 1: Category info ── */}
+                        {/* ── Col 1: All categories list ── */}
                         <div className="mega__col mega__col--info">
-                          <p className="mega__col-label">Catégorie</p>
-                          <h2 className="mega__cat-name">{activeL1.name}</h2>
-                          {activeL1.description && (
-                            <p className="mega__cat-desc">{activeL1.description}</p>
-                          )}
-                          <button
-                            className="mega__see-all"
-                            onClick={() => navigate(catUrl(activeL1))}>
-                            Voir tout <ArrowUpRight size={14} strokeWidth={2} />
-                          </button>
+                          <p className="mega__col-label">Toutes les catégories</p>
+                          {categories.map((cat) => (
+                            <button
+                              key={cat._id}
+                              className={`mega__row${activeL1?._id === cat._id ? " mega__row--active" : ""}`}
+                              onMouseEnter={() => openMega(cat)}
+                              onClick={() => navigate(catUrl(cat))}
+                              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}
+                            >
+                              <span>{cat.name}</span>
+                              <ArrowUpRight size={13} strokeWidth={2} style={{ opacity: 0.4 }} />
+                            </button>
+                          ))}
                         </div>
 
                         {/* ── Col 2: L2 — Univers ── */}
