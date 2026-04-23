@@ -343,33 +343,27 @@ const Header = () => {
                           {activeL1.description && (
                             <p className="mega__cat-desc">{activeL1.description}</p>
                           )}
-                          {categories.map((cat) => (
-                            <button
-                              key={cat._id}
-                              className="mega__see-all"
-                              onClick={() => navigate(catUrl(cat))}
-                            >
-                              {cat.name} <ArrowUpRight size={14} strokeWidth={2} />
-                            </button>
-                          ))}
+                          <button
+                            className="mega__see-all"
+                            onClick={() => navigate(catUrl(activeL1))}>
+                            Voir tout <ArrowUpRight size={14} strokeWidth={2} />
+                          </button>
                         </div>
 
-                        {/* ── Col 2: L2 — Univers ── */}
-                        <div className="mega__col mega__col--l2">
-                          <p className="mega__col-label">Univers</p>
-                          {activeL1.subcategories.map((l2) => (
-                            <button
-                              key={l2._id}
-                              className={`mega__row${activeL2?._id === l2._id ? " mega__row--active" : ""}`}
-                              onMouseEnter={() => selectL2(l2)}
-                              onClick={() => navigate(l2Url(activeL1, l2))}
-                            >
-                              <span>{l2.name}</span>
-                              {l2.subcategories.length > 0 && (
-                                <ChevronRight size={13} className="mega__row-chevron" />
-                              )}
-                            </button>
-                          ))}
+                        {/* ── Col 1: Category info ── */}
+                        <div className="mega__col mega__col--info">
+                          <p className="mega__col-label">Catégorie</p>
+                          <h2 className="mega__cat-name">{activeL1.name}</h2>
+                          {activeL1.description && (
+                            <p className="mega__cat-desc">{activeL1.description}</p>
+                          )}
+                          {/* Always show Voir tout — no condition */}
+                          <button
+                            className="mega__see-all"
+                            onClick={() => navigate(catUrl(activeL1))}
+                          >
+                            Voir tout <ArrowUpRight size={14} strokeWidth={2} />
+                          </button>
                         </div>
 
                         {/* ── Col 3: L3 — Collection ── */}
