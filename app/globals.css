@@ -863,7 +863,11 @@ a {
 .mega__col--info {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  /* Remove: justify-content: space-between */
+}
+
+.mega__see-all {
+  margin-top: 16px; /* fixed gap instead of auto */
 }
 
 .mega__cat-name {
@@ -879,14 +883,14 @@ a {
   font-size: 13px;
   color: #7a6a5a;
   line-height: 1.55;
-  margin: 0 0 auto 0;                  /* pushes "Voir tout" to bottom */
+  margin: 0 0 0 0;  /* ← remove the auto */
 }
 
 .mega__see-all {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  margin-top: 24px;
+  margin-top: 16px;  /* ← fixed gap */
   font-size: 13px;
   font-weight: 700;
   color: #1a1410;
