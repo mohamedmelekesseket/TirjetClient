@@ -503,7 +503,7 @@ export default function CategoryPage() {
                         </span>
 
                         {/* ADD TO CART BUTTON */}
-                        <button
+                        {/* <button
                           className="cat__card-cart"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -511,7 +511,7 @@ export default function CategoryPage() {
                           }}
                         >
                           🛍
-                        </button>
+                        </button> */}
                       </div>
                     </div>
                   </motion.article>
