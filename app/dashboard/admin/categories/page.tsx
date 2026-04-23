@@ -165,11 +165,33 @@ function NodeModal({ mode, onClose, onSave }:
     mode.kind === "create-l2" || mode.kind === "edit-l2" ? "dans la catégorie parente" :
     mode.kind === "create-l3" || mode.kind === "edit-l3" ? "dans le groupe L2" : "dans le groupe L3";
 
-  const handleSave = async () => {
+const handleSave = async () => {
     if (!name.trim()) { showErrorToast("Le nom est requis"); return; }
     if (isL1 && !mainCat) { showErrorToast("Catégorie principale requise"); return; }
     setSaving(true);
-    await onSave({ name: name.trim(), image: img.image, description, mainCategory: mainCat });
+
+    let finalImage = img.image;
+
+    if (img.image.startsWith("data:")) {
+      try {
+        const blob = await fetch(img.image).then(r => r.blob());
+        const formData = new FormData();
+        formData.append("image", blob, "category.jpg");
+        const uploadRes = await fetch(`${API_BASE}/upload-image`, {
+          method: "POST",
+          body: formData,
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadData.success) throw new Error(uploadData.message);
+        finalImage = uploadData.url;
+      } catch (e: any) {
+        showErrorToast("Erreur upload image: " + e.message);
+        setSaving(false);
+        return;
+      }
+    }
+
+    await onSave({ name: name.trim(), image: finalImage, description, mainCategory: mainCat });
     setSaving(false);
   };
 
@@ -496,15 +518,15 @@ export default function CategoriesPage() {
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
 
   // ── Save dispatcher ────────────────────────────────────────────────────────
-  const handleSave = async (form: NodeForm) => {
+const handleSave = async (form: NodeForm) => {
     if (!modal) return;
     try {
       let res: Response;
 
-      // ── L1 create / edit ──
       if (modal.kind === "create-l1") {
         res = await fetch(API_BASE, {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: form.name, image: form.image,
             description: form.description, mainCategory: form.mainCategory,
@@ -513,89 +535,70 @@ export default function CategoriesPage() {
 
       } else if (modal.kind === "edit-l1") {
         res = await fetch(`${API_BASE}/${modal.cat._id}`, {
-          method: "PUT", headers: { "Content-Type": "application/json" },
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: form.name, image: form.image,
             description: form.description, mainCategory: form.mainCategory,
           }),
         });
 
-      // ── L2 create ──
       } else if (modal.kind === "create-l2") {
         res = await fetch(`${API_BASE}/${modal.catId}/subcategories`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: form.name, image: form.image }),
         });
 
-      // ── L2 edit — fetch full cat, patch in memory, PUT back ──
       } else if (modal.kind === "edit-l2") {
-        const catRes  = await fetch(`${API_BASE}/${modal.catId}`);
-        const catData = await catRes.json();
-        const updated = (catData.data as Category).subcategories.map((s) =>
-          s._id === modal.l2._id ? { ...s, name: form.name, image: form.image } : s
-        );
-        res = await fetch(`${API_BASE}/${modal.catId}`, {
-          method: "PUT", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ subcategories: updated }),
+        // ← NOW calls PUT /:id/subcategories/:subId directly
+        res = await fetch(`${API_BASE}/${modal.catId}/subcategories/${modal.l2._id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: form.name, image: form.image }),
         });
 
-      // ── L3 create ──
       } else if (modal.kind === "create-l3") {
         res = await fetch(
           `${API_BASE}/${modal.catId}/subcategories/${modal.l2Id}/subcategories`,
-          { method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: form.name, image: form.image }) }
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: form.name, image: form.image }),
+          }
         );
 
-      // ── L3 edit ──
       } else if (modal.kind === "edit-l3") {
-        const catRes  = await fetch(`${API_BASE}/${modal.catId}`);
-        const catData = await catRes.json();
-        const updated = (catData.data as Category).subcategories.map((l2) => {
-          if (l2._id !== modal.l2Id) return l2;
-          return {
-            ...l2,
-            subcategories: l2.subcategories.map((l3) =>
-              l3._id === modal.l3._id ? { ...l3, name: form.name, image: form.image } : l3
-            ),
-          };
-        });
-        res = await fetch(`${API_BASE}/${modal.catId}`, {
-          method: "PUT", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ subcategories: updated }),
-        });
+        // ← NOW calls PUT /:id/subcategories/:subId/subcategories/:subSubId directly
+        res = await fetch(
+          `${API_BASE}/${modal.catId}/subcategories/${modal.l2Id}/subcategories/${modal.l3._id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: form.name, image: form.image }),
+          }
+        );
 
-      // ── L4 create ──
       } else if (modal.kind === "create-l4") {
         res = await fetch(
           `${API_BASE}/${modal.catId}/subcategories/${modal.l2Id}/subcategories/${modal.l3Id}/subcategories`,
-          { method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: form.name, image: form.image }) }
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: form.name, image: form.image }),
+          }
         );
 
-      // ── L4 edit ──
       } else {
-        const catRes  = await fetch(`${API_BASE}/${modal.catId}`);
-        const catData = await catRes.json();
-        const updated = (catData.data as Category).subcategories.map((l2) => {
-          if (l2._id !== modal.l2Id) return l2;
-          return {
-            ...l2,
-            subcategories: l2.subcategories.map((l3) => {
-              if (l3._id !== modal.l3Id) return l3;
-              return {
-                ...l3,
-                subcategories: l3.subcategories.map((l4) =>
-                  l4._id === modal.l4._id ? { ...l4, name: form.name, image: form.image } : l4
-                ),
-              };
-            }),
-          };
-        });
-        res = await fetch(`${API_BASE}/${modal.catId}`, {
-          method: "PUT", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ subcategories: updated }),
-        });
+        // edit-l4 ← NOW calls PUT /:id/.../subcategories/:itemId directly
+        res = await fetch(
+          `${API_BASE}/${modal.catId}/subcategories/${modal.l2Id}/subcategories/${modal.l3Id}/subcategories/${modal.l4._id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: form.name, image: form.image }),
+          }
+        );
       }
 
       if (!res!.ok) {
@@ -604,7 +607,9 @@ export default function CategoriesPage() {
       }
       showSuccessToast(modal.kind.startsWith("edit") ? "Mis à jour ✓" : "Créé ✓");
       await fetchCategories();
-    } catch (e: any) { showErrorToast(e.message || "Erreur sauvegarde"); }
+    } catch (e: any) {
+      showErrorToast(e.message || "Erreur sauvegarde");
+    }
     closeModal();
   };
 

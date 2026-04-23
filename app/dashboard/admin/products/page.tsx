@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { Check, Plus, Eye, Flag, Gem, Package, Search, Shirt, Lamp, X, Loader2 } from "lucide-react";
+import { Check, Plus, Eye, Flag, Gem, Package, Search, Shirt, Lamp, X, Loader2, Home } from "lucide-react";
 import type { ComponentType } from "react";
 import Link from "next/link";
 import { showErrorToast, showSuccessToast } from "@/lib/toast";
@@ -17,42 +17,37 @@ interface Product {
   stock: number;
   isApproved: boolean;
   isReported?: boolean;
+  isHome?: boolean;
   images: string[];
   artisan: { _id: string; name: string; slug?: string } | string | null;
   createdAt: string;
   isSuspended?: boolean;
 }
 
-type FilterTab = "Tous" | "Publiés" | "En attente" | "Signalés" | "Suspendus";
+type FilterTab = "Tous" | "Publiés" | "En attente" | "Signalés" | "Suspendus" | "Accueil";
 
 // ── Safe field extractors ───────────────────────────────────────────────────
 
-/** Returns the best display label for a category (object or raw string) */
 const getCategoryDisplay = (category: Product["category"]): string => {
   if (!category) return "—";
   if (typeof category === "object") {
-    // Populated object from API → use name directly
     return category.name || category.slug || "—";
   }
-  // Raw string: could be a slug we know, or a raw MongoDB _id
   return categoryLabel[category] || category || "—";
 };
 
-/** Returns a slug/key for icon lookup — only meaningful when category is a known slug */
 const getCategoryIconKey = (category: Product["category"]): string => {
   if (!category) return "";
   if (typeof category === "object") return category.slug || "";
   return category;
 };
 
-/** Always returns a displayable string for the artisan name */
 const getArtisanName = (artisan: Product["artisan"]): string => {
   if (!artisan) return "—";
   if (typeof artisan === "string") return artisan;
   return artisan.name || "—";
 };
 
-/** Always returns a safe numeric price */
 const getPrice = (price: any): number => {
   if (typeof price === "number") return price;
   if (typeof price === "object" && price !== null) return 0;
@@ -107,10 +102,11 @@ export default function AdminProductsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API}/api/products`, { headers: getHeaders() });
+      const res = await fetch(`${API}/api/products?limit=100`, { headers: getHeaders() });
       if (res.status === 401) throw new Error("Non autorisé — session expirée ?");
       if (!res.ok) throw new Error("Erreur lors du chargement des produits");
       const data = await res.json();
+      console.log("total:", data.products.length);
       setProducts(data.products || data.data || []);
     } catch (err: any) {
       setError(err.message);
@@ -140,6 +136,29 @@ export default function AdminProductsPage() {
     }
   };
 
+  // ── NEW: Toggle isHome ──────────────────────────────────────────────────
+  const handleToggleHome = async (id: string, currentValue: boolean) => {
+    setActionLoading(id + "-home");
+    try {
+      const res = await fetch(`${API}/api/products/${id}`, {
+        method: "PUT",
+        headers: getHeaders(),
+        body: JSON.stringify({ isHome: !currentValue }),
+      });
+      if (!res.ok) throw new Error("Échec");
+      // Optimistic update — no need for full refetch
+      setProducts((prev) =>
+        prev.map((p) => (p._id === id ? { ...p, isHome: !currentValue } : p))
+      );
+      showSuccessToast(currentValue ? "Retiré de l'accueil" : "Mis en vedette sur l'accueil");
+    } catch (err: any) {
+      showErrorToast("Erreur", err?.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+  // ───────────────────────────────────────────────────────────────────────
+
   const handleDelete = async (id: string) => {
     try {
       setDeletingId(id);
@@ -149,6 +168,7 @@ export default function AdminProductsPage() {
       });
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
       setProducts((prev) => prev.filter((p) => p._id !== id));
+      
       setDeleteConfirm(null);
       showSuccessToast("Produit supprimé");
     } catch (err: any) {
@@ -165,7 +185,8 @@ export default function AdminProductsPage() {
       (activeTab === "Publiés" && status === "Publié") ||
       (activeTab === "En attente" && status === "En attente") ||
       (activeTab === "Signalés" && p.isReported) ||
-      (activeTab === "Suspendus" && status === "Suspendu");
+      (activeTab === "Suspendus" && status === "Suspendu") ||
+      (activeTab === "Accueil" && p.isHome === true); // ← NEW
     const artisanName = getArtisanName(p.artisan);
     const matchSearch =
       p.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -178,6 +199,7 @@ export default function AdminProductsPage() {
     published: products.filter((p) => productStatus(p) === "Publié").length,
     pending: products.filter((p) => productStatus(p) === "En attente").length,
     reported: products.filter((p) => p.isReported).length,
+    home: products.filter((p) => p.isHome === true).length, // ← NEW
   };
 
   const isSessionLoading =
@@ -268,13 +290,14 @@ export default function AdminProductsPage() {
         </div>
       </div>
 
-      {/* ── Stats ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "16px", marginBottom: "24px" }}>
+      {/* ── Stats — now 5 cards ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: "16px", marginBottom: "24px" }}>
         {[
           { label: "Total produits", val: counts.total,     color: "#0234AB" },
           { label: "Publiés",        val: counts.published, color: "#0B9E5E" },
           { label: "En attente",     val: counts.pending,   color: "#F59E0B" },
           { label: "Signalés",       val: counts.reported,  color: "#E53E3E" },
+          { label: "Accueil",        val: counts.home,      color: "#6B46C1" }, // ← NEW
         ].map((s, i) => (
           <div key={s.label} className="order-stat-mini anim-fade-up" style={{ animationDelay: `${i * 0.07}s` }}>
             <div className="order-stat-mini-label">{s.label}</div>
@@ -283,11 +306,15 @@ export default function AdminProductsPage() {
         ))}
       </div>
 
-      {/* ── Filter tabs ── */}
+      {/* ── Filter tabs — now includes Accueil ── */}
       <div className="tabs">
-        {(["Tous", "Publiés", "En attente", "Signalés", "Suspendus"] as FilterTab[]).map((t) => (
+        {(["Tous", "Publiés", "En attente", "Signalés", "Suspendus", "Accueil"] as FilterTab[]).map((t) => (
           <button key={t} className={`tab${activeTab === t ? " active" : ""}`} onClick={() => setActiveTab(t)}>
-            {t}
+            {t === "Accueil" ? (
+              <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <Home size={13} /> {t}
+              </span>
+            ) : t}
           </button>
         ))}
       </div>
@@ -325,6 +352,7 @@ export default function AdminProductsPage() {
                   <th>Prix</th>
                   <th>Stock</th>
                   <th>Signalé</th>
+                  <th>Accueil</th>
                   <th>Statut</th>
                   <th>Actions</th>
                 </tr>
@@ -332,7 +360,7 @@ export default function AdminProductsPage() {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={8} style={{ textAlign: "center", padding: "32px", color: "#8B9AB5" }}>
+                    <td colSpan={9} style={{ textAlign: "center", padding: "32px", color: "#8B9AB5" }}>
                       Aucun produit trouvé
                     </td>
                   </tr>
@@ -345,6 +373,7 @@ export default function AdminProductsPage() {
                     const price = getPrice(p.price);
                     const Icon = categoryIcon[iconKey] || Package;
                     const isDeleting = deletingId === p._id;
+                    const isHomeBusy = actionLoading === p._id + "-home";
 
                     return (
                       <tr key={p._id} style={{ animationDelay: `${i * 0.055}s`, opacity: isDeleting ? 0.5 : 1 }}>
@@ -362,7 +391,6 @@ export default function AdminProductsPage() {
                         </td>
                         <td style={{ color: "#4A5568", fontSize: "0.875rem" }}>{artisanName}</td>
                         <td>
-                          {/* ✅ Always shows name in prod and localhost */}
                           <span className="badge badge-primary">{catDisplay}</span>
                         </td>
                         <td>
@@ -377,12 +405,37 @@ export default function AdminProductsPage() {
                             : <span style={{ color: "#8B9AB5", fontSize: "0.82rem" }}>—</span>
                           }
                         </td>
+
+                        {/* ── NEW: isHome column ── */}
+                        <td>
+                          {p.isHome ? (
+                            <button
+                              title="Retirer de l'accueil"
+                              disabled={isHomeBusy}
+                              onClick={() => handleToggleHome(p._id, true)}
+                              style={{
+                                display: "inline-flex", alignItems: "center", gap: 5,
+                                padding: "3px 10px", borderRadius: 20, border: "none", cursor: "pointer",
+                                background: "#EBF8FF", color: "#0234AB", fontWeight: 600, fontSize: "0.75rem",
+                                opacity: isHomeBusy ? 0.6 : 1, transition: "opacity 0.15s",
+                              }}
+                            >
+                              {isHomeBusy
+                                ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
+                                : <Home size={12} />}
+                              Accueil
+                            </button>
+                          ) : (
+                            <span style={{ color: "#8B9AB5", fontSize: "0.82rem" }}>—</span>
+                          )}
+                        </td>
+
                         <td>
                           <span className={`badge ${statusClass[status] || "badge-gray"}`}>{status}</span>
                         </td>
                         <td>
-                          <div style={{ display: "flex", gap: "6px" }}>
-                            <Link href={`/dashboard/admin/products/${p._id}`} className="icon-btn" title="Voir">
+                          <div style={{ display: "flex", gap: "6px",borderColor:"blue",color:"blue" }}>
+                            <Link href={`/dashboard/admin/products/${p._id}`} style={{borderColor:"blue",color:"blue"}} className="icon-btn" title="Voir">
                               <Eye size={16} />
                             </Link>
 
@@ -391,6 +444,7 @@ export default function AdminProductsPage() {
                                 className="btn btn-success btn-sm"
                                 disabled={actionLoading === p._id + "-approve"}
                                 onClick={() => handleApprove(p._id)}
+                                style={{borderColor:"blue",color:"blue"}}
                               >
                                 {actionLoading === p._id + "-approve" ? "..." : <Check size={14} />}
                               </button>
@@ -414,6 +468,7 @@ export default function AdminProductsPage() {
                                   title="Supprimer"
                                   disabled={isDeleting}
                                   onClick={() => setDeleteConfirm(p)}
+                                  style={{borderColor:"red",color:"red"}}
                                 >
                                   {isDeleting
                                     ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, useScroll, useTransform, Variants } from "framer-motion";
 import Image1 from "../images/hero-artisan.jpg";
+import Image2 from "../images/Untitled.png";
 import story from "../images/story.jpg";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -26,6 +27,7 @@ interface Category {
   name: string;
   image: string;
   description: string;
+  slug: string;
   subcategories: { _id: string; name: string; slug: string }[];
   isActive: boolean;
 }
@@ -142,7 +144,7 @@ function Hero() {
   }, []);
 
   return (
-<section className="pg-hero" ref={containerRef}>
+    <section className="pg-hero" ref={containerRef}>
       <motion.div className="pg-hero__imgwrap" style={{ y: imgY }}>
         <img src={Image1.src} alt="" aria-hidden className="pg-hero__img" />
       </motion.div>
@@ -200,6 +202,70 @@ function Hero() {
   );
 }
 
+// ─── Category Icon ────────────────────────────────────────────────────────────
+function CategoryIcon({ name }: { name: string }) {
+  const n = name.toLowerCase();
+
+  if (n.includes("coffret") || n.includes("cadeau"))
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#8a5c2e" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+        <rect x="3" y="8" width="18" height="13" rx="1" />
+        <path d="M21 8H3V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2z" />
+        <path d="M12 5V21" />
+        <path d="M8.5 5c0-1.9 3.5-3.5 3.5-3.5s3.5 1.6 3.5 3.5" />
+      </svg>
+    );
+
+  if (n.includes("vêtement") || n.includes("chaussure") || n.includes("mode") || n.includes("habit"))
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#8a5c2e" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+      </svg>
+    );
+
+  if (n.includes("maison") || n.includes("décor") || n.includes("intérieur") || n.includes("tapis"))
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#8a5c2e" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
+      </svg>
+    );
+
+  if (n.includes("cosmétique") || n.includes("beauté") || n.includes("soin") || n.includes("naturel"))
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#8a5c2e" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+        <path d="M12 2a5 5 0 0 1 5 5c0 3-2 5.5-5 8-3-2.5-5-5-5-8a5 5 0 0 1 5-5z" />
+        <path d="M12 15v7" />
+        <path d="M9 19h6" />
+      </svg>
+    );
+
+  if (n.includes("gastronomie") || n.includes("alimentaire") || n.includes("cuisine") || n.includes("trésor"))
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#8a5c2e" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+        <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+        <line x1="6" y1="1" x2="6" y2="4" />
+        <line x1="10" y1="1" x2="10" y2="4" />
+        <line x1="14" y1="1" x2="14" y2="4" />
+      </svg>
+    );
+
+  if (n.includes("bijou") || n.includes("accessoire") || n.includes("joaillerie"))
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#8a5c2e" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+      </svg>
+    );
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="#8a5c2e" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  );
+}
+
 // ─── Categories ───────────────────────────────────────────────────────────────
 interface CategoriesSectionProps {
   categories: Category[];
@@ -211,17 +277,18 @@ function CategoriesSection({ categories, loading }: CategoriesSectionProps) {
 
   if (loading) {
     return (
-      <section className="pg-artisans">
-        <div className="pg-artisans__head">
-          <p className="pg-label">Nos Catégories</p>
-          <h2 className="pg-h2">Explorer par catégorie</h2>
+      <section className="tjs">
+        <div className="tjs-head">
+          <h2 className="tjs-h2">Découvrez nos univers</h2>
         </div>
-        <div className="pg-artisans__grid">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="pg-art-card" style={{ opacity: 0.3 }}>
-              <div className="pg-art-card__avatar" style={{ background: "#e2e8f0", borderRadius: "50%" }} />
-              <div style={{ height: 14, background: "#e2e8f0", borderRadius: 4, margin: "10px auto 6px", width: "70%" }} />
-              <div style={{ height: 11, background: "#e2e8f0", borderRadius: 4, margin: "0 auto", width: "50%" }} />
+        <div className="tjs-row1">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="tjs-card tjs-card--skeleton">
+              <div className="tjs-card__photo tjs-skeleton" />
+              <div className="tjs-card__body">
+                <div className="tjs-skeleton tjs-skeleton--line" style={{ width: "70%", height: 16, marginBottom: 8 }} />
+                <div className="tjs-skeleton tjs-skeleton--line" style={{ width: "55%", height: 11 }} />
+              </div>
             </div>
           ))}
         </div>
@@ -231,93 +298,95 @@ function CategoriesSection({ categories, loading }: CategoriesSectionProps) {
 
   if (categories.length === 0) return null;
 
+  const row1 = categories.slice(0, 4);
+  const row2 = categories.slice(4, 7);
+
   return (
-    <section className="pg-artisans">
-      <motion.div
-        className="pg-artisans__head"
-        variants={fadeUp}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
-      >
-        <p className="pg-label">Nos Catégories</p>
-        <h2 className="pg-h2">Explorer par catégorie</h2>
-      </motion.div>
+    <section className="tjs">
+      <div className="tjs-head">
+        <div className="tjs-icon-top">
+          <img src={Image2.src} width={'70px'} height={'70px'} alt="" />
+        </div>
+        <h2 className="tjs-h2">Découvrez nos univers</h2>
+        <p className="tjs-sub">
+          Explorez la richesse de la culture amazighe à travers nos catégories
+        </p>
+        <div className="tjs-divider" />
+      </div>
 
-      <div className="pg-artisans__grid">
-        {categories.map((cat, i) => (
-          <motion.article
+      <div className="tjs-row1">
+        {row1.map((cat) => (
+          <article
             key={cat._id}
-            className="pg-art-card"
-            variants={fadeUp}
-            custom={i}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
-            style={{ cursor: "pointer" }}
-            onClick={() => router.push(`/boutique?category=${cat._id}`)}
+            className="tjs-card"
+            onClick={() => router.push(`/boutique/categorie/${cat.slug}`)}
           >
-            <motion.div
-              className="pg-art-card__avatar"
-              whileHover={{ scale: 1.04, transition: { duration: 0.3 } }}
-              style={{ overflow: "hidden", position: "relative" }}
-            >
+            <div className="tjs-card__photo">
               {cat.image ? (
-                <img
-                  src={cat.image}
-                  alt={cat.name}
-                  style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                    const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
-                    if (fallback) fallback.style.display = "flex";
-                  }}
-                />
-              ) : null}
-              <div
-                style={{
-                  display: cat.image ? "none" : "flex",
-                  width: "100%",
-                  height: "100%",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "2rem",
-                  fontWeight: 700,
-                  color: "#b85d38",
-                  fontFamily: "'Playfair Display', serif",
-                  position: cat.image ? "absolute" : "relative",
-                  inset: 0,
-                }}
-              >
-                {cat.name.charAt(0)}
-              </div>
-              <div className="pg-art-card__ring" />
-            </motion.div>
-
-            <h4 className="pg-art-card__name">{cat.name}</h4>
-            <p className="pg-art-card__craft" style={{ fontSize: "11px", color: "#8a7b72" }}>
-              {cat.subcategories.length} sous-catégories
-            </p>
-            {cat.description && (
-              <p className="pg-art-card__loc" style={{ fontSize: "9px", marginTop: 4, color: "#aaa", lineHeight: 1.4 }}>
-                {cat.description.length > 50 ? cat.description.slice(0, 50) + "…" : cat.description}
-              </p>
-            )}
-          </motion.article>
+                <img src={cat.image} alt={cat.name} loading="lazy" />
+              ) : (
+                <div className="tjs-card__photo-fallback">{cat.name.charAt(0)}</div>
+              )}
+            </div>
+            <div className="tjs-card__body">
+              <h4 className="tjs-card__name">{cat.name}</h4>
+              {cat.description && (
+                <p className="tjs-card__line1">
+                  {cat.description.length > 40 ? cat.description.slice(0, 40) + "…" : cat.description}
+                </p>
+              )}
+              {cat.subcategories?.length > 0 && (
+                <p className="tjs-card__line2">
+                  {cat.subcategories.slice(0, 2).map((s) => s.name).join(", ")}
+                  {cat.subcategories.length > 2 ? "…" : ""}
+                </p>
+              )}
+              <span className="tjs-card__arrow">→</span>
+            </div>
+          </article>
         ))}
       </div>
 
-      <motion.div
-        style={{ textAlign: "center", marginTop: 32 }}
-        variants={fadeUp}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-      >
-        <Link href="/boutique" className="pg-textlink">
+      {row2.length > 0 && (
+        <div className="tjs-row2">
+          {row2.map((cat) => (
+            <article
+              key={cat._id}
+              className="tjs-card"
+              onClick={() => router.push(`/boutique/categorie/${cat.slug}`)}
+            >
+              <div className="tjs-card__photo">
+                {cat.image ? (
+                  <img src={cat.image} alt={cat.name} loading="lazy" />
+                ) : (
+                  <div className="tjs-card__photo-fallback">{cat.name.charAt(0)}</div>
+                )}
+              </div>
+              <div className="tjs-card__body">
+                <h4 className="tjs-card__name">{cat.name}</h4>
+                {cat.description && (
+                  <p className="tjs-card__line1">
+                    {cat.description.length > 40 ? cat.description.slice(0, 40) + "…" : cat.description}
+                  </p>
+                )}
+                {cat.subcategories?.length > 0 && (
+                  <p className="tjs-card__line2">
+                    {cat.subcategories.slice(0, 2).map((s) => s.name).join(", ")}
+                    {cat.subcategories.length > 2 ? "…" : ""}
+                  </p>
+                )}
+                <span className="tjs-card__arrow">→</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
+      <div className="tjs-cta">
+        <Link href="/boutique" className="tjs-btn">
           Voir toutes les catégories →
         </Link>
-      </motion.div>
+      </div>
     </section>
   );
 }
@@ -333,24 +402,26 @@ function Products({ categories }: ProductsProps) {
   const router = useRouter();
 
   useEffect(() => {
-    fetch(`${API}/api/products?isHome=true&limit=6`)
+    fetch(`${API}/api/products?limit=100`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data) {
           const list: Product[] = data.products ?? data.data ?? [];
-          const homeProducts = list.filter((p: Product) => p.isHome).slice(0, 6);
-          setProducts(homeProducts.length > 0 ? homeProducts : list.slice(0, 6));
+          console.log("total:", list.length);
+          console.log("isHome true:", list.filter(p => p.isHome === true).length);
+          console.log("isHome false:", list.filter(p => p.isHome === false).length);
+          console.log("isHome undefined/null:", list.filter(p => p.isHome == null).length);
+          const homeProducts = list.filter((p: Product) => p.isHome === true).slice(0, 6);
+          setProducts(homeProducts);
         }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  // ── Resolves the category name whether the API returns a populated object or a raw ID string
   const getCategoryName = (category: Product["category"]): string => {
     if (!category) return "";
     if (typeof category === "object") return category.name;
-    // It's a raw ID string — look it up in the shared categories list
     return categories.find((c) => c._id === category)?.name ?? "";
   };
 
@@ -385,6 +456,7 @@ function Products({ categories }: ProductsProps) {
     );
   }
 
+  // ✅ If no isHome products exist, render nothing — don't show an empty section
   if (products.length === 0) return null;
 
   return (
@@ -406,7 +478,8 @@ function Products({ categories }: ProductsProps) {
       </motion.div>
 
       <div className="pg-products__grid">
-        {products.filter((p) => p.isHome === true).map((p, i) => (
+        {/* ✅ No extra .filter() here — products state already contains only isHome===true items */}
+        {products.map((p, i) => (
           <motion.article
             key={p._id}
             className="pg-prod-card"
@@ -444,7 +517,6 @@ function Products({ categories }: ProductsProps) {
               )}
               <div className="pg-prod-card__shade" />
               <span className="pg-prod-card__cat">{getCategoryName(p.category)}</span>
-
               <div className="pg-prod-card__info">
                 <h4 className="pg-prod-card__name">{p.title}</h4>
                 {getArtisanName(p.artisan) && (
@@ -632,7 +704,7 @@ export default function Page() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.data) {
-          setCategories(data.data.filter((c: Category) => c.isActive).slice(0, 6));
+          setCategories(data.data.filter((c: Category) => c.isActive).slice(0, 7));
         }
       })
       .catch(() => {})

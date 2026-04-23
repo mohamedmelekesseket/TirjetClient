@@ -454,41 +454,64 @@ export default function CategoryPage() {
                 const wished  = wishlist.includes(p._id);
                 const pending = wishPending.has(p._id);
                 return (
-                  <motion.article key={p._id} layout
-                    className={`cat__card${viewMode === "list" ? " cat__card--list" : ""}`}
+                  <motion.article
+                    key={p._id}
+                    layout
+                    className="cat__card"
                     onClick={() => window.location.href = `/boutique/${p._id}`}
-                    initial={{ opacity: 0, scale: 0.96, y: 16 }}
-                    animate={{ opacity: 1, scale: 1, y: 0, transition: { duration: 0.32, ease: [0.25, 0.1, 0.25, 1] } }}
-                    exit={{ opacity: 0, scale: 0.96, y: -8, transition: { duration: 0.18 } }}
-                    whileHover={{ y: -4, transition: { duration: 0.2 } }}>
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
                     <div className="cat__card-img">
-                      {p.images?.[0]
-                        ? <img src={p.images[0]} alt={p.title} loading="lazy" />
-                        : <div className="cat__card-placeholder"><Package size={32} /></div>}
-                      {p.subcategoryL2?.name && (
-                        <span className="cat__card-badge">{p.subcategoryL2.name}</span>
+                      {p.images?.[0] ? (
+                        <img src={p.images[0]} alt={p.title} />
+                      ) : (
+                        <div className="cat__card-placeholder"><Package size={28} /></div>
                       )}
-                      <button className="cat__card-wish"
-                        onClick={(e) => { e.stopPropagation(); toggleWish(p._id); }}
-                        disabled={pending}
-                        style={{ color: wished ? "#d4784f" : undefined }}
-                        aria-label={wished ? "Retirer des favoris" : "Ajouter aux favoris"}>
-                        {wished ? <Heart size={16} fill="currentColor" /> : <HeartOff size={16} />}
+
+                      {/* CATEGORY BADGE */}
+                      {p.subcategoryL2?.name && (
+                        <span className="cat__card-badge">
+                          {p.subcategoryL2.name}
+                        </span>
+                      )}
+
+                      {/* WISHLIST */}
+                      <button
+                        className="cat__card-wish"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleWish(p._id);
+                        }}
+                      >
+                        {wished ? <Heart size={16} fill="#000" /> : <Heart size={16} />}
                       </button>
-                      <div className="cat__card-grad" />
                     </div>
+
                     <div className="cat__card-body">
                       <h3 className="cat__card-title">{p.title}</h3>
-                       <div className="cat__card-trail">
-                        {[p.subcategoryL2?.name, p.subcategoryL3?.name, p.subcategoryL4?.name]
-                          .filter(Boolean).join(" › ")}
+
+                      <div className="cat__card-trail">
+                        {[p.subcategoryL2?.name, p.subcategoryL3?.name]
+                          .filter(Boolean)
+                          .join(" • ")}
                       </div>
-                      {viewMode === "list" && (
-                        <p className="cat__card-desc">{p.description?.slice(0, 140)}</p>
-                      )}
+
                       <div className="cat__card-foot">
-                        <span className="cat__card-price">{p.price.toLocaleString("fr-TN")} TND</span>
-                        <span className="cat__card-cta">Voir →</span>
+                        <span className="cat__card-price">
+                          {p.price.toLocaleString("fr-TN")} TND
+                        </span>
+
+                        {/* ADD TO CART BUTTON */}
+                        <button
+                          className="cat__card-cart"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToCart(p);
+                          }}
+                        >
+                          🛍
+                        </button>
                       </div>
                     </div>
                   </motion.article>
