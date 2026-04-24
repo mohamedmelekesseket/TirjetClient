@@ -32,7 +32,7 @@ const links: NavLink[] = [
     href: "/CultureAmazigh",
     label: "Culture Amazigh",
     dropdown: [
-      { label: "Langue amazigh",             href: "/CultureAmazigh/langue" },
+      { label: "Langue amazigh",             href: "/CultureAmazigh/langueAmazigh" },
       { label: "Événements & traditions",     href: "/CultureAmazigh/evenements" },
       { label: "Symboles et motifs berbères", href: "/CultureAmazigh/symboles" },
       { label: "Musique amazigh",             href: "/CultureAmazigh/musique" },
