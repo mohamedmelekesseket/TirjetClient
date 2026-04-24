@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { motion,Variants  } from 'framer-motion';
 import { ShoppingBag, Mail, Phone, MapPin } from 'lucide-react';
-import logo from '../images/tirjet_app_icon (1).png'
+import logo from "../images/logo2 (2).png";
 
 export default function CompactFooter() {
   const currentYear = new Date().getFullYear();
@@ -50,9 +50,8 @@ export default function CompactFooter() {
           <motion.div variants={itemVariants} className="art-compact-col">
             <Link href="/" className="art-compact-logo">
               {/* <ShoppingBag size={20} className="art-compact-icon" /> */}
-              <img src={logo.src} width={'50px'} alt="" />
-              
-              <span>Tirjet</span>
+              <img src={logo.src} width="144" alt="Tirjet" />
+
             </Link>
             <p className="art-compact-tagline">
               La marketplace de l'Tirjett authentique.<br/>
@@ -83,7 +82,7 @@ export default function CompactFooter() {
           <motion.div variants={itemVariants} className="art-compact-col">
             <h3 className="art-compact-title">Contact</h3>
             <ul className="art-compact-contact">
-              <li className="contact-link"><Mail size={14} /> contact@Tirjet.com</li>
+              <li className="contact-link"><Mail size={14} /> contact@tirjet.com</li>
               <li className="contact-link"><Phone size={14} /> +212 600 000 000</li>
               <li className="contact-link"><MapPin size={14} /> Tunisia, Tunis</li>
             </ul>

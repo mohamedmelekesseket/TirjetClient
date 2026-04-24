@@ -12742,7 +12742,8 @@ button { cursor: pointer; }
 }
 
 .langue-pub-card {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   grid-template-columns: 1fr 1fr;
   background: var(--langue-white);
   border-radius: 20px;
@@ -12774,6 +12775,7 @@ button { cursor: pointer; }
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 50%;
   position: relative;
   min-height: 260px;
 }
@@ -12820,6 +12822,7 @@ button { cursor: pointer; }
 /* ── Body panel ── */
 .langue-pub-body {
   padding: 48px 42px;
+  width: 50%;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -12885,6 +12888,22 @@ button { cursor: pointer; }
 
 .langue-pub-more-text:hover { letter-spacing: 1px; }
 
+
+
+@media (max-width: 768px) {
+.langue-pub-card {
+  display: flex;
+  flex-direction: column;
+}
+.langue-pub-visual {
+  width: 100%;
+}
+.langue-pub-body {
+  
+  width: 100%;
+
+}
+}
 /* ═══════════════════════════════════════════════
    VOCABULARY SECTION
    ═══════════════════════════════════════════════ */
