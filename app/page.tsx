@@ -478,7 +478,6 @@ function Products({ categories }: ProductsProps) {
       </motion.div>
 
       <div className="pg-products__grid">
-        {/* ✅ No extra .filter() here — products state already contains only isHome===true items */}
         {products.map((p, i) => (
           <motion.article
             key={p._id}
@@ -516,7 +515,7 @@ function Products({ categories }: ProductsProps) {
                 </div>
               )}
               <div className="pg-prod-card__shade" />
-              <span className="pg-prod-card__cat">{getCategoryName(p.category)}</span>
+              <span className="pg-prod-card__cat" style={{backgroundColor:"black"}}>{getCategoryName(p.category)}</span>
               <div className="pg-prod-card__info">
                 <h4 className="pg-prod-card__name">{p.title}</h4>
                 {getArtisanName(p.artisan) && (

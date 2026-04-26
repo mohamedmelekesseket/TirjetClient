@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronRight, SlidersHorizontal, X, Search,
-  Heart, HeartOff, Package, Loader2, ArrowLeft,
+  Heart, Package, Loader2, ArrowLeft,
   Grid3X3, LayoutList, ChevronDown, Check,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -39,9 +39,17 @@ export default function CategoryPage() {
   const { data: session } = useSession();
   const apiToken = (session as any)?.apiToken as string | undefined;
 
-  const l1Slug = Array.isArray(params?.slug)
-    ? params.slug[0]
-    : typeof params?.slug === "string" ? params.slug : "";
+  // ── Extract all slug segments from the URL ────────────────────────────────
+  const slugs = Array.isArray(params?.slug)
+    ? params.slug
+    : params?.slug
+      ? [params.slug]
+      : [];
+
+  const l1Slug = slugs[0] ?? "";
+  const l2Slug = slugs[1] ?? "";
+  const l3Slug = slugs[2] ?? "";
+  const l4Slug = slugs[3] ?? "";
 
   const [categoryTree, setCategoryTree] = useState<Category | null>(null);
   const treeSlugRef = useRef<string | null>(null);
@@ -50,9 +58,9 @@ export default function CategoryPage() {
   const [activeL3, setActiveL3] = useState<Level3 | null>(null);
   const [activeL4, setActiveL4] = useState<Level4 | null>(null);
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [fetching, setFetching] = useState(false);
-  const [error, setError]       = useState<string | null>(null);
+  const [products, setProducts]       = useState<Product[]>([]);
+  const [fetching, setFetching]       = useState(false);
+  const [error, setError]             = useState<string | null>(null);
 
   const [wishlist, setWishlist]       = useState<string[]>([]);
   const [wishPending, setWishPending] = useState<Set<string>>(new Set());
@@ -64,18 +72,40 @@ export default function CategoryPage() {
   const [viewMode, setViewMode]       = useState<"grid" | "list">("grid");
   const [sortOpen, setSortOpen]       = useState(false);
 
-  // ── 1. Fetch category tree ────────────────────────────────────────────────
+  // ── 1. Fetch category tree + initialize active levels from URL ─────────────
   useEffect(() => {
     if (!l1Slug || treeSlugRef.current === l1Slug) return;
     treeSlugRef.current = l1Slug;
+
     fetch(`${API}/api/categories?mainCategory=artisanat`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         const list: Category[] = data?.data ?? [];
-        setCategoryTree(list.find((c) => c.slug === l1Slug) ?? null);
+        const tree = list.find((c) => c.slug === l1Slug) ?? null;
+        setCategoryTree(tree);
+
+        if (tree) {
+          // Initialize L2 from URL
+          const foundL2 = l2Slug
+            ? (tree.subcategories.find((l2) => l2.slug === l2Slug) ?? null)
+            : null;
+          setActiveL2(foundL2);
+
+          // Initialize L3 from URL
+          if (foundL2 && l3Slug) {
+            const foundL3 = foundL2.subcategories.find((l3) => l3.slug === l3Slug) ?? null;
+            setActiveL3(foundL3);
+
+            // Initialize L4 from URL
+            if (foundL3 && l4Slug) {
+              const foundL4 = foundL3.subcategories.find((l4) => l4.slug === l4Slug) ?? null;
+              setActiveL4(foundL4);
+            }
+          }
+        }
       })
       .catch(() => { treeSlugRef.current = null; });
-  }, [l1Slug]);
+  }, [l1Slug, l2Slug, l3Slug, l4Slug]);
 
   // ── 2. Selection helpers ──────────────────────────────────────────────────
   const selectL2 = useCallback((l2: Level2 | null) => {
@@ -98,6 +128,7 @@ export default function CategoryPage() {
   useEffect(() => {
     if (!categoryTree) return;
     const controller = new AbortController();
+
     const load = async () => {
       setFetching(true);
       setError(null);
@@ -106,6 +137,7 @@ export default function CategoryPage() {
         if (activeL4?.slug)      qs.set("subcategoryL4", activeL4.slug);
         else if (activeL3?.slug) qs.set("subcategoryL3", activeL3.slug);
         else if (activeL2?.slug) qs.set("subcategoryL2", activeL2.slug);
+
         const res  = await fetch(`${API}/api/products?${qs}`, { signal: controller.signal });
         if (!res.ok) throw new Error("Erreur serveur");
         const data = await res.json();
@@ -117,6 +149,7 @@ export default function CategoryPage() {
         if (!controller.signal.aborted) setFetching(false);
       }
     };
+
     load();
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -168,10 +201,10 @@ export default function CategoryPage() {
   // ── 6. Breadcrumb ─────────────────────────────────────────────────────────
   const breadcrumbs = [
     { label: "Boutique",          onClick: null as null | (() => void), isHome: true },
-    categoryTree && { label: categoryTree.name, onClick: () => selectL2(null),      isHome: false },
-    activeL2     && { label: activeL2.name,     onClick: () => selectL3(null),      isHome: false },
-    activeL3     && { label: activeL3.name,     onClick: () => setActiveL4(null),   isHome: false },
-    activeL4     && { label: activeL4.name,     onClick: null,                      isHome: false },
+    categoryTree && { label: categoryTree.name, onClick: () => selectL2(null),    isHome: false },
+    activeL2     && { label: activeL2.name,     onClick: () => selectL3(null),    isHome: false },
+    activeL3     && { label: activeL3.name,     onClick: () => setActiveL4(null), isHome: false },
+    activeL4     && { label: activeL4.name,     onClick: null,                    isHome: false },
   ].filter(Boolean) as { label: string; onClick: (() => void) | null; isHome: boolean }[];
 
   const activeName = activeL4?.name ?? activeL3?.name ?? activeL2?.name ?? categoryTree?.name ?? "Catégorie";
@@ -422,8 +455,12 @@ export default function CategoryPage() {
           <AnimatePresence>
             {fetching && (
               <motion.div className="cat__center"
-                style={{ position: "absolute", inset: 0, zIndex: 5, backdropFilter: "blur(2px)",
-                  backgroundColor: "rgba(255,255,255,0.55)", pointerEvents: "none" }}
+                style={{
+                  position: "absolute", inset: 0, zIndex: 5,
+                  backdropFilter: "blur(2px)",
+                  backgroundColor: "rgba(255,255,255,0.55)",
+                  pointerEvents: "none",
+                }}
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}>
                 <Loader2 size={28} className="cat__spin" />
@@ -452,7 +489,6 @@ export default function CategoryPage() {
             <AnimatePresence mode="popLayout" initial={false}>
               {filtered.map((p) => {
                 const wished  = wishlist.includes(p._id);
-                const pending = wishPending.has(p._id);
                 return (
                   <motion.article
                     key={p._id}
@@ -469,49 +505,26 @@ export default function CategoryPage() {
                         <div className="cat__card-placeholder"><Package size={28} /></div>
                       )}
 
-                      {/* CATEGORY BADGE */}
                       {p.subcategoryL2?.name && (
-                        <span className="cat__card-badge">
-                          {p.subcategoryL2.name}
-                        </span>
+                        <span className="cat__card-badge">{p.subcategoryL2.name}</span>
                       )}
 
-                      {/* WISHLIST */}
                       <button
                         className="cat__card-wish"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleWish(p._id);
-                        }}
-                      >
-                        {wished ? <Heart size={16} fill="#000" /> : <Heart size={16} />}
+                        onClick={(e) => { e.stopPropagation(); toggleWish(p._id); }}>
+                        <Heart size={16} fill={wished ? "#red" : "black"} />
                       </button>
                     </div>
 
                     <div className="cat__card-body">
                       <h3 className="cat__card-title">{p.title}</h3>
-
                       <div className="cat__card-trail">
-                        {[p.subcategoryL2?.name, p.subcategoryL3?.name]
-                          .filter(Boolean)
-                          .join(" • ")}
+                        {[p.subcategoryL2?.name, p.subcategoryL3?.name].filter(Boolean).join(" • ")}
                       </div>
-
                       <div className="cat__card-foot">
                         <span className="cat__card-price">
                           {p.price.toLocaleString("fr-TN")} TND
                         </span>
-
-                        {/* ADD TO CART BUTTON */}
-                        {/* <button
-                          className="cat__card-cart"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            addToCart(p);
-                          }}
-                        >
-                          🛍
-                        </button> */}
                       </div>
                     </div>
                   </motion.article>
