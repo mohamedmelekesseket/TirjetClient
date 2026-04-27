@@ -119,50 +119,55 @@ export default function ProfilePage() {
     if (photoInputRef.current) photoInputRef.current.value = '';
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    setError(null);
-    setSuccessMsg(null);
-    try {
-      const body = new FormData();
-      body.append('phone',       form.phone);
-      body.append('region',      form.region);
-      body.append('specialite',  form.specialite);
-      body.append('description', form.description);
-      body.append('instagram',   form.instagram);
-      body.append('website',     form.website);
+const handleSave = async () => {
+  setSaving(true);
+  setError(null);
+  setSuccessMsg(null);
+  try {
+    const body = new FormData();
+    body.append('phone',       form.phone);
+    body.append('region',      form.region);
+    body.append('specialite',  form.specialite);
+    body.append('description', form.description);
+    body.append('instagram',   form.instagram);
+    body.append('website',     form.website);
+    if (photoFile) body.append('profilePhoto', photoFile);
 
-      if (photoFile) {
-        body.append('profilePhoto', photoFile);
-      }
+    const res = await fetch(`${API}/api/artisans/me`, {
+      method: 'PUT',
+      headers: apiToken ? { Authorization: `Bearer ${apiToken}` } : {},
+      body,
+    });
 
-      const res = await fetch(`${API}/api/artisans/me`, {
-        method: 'PUT',
-        headers: apiToken ? { Authorization: `Bearer ${apiToken}` } : {},
-        body,
-      });
-
-      if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.message || 'Erreur lors de la sauvegarde');
-      }
-
-      const saved = await res.json();
-      if (saved.profilePhoto) {
-        setProfilePhoto(saved.profilePhoto);
-        setPhotoFile(null);
-        setPhotoPreview(null);
-      }
-
-      setSuccessMsg('Profil mis à jour avec succès !');
-      setTimeout(() => setSuccessMsg(null), 3500);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
+    if (!res.ok) {
+      const d = await res.json();
+      throw new Error(d.message || 'Erreur lors de la sauvegarde');
     }
-  };
 
+    const saved = await res.json();
+
+    // Always clear the pending file state
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    if (photoInputRef.current) photoInputRef.current.value = '';
+
+    // Update photo URL (old or new)
+    setProfilePhoto(saved.profilePhoto ?? '');
+
+    // Warn if photo didn't actually change despite uploading
+    if (photoFile && saved.profilePhoto === profilePhoto) {
+      setError('⚠ La photo n\'a pas pu être mise à jour. Réessayez.');
+      return;
+    }
+
+    setSuccessMsg('Profil mis à jour avec succès !');
+    setTimeout(() => setSuccessMsg(null), 3500);
+  } catch (err: any) {
+    setError(err.message);
+  } finally {
+    setSaving(false);
+  }
+};
   const displayName = user?.name ?? '—';
   const initials    = displayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
   const currentPhoto = photoPreview || profilePhoto;
@@ -585,6 +590,7 @@ export default function ProfilePage() {
                     title="Cliquer pour changer la photo"
                   >
                     <img
+                      key={currentPhoto}          // ← forces DOM remount on URL change
                       src={currentPhoto}
                       alt="Photo de profil"
                       className="pp-photo-img"

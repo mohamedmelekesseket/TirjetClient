@@ -6,9 +6,8 @@ import LayoutWrapper from "@/components/LayoutWrapper";
 import AppToaster from "@/components/AppToaster";
 import { fontDisplay, fontSans } from "@/lib/font";
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "Tirjet",
-  description: "Artisanat Tunisie",
 };
 
 export default function RootLayout({
