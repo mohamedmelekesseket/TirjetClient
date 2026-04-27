@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Lora:ital,wght@0,400;0,500;1,400&family=Noto+Sans+Tifinagh&display=swap');
 
 @theme inline {
   --color-background: var(--background);
@@ -8569,6 +8570,13 @@ tbody td {
   margin-bottom: 24px;
 }
 
+.dash-kpi-5 {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
 .dash-two-col {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -8583,6 +8591,7 @@ tbody td {
   .artisan-home-grid { grid-template-columns: 1fr; }
   .admin-quick-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dash-kpi-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-kpi-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-width: 1024px) {
@@ -8605,6 +8614,7 @@ tbody td {
   .admin-grid { grid-template-columns: 1fr; }
   .admin-quick-nav { grid-template-columns: 1fr; }
   .dash-kpi-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-kpi-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dash-two-col { grid-template-columns: 1fr; }
 }
 
@@ -8629,9 +8639,15 @@ tbody td {
   .navbar-profile { padding: 0; border: none; }
   .navbar-profile > div:last-child { display: none; }
   .dash-kpi-4 { grid-template-columns: 1fr; }
+  .dash-kpi-5 { grid-template-columns: 1fr; }
 
   /* Common inline 2-col grids inside modals/cards */
   .dash-inline-2col { display: grid; grid-template-columns: 1fr; gap: 10px; }
+
+  .card-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 }
 
 @media (max-width: 520px) {
@@ -8646,6 +8662,107 @@ tbody td {
   .navbar-icon-btn { width: 34px; height: 34px; border-radius: 10px; }
   .navbar-avatar { width: 32px; height: 32px; border-radius: 10px; }
   .dash-mobile-nav-label { font-size: 0.9rem; }
+}
+
+/* Dashboard hard mobile/tablet fallback */
+@media (max-width: 992px) {
+  .dashboard-layout {
+    display: block;
+    min-height: auto;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .dashboard-main {
+    margin-left: 0;
+    min-width: 0;
+  }
+
+  .navbar-mobile-menu-btn {
+    display: inline-flex;
+  }
+
+  .navbar-inner {
+    padding: 0 14px;
+  }
+
+  .navbar-search {
+    display: none;
+  }
+
+  .navbar-profile {
+    padding: 0;
+    border: none;
+  }
+
+  .navbar-profile > div:last-child {
+    display: none;
+  }
+
+  .dashboard-inner {
+    padding: 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .header-actions-row {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .header-actions-row > * {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .search-bar {
+    width: 100%;
+  }
+
+  .search-bar-input {
+    width: 100%;
+  }
+
+  .tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .tab {
+    flex: 0 0 auto;
+  }
+
+  .stats-grid,
+  .admin-stats-grid,
+  .dash-kpi-4,
+  .dash-kpi-5,
+  .orders-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-grid,
+  .admin-stats-grid,
+  .dash-kpi-4,
+  .dash-kpi-5,
+  .orders-stats {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ============================================================
@@ -12044,7 +12161,6 @@ input[type="range"].cat__range-input::-webkit-slider-thumb {
    Prefix: cult-
    ═══════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Lora:ital,wght@0,400;0,500;1,400&family=Noto+Sans+Tifinagh&display=swap');
 
 /* ── Variables ── */
 :root {
@@ -13792,3 +13908,61 @@ button { cursor: pointer; }
 
 
 
+/* ─── Global responsive safety layer ─────────────────────────────────────── */
+html,
+body,
+.site-root,
+.site-body,
+.site-main {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+img,
+video,
+canvas,
+svg,
+iframe {
+  max-width: 100%;
+}
+
+img,
+video,
+canvas,
+iframe {
+  height: auto;
+}
+
+main,
+section,
+article,
+header,
+footer,
+nav,
+aside {
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .site-main {
+    overflow-x: hidden;
+  }
+}
+
+@media (max-width: 768px) {
+  .site-body {
+    --navbar-bar-height: 72px;
+  }
+
+  .site-main {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 15px;
+  }
+}

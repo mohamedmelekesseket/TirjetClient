@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import PageTransition from "@/components/PageTransition";
 import Providers from "@/components/Providers";
@@ -10,6 +10,12 @@ export const metadata = {
   title: "Tirjet",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,        // ← add this
+  userScalable: false,    // ← add this
+};
 export default function RootLayout({
   children,
 }: {
