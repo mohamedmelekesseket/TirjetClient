@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, X, Loader2, Package, Dot } from "lucide-react";
+import { Check, X, Loader2, Package, Eye } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -24,6 +24,7 @@ interface Product {
   description: string;
   price: number;
   images: string[];
+  views: number; // ← NEW
   category: { _id: string; name: string } | string;
   artisan: {
     _id: string;
@@ -218,17 +219,35 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       .catch(() => { });
   }, []);
 
-  // ── Fetch product (reacts to currentId) ───────────────────────────────────
+  // ── Fetch product — with unique-view tracking ──────────────────────────────
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`${API}/api/products/${currentId}`);
+
+        // ── View deduplication via localStorage ────────────────────────────
+        // Key is per-product so switching to a related product counts once too.
+        const viewedKey = `viewed_product_${currentId}`;
+        const alreadyViewed = localStorage.getItem(viewedKey) === "1";
+
+        // Tell the server to skip incrementing if we already tracked this view.
+        // credentials:"include" is required so the httpOnly visitor_id cookie
+        // is sent/received for anonymous users.
+        const url = `${API}/api/products/${currentId}${alreadyViewed ? "?viewed=1" : ""}`;
+        const res = await fetch(url, { credentials: "include" });
+
         if (!res.ok) throw new Error(`Erreur ${res.status}`);
         const data = await res.json();
+
+        // Mark as viewed so refreshes and future renders don't re-count.
+        if (!alreadyViewed) {
+          localStorage.setItem(viewedKey, "1");
+        }
+
         setProduct(data);
 
+        // ── Related products ───────────────────────────────────────────────
         const relRes = await fetch(`${API}/api/products`);
         if (relRes.ok) {
           const allData = await relRes.json();
@@ -256,7 +275,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       }
     };
     fetchProduct();
-  }, [currentId]); // ← reacts to currentId changes
+  }, [currentId]);
 
   // ── Fetch comments ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -278,8 +297,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const currentUserId = (session as any)?.apiUser?._id as string | undefined;
 
   // ── Handlers ───────────────────────────────────────────────────────────────
-
-  // Navigate to a related product without a page reload
   function handleRelatedClick(productId: string) {
     setCurrentId(productId);
     setActiveTab("avis");
@@ -295,19 +312,14 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  // ✅ Real cart integration
   async function handleCart() {
     if (!product) return;
-
-    // Redirect to login if not authenticated
     if (!session) {
       router.push("/connexion");
       return;
     }
-
     setCartLoading(true);
     setCartError(null);
-
     try {
       await addToCart(product._id, qty);
       setAdded(true);
@@ -315,7 +327,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         `${product.title} ajouté au panier`,
         `${qty} pièce${qty > 1 ? "s" : ""} sélectionnée${qty > 1 ? "s" : ""}.`
       );
-      // Reset "added" state after 2.5s so button returns to normal
       setTimeout(() => setAdded(false), 2500);
     } catch (err: any) {
       setCartError(err.message ?? "Erreur lors de l'ajout au panier.");
@@ -347,14 +358,12 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     try {
       const token = getToken();
       if (!token) { setSubmitError("Vous devez être connecté pour laisser un avis."); return; }
-
       const res = await fetch(`${API}/api/products/${currentId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ rating: newRating, content: newContent }),
       });
       if (!res.ok) throw new Error((await res.json()).message);
-
       const created: Comment = await res.json();
       setComments(prev => [created, ...prev]);
       setNewContent("");
@@ -378,7 +387,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         body: JSON.stringify({ rating: newRating, content: newContent }),
       });
       if (!res.ok) throw new Error((await res.json()).message);
-
       const updated: Comment = await res.json();
       setComments(prev => prev.map(c => c._id === editingId ? updated : c));
       handleCancelEdit();
@@ -463,15 +471,21 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] as any }}>
 
+          {/* Status badges + view counter */}
           <div className="pd-info__top">
             <span className="pd-cat-pill">{catLabel}</span>
             {inStock
               ? <span className="pd-badge pd-badge--green">En stock ({product.stock})</span>
               : <span className="pd-badge pd-badge--red">Épuisé</span>}
+
+            {/* ── View counter ────────────────────────────────────────────── */}
+            <span className="pd-views-badge">
+              <Eye size={13} style={{ marginRight: 4, opacity: 0.7 }} />
+              {(product.views ?? 0).toLocaleString("fr-TN")} vue{product.views !== 1 ? "s" : ""}
+            </span>
           </div>
 
           <h1 className="pd-info__title">{product.title}</h1>
-          {/* <StarRow count={avgRating} total={comments.length} /> */}
 
           <div className="pd-info__price-row">
             <span className="pd-info__price">{product.price.toLocaleString("fr-TN")} TND</span>
@@ -553,7 +567,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             </motion.button>
           </div>
 
-          {/* Cart error message */}
           {cartError && (
             <motion.p
               initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
@@ -566,18 +579,13 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             </motion.p>
           )}
 
-          {/* Go to cart shortcut when item just added */}
           {added && !cartLoading && (
             <motion.div
               initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
               style={{ marginTop: "0.5rem", display: "flex", gap: 10 }}>
-              <Link href="/panier" className="pd-artisan-row__link">
-                Voir le panier →
-              </Link>
+              <Link href="/panier" className="pd-artisan-row__link">Voir le panier →</Link>
               <span style={{ color: "#b8a88a", fontSize: "0.82rem" }}>·</span>
-              <Link href="/commande" className="pd-artisan-row__link">
-                Commander →
-              </Link>
+              <Link href="/commande" className="pd-artisan-row__link">Commander →</Link>
             </motion.div>
           )}
         </motion.div>
@@ -605,11 +613,12 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             {activeTab === "details" && (
               <div className="pd-details-grid">
                 {[
-                  ["Catégorie", catLabel],
-                  ["Origine", product.artisan?.city ?? "Tunisie"],
-                  ["Stock", `${product.stock} pièce(s)`],
-                  ["Référence", product._id.slice(-8).toUpperCase()],
-                  ["Ajouté le", new Date(product.createdAt).toLocaleDateString("fr-FR")],
+                  ["Catégorie",  catLabel],
+                  ["Origine",    product.artisan?.city ?? "Tunisie"],
+                  ["Stock",      `${product.stock} pièce(s)`],
+                  ["Vues",       `${(product.views ?? 0).toLocaleString("fr-TN")} vue(s)`], // ← shown in details tab too
+                  ["Référence",  product._id.slice(-8).toUpperCase()],
+                  ["Ajouté le",  new Date(product.createdAt).toLocaleDateString("fr-FR")],
                 ].map(([k, v]) => (
                   <div key={k} className="pd-detail-row">
                     <span className="pd-detail-row__key">{k}</span>
@@ -826,6 +835,22 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* ── View counter badge ──────────────────────────────────────────── */
+        .pd-views-badge {
+          display: inline-flex;
+          align-items: center;
+          font-size: 0.78rem;
+          color: #a09080;
+          background: #f5f0e8;
+          border: 1px solid #e8dfd2;
+          border-radius: 20px;
+          padding: 2px 10px;
+          margin-left: 6px;
+          font-weight: 500;
+          letter-spacing: 0.01em;
+        }
+
+        /* ── Review form ─────────────────────────────────────────────────── */
         .pd-review-form {
           background: var(--surface, #faf8f5);
           border: 1px solid #e8e0d5;

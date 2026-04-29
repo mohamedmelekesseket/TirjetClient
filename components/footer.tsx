@@ -83,7 +83,7 @@ export default function CompactFooter() {
             <h3 className="art-compact-title">Contact</h3>
             <ul className="art-compact-contact">
               <li className="contact-link"><Mail size={14} /> contact@tirjet.com</li>
-              <li className="contact-link"><Phone size={14} /> +226 00 000 000</li>
+              <li className="contact-link"><Phone size={14} /> +216 00 000 000</li>
               <li className="contact-link"><MapPin size={14} /> Tunisia, Tunis</li>
             </ul>
           </motion.div>

@@ -7,6 +7,8 @@ import { motion, useScroll, useTransform, Variants } from "framer-motion";
 import Image1 from "../images/hero-artisan.jpg";
 import Image2 from "../images/Untitled.png";
 import story from "../images/story.jpg";
+import PanierPage from "./Panier/page";
+import { ShoppingBag} from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -391,6 +393,229 @@ function CategoriesSection({ categories, loading }: CategoriesSectionProps) {
   );
 }
 
+
+// ─── Premium Artisans Carousel ────────────────────────────────────────────────
+function PremiumArtisans() {
+  const [artisans, setArtisans] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+useEffect(() => {
+  fetch(`${API}/api/artisans/public`)
+    .then((r) => (r.ok ? r.json() : null))
+    .then((data) => {
+      if (data) {
+        const list = Array.isArray(data) ? data : data.artisans ?? [];
+
+        setArtisans(
+          list
+            .filter((a: any) => a.isPremium === true)
+            .slice(0, 5)
+        );
+      }
+    })
+    .catch(() => {})
+    .finally(() => setLoading(false));
+}, []);
+  const scroll = (dir: number) =>
+    carouselRef.current?.scrollBy({ left: dir * 250, behavior: "smooth" });
+
+  // Add a console.log to debug
+  console.log("PremiumArtisans:", artisans.length, artisans);
+
+  if (loading) return (
+    <section className="pg-premium-section">
+      <div className="pg-premium__hd">
+        <div>
+          <div className="pg-premium__title-row">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A055" strokeWidth="1.5">
+              <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
+            </svg>
+            <h2 className="pg-premium__h2">Artisans Premium</h2>
+          </div>
+          <p className="pg-premium__sub">Ces artisans soutiennent notre plateforme et sont mis en avant</p>
+        </div>
+      </div>
+      <div className="pg-premium__carousel">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="pg-artisan-card" style={{ opacity: 0.3, minWidth: 220 }}>
+            <div style={{ height: 220, background: "#1a1208" }} />
+            <div className="pg-artisan-card__body">
+              <div style={{ height: 14, background: "#2a1f10", borderRadius: 4, marginBottom: 8, width: "70%" }} />
+              <div style={{ height: 10, background: "#2a1f10", borderRadius: 4, width: "50%" }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+
+  if (artisans.length === 0) return null;
+
+  return (
+    <section className="pg-premium-section">
+      <div className="pg-premium__hd">
+        <div>
+          <div className="pg-premium__title-row">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A055" strokeWidth="1.5">
+              <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
+            </svg>
+            <h2 className="pg-premium__h2">Artisans Premium</h2>
+          </div>
+          <p className="pg-premium__sub">Ces artisans soutiennent notre plateforme et sont mis en avant</p>
+        </div>
+        <div className="pg-premium__nav">
+          <button className="pg-premium__link" onClick={() => router.push("/Artisans")}>
+            Voir tous les artisans
+          </button>
+          <button className="pg-nav-btn" onClick={() => scroll(1)}>›</button>
+        </div>
+      </div>
+
+      <div className="pg-premium__carousel" ref={carouselRef}>
+        {artisans.map((a) => {
+          // Handle both {user: {name}} and flat {name} shapes
+          const name = a.user?.name ?? a.name ?? "Artisan";
+          const userId = a.user?._id ?? a._id;
+          const photo = a.profilePhoto ?? a.user?.image ?? "/placeholder-artisan.jpg";
+          const isPremium = a.rank != null;
+
+          return (
+            <article
+              key={a._id}
+              className="pg-artisan-card"
+              onClick={() => router.push(`/Artisans/${userId}`)}
+            >
+              <div className="pg-artisan-card__img-wrap">
+                {photo ? (
+                  <img src={photo} alt={name} className="pg-artisan-card__img" />
+                ) : (
+                  <div className="pg-artisan-card__img-fallback">
+                    {name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                {isPremium && <span className="pg-premium-badge">PREMIUM</span>}
+              </div>
+              <div className="pg-artisan-card__body">
+                <h4 className="pg-artisan-card__name">{name}</h4>
+                {a.specialite && <p className="pg-artisan-card__spec">{a.specialite}</p>}
+                {/* {a.region && <p className="pg-artisan-card__loc">{a.region}, Tunisie</p>} */}
+                {a.rating != null && (
+                  <p className="pg-artisan-card__rating">
+                    ★ {a.rating} <span>({a.reviewCount ?? 0})</span>
+                  </p>
+                )}
+                <button className="pg-artisan-card__btn">Découvrir sa boutique</button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// ─── Premium Products Carousel ────────────────────────────────────────────────
+function PremiumProducts({ categories }: { categories: Category[] }) {
+  const [products, setProducts] = useState<Product[]>([]);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    fetch(`${API}/api/products?limit=100`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) {
+          const list: Product[] = data.products ?? data.data ?? [];
+          setProducts(list.filter((p) => p.isHome === true).slice(0, 8));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const scroll = (dir: number) =>
+    carouselRef.current?.scrollBy({ left: dir * 210, behavior: "smooth" });
+
+  const getCatName = (cat: Product["category"]) =>
+    typeof cat === "object" ? cat.name : categories.find((c) => c._id === cat)?.name ?? "";
+
+  const getArtisanName = (a: Product["artisan"]) =>
+    !a ? "" : typeof a === "string" ? a : a.name;
+
+  if (products.length === 0) return null;
+
+  return (
+    <section className="pg-premium-section">
+      <div className="pg-premium__hd">
+        <div>
+          <div className="pg-premium__title-row">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A055" strokeWidth="1.5">
+              <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
+            </svg>
+            <h2 className="pg-premium__h2">
+              Produits en vedette <em style={{ color: "#C9A055", fontStyle: "normal" }}>Premium</em>
+            </h2>
+          </div>
+          <p className="pg-premium__sub">Les meilleures créations sélectionnées par notre équipe</p>
+        </div>
+        <div className="pg-premium__nav">
+          <button className="pg-premium__link" onClick={() => router.push("/boutique")}>
+            Voir tous les produits
+          </button>
+          <button className="pg-nav-btn" onClick={() => scroll(1)}>›</button>
+        </div>
+      </div>
+
+      <div className="pg-premium__carousel" ref={carouselRef}>
+        {products.map((p) => (
+          <article
+            key={p._id}
+            className="pg-prod-card-h"
+            onClick={() => router.push(`/boutique/${p._id}`)}
+          >
+            <div className="pg-prod-card-h__img-wrap">
+              {p.images?.[0] ? (
+                <img src={p.images[0]} alt={p.title} className="pg-prod-card-h__img" />
+              ) : (
+                <div className="pg-prod-card-h__fallback">🏺</div>
+              )}
+              <span className="pg-premium-badge">PREMIUM</span>
+              <button
+                className="pg-wishlist-btn"
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Favoris"
+              >
+                ♡
+              </button>
+            </div>
+            <div className="pg-prod-card-h__body">
+              <h4 className="pg-prod-card-h__name">{p.title}</h4>
+              {getArtisanName(p.artisan) && (
+                <p className="pg-prod-card-h__by">Par {getArtisanName(p.artisan)}</p>
+              )}
+              <div className="pg-prod-card-h__footer">
+                <div>
+                  <span className="pg-prod-card-h__price">
+                    {p.price.toLocaleString("fr-FR")} DT
+                  </span>
+                </div>
+                <button
+                  className="pg-cart-btn"
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label="Ajouter au panier"
+                >
+                  <ShoppingBag size={18}/>
+                </button>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // ─── Featured Products ────────────────────────────────────────────────────────
 interface ProductsProps {
   categories: Category[];
@@ -710,14 +935,15 @@ export default function Page() {
       .finally(() => setCategoriesLoading(false));
   }, []);
 
-  return (
-    <main className="pg-main">
-      <Hero />
-      <CategoriesSection categories={categories} loading={categoriesLoading} />
-      <Products categories={categories} />
-      <Values />
-      <Story />
-      <CTA />
-    </main>
-  );
+return (
+  <main className="pg-main">
+    <Hero />
+    <CategoriesSection categories={categories} loading={categoriesLoading} />
+    <PremiumArtisans />          {/* ← NEW */}
+    <PremiumProducts categories={categories} />   {/* ← NEW (replaces old Products) */}
+    <Values />
+    <Story />
+    <CTA />
+  </main>
+);
 }
