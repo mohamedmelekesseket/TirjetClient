@@ -642,141 +642,7 @@ function PremiumProducts({
   );
 }
 
-// ─── Featured Products ────────────────────────────────────────────────────────
-function Products({
-  allProducts,
-  categories,
-  loading,
-}: {
-  allProducts: Product[];
-  categories: Category[];
-  loading: boolean;
-}) {
-  const router = useRouter();
 
-  const getCategoryName = (category: Product["category"]): string => {
-    if (!category) return "";
-    if (typeof category === "object") return category.name;
-    return categories.find((c) => c._id === category)?.name ?? "";
-  };
-
-  const getArtisanName = (artisan: Product["artisan"]): string => {
-    if (!artisan) return "";
-    if (typeof artisan === "string") return artisan;
-    return artisan.name;
-  };
-
-  const getArtisanLocation = (artisan: Product["artisan"]): string => {
-    if (!artisan || typeof artisan === "string") return "";
-    return artisan.location ?? "";
-  };
-
-  if (loading) {
-    return (
-      <section className="pg-products">
-        <div className="pg-products__hd">
-          <div>
-            <p className="pg-label pg-label--amber">Boutique</p>
-            <h2 className="pg-h2">Créations en vedette</h2>
-          </div>
-        </div>
-        <div className="pg-products__grid">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="pg-prod-card" style={{ opacity: 0.3 }}>
-              <div className="pg-prod-card__media" style={{ background: "#e2e8f0", height: 320, borderRadius: 16 }} />
-            </div>
-          ))}
-        </div>
-      </section>
-    );
-  }
-
-  const products = allProducts.filter((p) => p.isHome === true).slice(0, 6);
-  if (products.length === 0) return null;
-
-  return (
-    <section className="pg-products">
-      <motion.div
-        className="pg-products__hd"
-        variants={fadeUp}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
-      >
-        <div>
-          <p className="pg-label pg-label--amber">Boutique</p>
-          <h2 className="pg-h2">Créations en vedette</h2>
-        </div>
-        <Link href="/boutique" className="pg-textlink">
-          Voir tout →
-        </Link>
-      </motion.div>
-
-      <div className="pg-products__grid">
-        {products.map((p, i) => (
-          <motion.article
-            key={p._id}
-            className="pg-prod-card"
-            variants={scaleIn}
-            custom={i}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.15 }}
-            style={{ cursor: "pointer" }}
-            onClick={() => router.push(`/boutique/${p._id}`)}
-          >
-            <div className="pg-prod-card__media">
-              {p.images?.[0] ? (
-                <motion.img
-                  src={p.images[0]}
-                  alt={p.title}
-                  className="pg-prod-card__img"
-                  whileHover={{ scale: 1.07 }}
-                  transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    background: "linear-gradient(135deg, #f4ede3, #e8d5c0)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "3rem",
-                  }}
-                >
-                  🏺
-                </div>
-              )}
-              <div className="pg-prod-card__shade" />
-              <span className="pg-prod-card__cat" style={{ backgroundColor: "black" }}>
-                {getCategoryName(p.category)}
-              </span>
-              <div className="pg-prod-card__info">
-                <h4 className="pg-prod-card__name">{p.title}</h4>
-                {getArtisanName(p.artisan) && (
-                  <p className="pg-prod-card__shop">{getArtisanName(p.artisan)}</p>
-                )}
-                <div className="pg-prod-card__foot">
-                  {getArtisanLocation(p.artisan) && (
-                    <span className="pg-prod-card__loc">
-                      <Pin />
-                      {getArtisanLocation(p.artisan)}
-                    </span>
-                  )}
-                  <span className="pg-prod-card__price">
-                    <strong>{p.price.toLocaleString("fr-FR")}</strong> TND
-                  </span>
-                </div>
-              </div>
-            </div>
-          </motion.article>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 // ─── Values ───────────────────────────────────────────────────────────────────
 function Values() {
@@ -972,7 +838,6 @@ useEffect(() => {
       <CategoriesSection categories={categories} loading={categoriesLoading} />
       <PremiumArtisans allProducts={allProducts} />
       <PremiumProducts allProducts={allProducts} categories={categories} />
-      <Products allProducts={allProducts} categories={categories} loading={productsLoading} />
       <Values />
       <Story />
       <CTA />
