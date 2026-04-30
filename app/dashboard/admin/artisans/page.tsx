@@ -29,7 +29,7 @@ interface Artisan {
   languages?: string[];
   tags?: string[];
   notes?: string;
-  isFeatured?: boolean;
+  isPremium?: boolean;
   isApproved: boolean;
   rank?: number | null;
   createdAt: string;
@@ -209,13 +209,13 @@ function EditArtisanModal({
     });
     return init;
   });
-  const [isFeatured, setIsFeatured] = useState<boolean>(artisan.isFeatured ?? false);
+  const [isPremium, setisPremium] = useState<boolean>(artisan.isPremium ?? false);
   const [rank, setRank] = useState<string>(artisan.rank != null ? String(artisan.rank) : "");
 
   const set = (k: string, v: unknown) => setForm((p) => ({ ...p, [k]: v }));
 
   const handleSave = () => {
-    const payload: Record<string, unknown> = { isFeatured };
+    const payload: Record<string, unknown> = { isPremium };
 
     // rank: empty string → null (unranked), otherwise parse as int
     const parsedRank = rank.trim() === "" ? null : parseInt(rank, 10);
@@ -340,8 +340,8 @@ function EditArtisanModal({
         >
           <input
             type="checkbox"
-            checked={isFeatured}
-            onChange={(e) => setIsFeatured(e.target.checked)}
+            checked={isPremium}
+            onChange={(e) => setisPremium(e.target.checked)}
             style={{ width: "16px", height: "16px", cursor: "pointer" }}
           />
           <div>
@@ -672,7 +672,7 @@ export default function AdminArtisansPage() {
 
                         <td>
                           <span className={`badge ${statusClass[label] || "badge-gray"}`}>{label}</span>
-                          {a.isFeatured && (
+                          {a.isPremium && (
                             <span style={{ marginLeft: "6px", fontSize: ".7rem", background: "#FEF3C7", color: "#92400E", borderRadius: "4px", padding: "1px 5px" }}>
                               ⭐ Featured
                             </span>

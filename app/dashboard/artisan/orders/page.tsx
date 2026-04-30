@@ -829,7 +829,7 @@ export default function OrdersPage() {
                             title="Voir"
                             onClick={() => setDetailTarget(o)}
                           >
-                            <Eye size={16} />
+                            <Eye color="#0E2B7F" size={16} />
                           </button>
                           <button
                             className="icon-btn icon-btn-danger"

@@ -9,7 +9,6 @@ import {
   ChevronDown, ShieldUser, ChevronRight, ArrowUpRight,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
-// import logo from "../images/tirjet_app_icon (1).png";
 import logo from "../images/logo2 (2).png";
 
 const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/categories?mainCategory=artisanat`;
@@ -201,17 +200,15 @@ const Header = () => {
     setActiveL3(l2.subcategories?.[0] ?? null);
   };
 
-  // ── Navigate and close mega ─────────────────────────────────────────────────
   const navigate = (url: string) => {
     router.push(url);
     setMegaOpen(false);
   };
 
-  // ── Build category slug URL helpers ────────────────────────────────────────
-  const catUrl  = (l1: Category)                                    => `/boutique/categorie/${l1.slug}`;
-  const l2Url   = (l1: Category, l2: Level2)                        => `/boutique/categorie/${l1.slug}/${l2.slug}`;
-  const l3Url   = (l1: Category, l2: Level2, l3: Level3)            => `/boutique/categorie/${l1.slug}/${l2.slug}/${l3.slug}`;
-  const l4Url   = (l1: Category, l2: Level2, l3: Level3, l4: Level4)=> `/boutique/categorie/${l1.slug}/${l2.slug}/${l3.slug}/${l4.slug}`;
+  const catUrl = (l1: Category)                                      => `/boutique/categorie/${l1.slug}`;
+  const l2Url  = (l1: Category, l2: Level2)                          => `/boutique/categorie/${l1.slug}/${l2.slug}`;
+  const l3Url  = (l1: Category, l2: Level2, l3: Level3)              => `/boutique/categorie/${l1.slug}/${l2.slug}/${l3.slug}`;
+  const l4Url  = (l1: Category, l2: Level2, l3: Level3, l4: Level4)  => `/boutique/categorie/${l1.slug}/${l2.slug}/${l3.slug}/${l4.slug}`;
 
   return (
     <>
@@ -225,14 +222,13 @@ const Header = () => {
 
             {/* ══ TOP BAR ══════════════════════════════════════════════════════ */}
             <div className="hdr__top">
+
+              {/* Logo */}
               <Link href="/" className="hdr__logo">
                 <img src={logo.src} width="144" alt="Tirjet" />
-                {/* <div className="hdr__logo-text">
-                  <span className="hdr__logo-name">Tirjet</span>
-                  <span className="hdr__logo-sub">Culture &amp; Amazigh</span>
-                </div> */}
               </Link>
 
+              {/* Desktop nav */}
               <nav className="hdr__nav">
                 {links.map((link) => (
                   <NavItem key={link.href} link={link}
@@ -240,11 +236,11 @@ const Header = () => {
                 ))}
               </nav>
 
+              {/* ── Desktop-only actions (hidden on mobile via CSS) ── */}
               <div className="hdr__actions">
-                <button onClick={() => router.push("/Panier")} className="hdr__icon-btn" aria-label="Panier">
-                  <ShoppingBag size={18} />
-                </button>
-
+                <Link href="/Rejoigneznous">
+                  <button className="hdr__btn hdr__btn--primary">REJOINDRE</button>
+                </Link>
                 {!isLoggedIn ? (
                   <Link href="/connexion">
                     <button className="hdr__btn hdr__btn--outline">Connexion</button>
@@ -252,7 +248,7 @@ const Header = () => {
                 ) : (
                   <div style={{ position: "relative" }}>
                     <button className="hdr__icon-btn" onClick={() => setUserMenuOpen(v => !v)} aria-label="Compte">
-                      <User size={18} />
+                      <User size={17} strokeWidth={1.8} />
                     </button>
                     <AnimatePresence>
                       {userMenuOpen && (
@@ -269,15 +265,17 @@ const Header = () => {
                               onClick={() => { setUserMenuOpen(false); router.push("/profile"); }}>
                               <User size={15} /> Profil
                             </button>
-                            <button className="hdr__user-menu-item"
-                              onClick={() => {
-                                setUserMenuOpen(false);
-                                const role = apiUser?.role;
-                                if (role === "admin")       router.push("/dashboard/admin");
-                                else if (role === "vendor") router.push("/dashboard/artisan");
-                              }}>
-                              <ShieldUser size={15} /> Dashboard
-                            </button>
+                            {(apiUser?.role === "admin" || apiUser?.role === "vendor") && (
+                              <button className="hdr__user-menu-item"
+                                onClick={() => {
+                                  setUserMenuOpen(false);
+                                  const role = apiUser?.role;
+                                  if (role === "admin")       router.push("/dashboard/admin");
+                                  else if (role === "vendor") router.push("/dashboard/artisan");
+                                }}>
+                                <ShieldUser size={15} /> Dashboard
+                              </button>
+                            )}
                             <button className="hdr__user-menu-item hdr__user-menu-item--danger"
                               onClick={() => { setUserMenuOpen(false); signOut({ callbackUrl: "/" }); }}>
                               <LogOut size={15} /> Se déconnecter
@@ -289,14 +287,34 @@ const Header = () => {
                   </div>
                 )}
 
-                <Link href="/Rejoigneznous">
-                  <button className="hdr__btn hdr__btn--primary">REJOINDRE</button>
-                </Link>
+                
+                <button
+                  onClick={() => router.push("/Panier")}
+                  className="hdr__icon-btn"
+                  aria-label="Panier">
+                  <ShoppingBag size={17} strokeWidth={1.8} />
+                </button>
               </div>
 
-              <button className="hdr__hamburger" onClick={() => setMenuOpen(v => !v)} aria-label="Menu">
-                {menuOpen ? <X size={22} /> : <Menu size={22} />}
-              </button>
+              {/* ── Bag + hamburger — always visible on all screen sizes ── */}
+              <div className="hdr__end-actions">
+                <button
+                  onClick={() => router.push("/Panier")}
+                  className="hdr__icon-btn"
+                  id="panierHeader"
+                  aria-label="Panier">
+                  <ShoppingBag size={17} strokeWidth={1.8} />
+                </button>
+                <button
+                  className="hdr__hamburger"
+                  onClick={() => setMenuOpen(v => !v)}
+                  aria-label="Menu">
+                  {menuOpen
+                    ? <X size={21} strokeWidth={2} />
+                    : <Menu size={21} strokeWidth={2} />}
+                </button>
+              </div>
+
             </div>
 
             {/* ══ CATEGORY BAR ═════════════════════════════════════════════════ */}
@@ -307,10 +325,7 @@ const Header = () => {
                     <button
                       key={cat._id}
                       className={`hdr__catbar-item${activeL1?._id === cat._id && megaOpen ? " hdr__catbar-item--active" : ""}`}
-                      // onMouseEnter={() => openMega(cat)}
-                      // onClick={() => navigate(catUrl(cat))}
-                      onClick={() => openMega(cat)}
-                    >
+                      onClick={() => openMega(cat)}>
                       {cat.name}
                       {cat.subcategories.length > 0 && (
                         <motion.span
@@ -337,24 +352,19 @@ const Header = () => {
 
                       <div className="mega__inner">
 
-                        {/* ── Col 1: Category info ── */}
+                        {/* Col 1 */}
                         <div className="mega__col mega__col--info">
                           <p className="mega__col-label">Catégorie</p>
                           <h2 className="mega__cat-name">{activeL1.name}</h2>
                           {activeL1.description && (
                             <p className="mega__cat-desc">{activeL1.description}</p>
                           )}
-                          {/* ✅ Move Voir tout ABOVE the fold — right after description */}
-                          <button
-                            className="mega__see-all"
-                            onClick={() => navigate(catUrl(activeL1))}
-                            
-                          >
+                          <button className="mega__see-all" onClick={() => navigate(catUrl(activeL1))}>
                             Voir tout <ArrowUpRight size={14} strokeWidth={2} />
                           </button>
                         </div>
 
-                        {/* ── Col 2: L2 — Univers ── */}
+                        {/* Col 2 */}
                         <div className="mega__col mega__col--l2">
                           <p className="mega__col-label">Univers</p>
                           {activeL1.subcategories.map((l2) => (
@@ -362,8 +372,7 @@ const Header = () => {
                               key={l2._id}
                               className={`mega__row${activeL2?._id === l2._id ? " mega__row--active" : ""}`}
                               onMouseEnter={() => selectL2(l2)}
-                              onClick={() => navigate(l2Url(activeL1, l2))}
-                            >
+                              onClick={() => navigate(l2Url(activeL1, l2))}>
                               <span>{l2.name}</span>
                               {l2.subcategories.length > 0 && (
                                 <ChevronRight size={13} className="mega__row-chevron" />
@@ -372,24 +381,20 @@ const Header = () => {
                           ))}
                         </div>
 
-
-                        {/* ── Col 3: L3 — Collection ── */}
+                        {/* Col 3 */}
                         <div className="mega__col mega__col--l3">
                           {activeL2 && activeL2.subcategories.length > 0 && (
                             <AnimatePresence mode="wait">
                               <motion.div key={activeL2._id}
-                                initial={{ opacity: 0, x: 8 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: 8 }}
-                                transition={{ duration: 0.14 }}>
+                                initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 8 }} transition={{ duration: 0.14 }}>
                                 <p className="mega__col-label">Collection</p>
                                 {activeL2.subcategories.map((l3) => (
                                   <button
                                     key={l3._id}
                                     className={`mega__row${activeL3?._id === l3._id ? " mega__row--active" : ""}`}
                                     onMouseEnter={() => setActiveL3(l3)}
-                                    onClick={() => navigate(l3Url(activeL1, activeL2, l3))}
-                                  >
+                                    onClick={() => navigate(l3Url(activeL1, activeL2, l3))}>
                                     <span>{l3.name}</span>
                                     {l3.subcategories.length > 0 && (
                                       <ChevronRight size={13} className="mega__row-chevron" />
@@ -401,22 +406,19 @@ const Header = () => {
                           )}
                         </div>
 
-                        {/* ── Col 4: L4 — Pièces ── */}
+                        {/* Col 4 */}
                         <div className="mega__col mega__col--l4">
                           {activeL3 && activeL3.subcategories.length > 0 && activeL2 && (
                             <AnimatePresence mode="wait">
                               <motion.div key={activeL3._id}
-                                initial={{ opacity: 0, x: 8 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: 8 }}
-                                transition={{ duration: 0.14 }}>
+                                initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 8 }} transition={{ duration: 0.14 }}>
                                 <p className="mega__col-label">Pièces</p>
                                 {activeL3.subcategories.map((l4) => (
                                   <button
                                     key={l4._id}
                                     className="mega__leaf"
-                                    onClick={() => navigate(l4Url(activeL1, activeL2!, activeL3, l4))}
-                                  >
+                                    onClick={() => navigate(l4Url(activeL1, activeL2!, activeL3, l4))}>
                                     <span className="mega__leaf-dot" />
                                     <span className="mega__leaf-name">{l4.name}</span>
                                     {l4.productCount != null && l4.productCount > 0 && (
@@ -455,7 +457,6 @@ const Header = () => {
 
               <nav className="hdr__drawer-nav">
 
-                {/* Nav links */}
                 {links.map((link, i) => (
                   <motion.div key={link.href}
                     initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
@@ -535,17 +536,11 @@ const Header = () => {
                                     exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
                                     style={{ overflow: "hidden" }}>
 
-                                    {/* "See all" for L1 */}
-                                    <button
-                                      className="hdr__mobile-nav-see-all"
-                                      onClick={() => {
-                                        router.push(catUrl(cat));
-                                        setMenuOpen(false);
-                                      }}>
+                                    <button className="hdr__mobile-nav-see-all"
+                                      onClick={() => { router.push(catUrl(cat)); setMenuOpen(false); }}>
                                       Voir tout — {cat.name} <ChevronRight size={12} />
                                     </button>
 
-                                    {/* L2 list */}
                                     {cat.subcategories.map((l2) => (
                                       <div key={l2._id} className="hdr__mobile-l2-group">
                                         <button className="hdr__mobile-l2-header"
@@ -566,7 +561,6 @@ const Header = () => {
                                           )}
                                         </button>
 
-                                        {/* L3 list */}
                                         <AnimatePresence>
                                           {mobileActiveL2 === l2._id && l2.subcategories.length > 0 && (
                                             <motion.div
@@ -576,10 +570,7 @@ const Header = () => {
                                               <div className="hdr__mobile-sub-list">
                                                 {l2.subcategories.map((l3) => (
                                                   <button key={l3._id} className="hdr__mobile-sub-btn"
-                                                    onClick={() => {
-                                                      router.push(l3Url(cat, l2, l3));
-                                                      setMenuOpen(false);
-                                                    }}>
+                                                    onClick={() => { router.push(l3Url(cat, l2, l3)); setMenuOpen(false); }}>
                                                     <ChevronRight size={9} style={{ opacity: 0.3 }} />
                                                     {l3.name}
                                                     {l3.subcategories.length > 0 && (
@@ -612,28 +603,25 @@ const Header = () => {
                     <button className="hdr__btn hdr__btn--outline" style={{ width: "100%" }}>Connexion</button>
                   </Link>
                 ) : (
-                <>
-                  <button className="hdr__btn hdr__btn--outline"
-                    onClick={() => { setMenuOpen(false); router.push("/profile"); }}>
-                    Mon profil
-                  </button>
-
-                  {/* ADD THIS */}
-                  {(apiUser?.role === "admin" || apiUser?.role === "vendor") && (
+                  <>
                     <button className="hdr__btn hdr__btn--outline"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        router.push(apiUser.role === "admin" ? "/dashboard/admin" : "/dashboard/artisan");
-                      }}>
-                      Dashboard
+                      onClick={() => { setMenuOpen(false); router.push("/profile"); }}>
+                      Mon profil
                     </button>
-                  )}
-
-                  <button className="hdr__btn hdr__btn--outline"
-                    onClick={() => { setMenuOpen(false); signOut({ callbackUrl: "/" }); }}>
-                    Se déconnecter
-                  </button>
-                </>
+                    {(apiUser?.role === "admin" || apiUser?.role === "vendor") && (
+                      <button className="hdr__btn hdr__btn--outline"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          router.push(apiUser.role === "admin" ? "/dashboard/admin" : "/dashboard/artisan");
+                        }}>
+                        Dashboard
+                      </button>
+                    )}
+                    <button className="hdr__btn hdr__btn--outline"
+                      onClick={() => { setMenuOpen(false); signOut({ callbackUrl: "/" }); }}>
+                      Se déconnecter
+                    </button>
+                  </>
                 )}
                 <Link href="/Rejoigneznous" onClick={() => setMenuOpen(false)}>
                   <button className="hdr__btn hdr__btn--primary" style={{ width: "100%" }}>REJOINDRE</button>

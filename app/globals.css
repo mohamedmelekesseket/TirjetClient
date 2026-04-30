@@ -150,8 +150,10 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 48px;
+  padding: 10px ;
+  padding-left: 48px;
   gap: 24px;
+  width: 100%;
 }
 
 /* ── LOGO ────────────────────────────────────────── */
@@ -222,27 +224,33 @@ a {
 .hdr__actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 10px;
   flex-shrink: 0;
 }
 
 .hdr__icon-btn {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  border: 1px solid rgba(184, 93, 56, 0.2);
-  background: transparent;
-  color: #5a4a42;
+  border: none;
+  background: rgba(184, 93, 56, 0.08);
+  color: #7a5c50;
   display: grid;
   place-items: center;
   cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.15s ease;
+  flex-shrink: 0;
 }
 
 .hdr__icon-btn:hover {
-  background: rgba(184, 93, 56, 0.08);
-  border-color: #b85d38;
+  background: rgba(184, 93, 56, 0.16);
   color: #b85d38;
+  transform: scale(1.08);
+}
+
+.hdr__icon-btn:active {
+  transform: scale(0.95);
 }
 
 .hdr__btn {
@@ -278,7 +286,48 @@ a {
 .hdr__btn--primary:hover {
   background: #9e4e2e;
 }
+/* ── END ACTIONS (bag + hamburger) ── */
+.hdr__end-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
 
+/* ── HAMBURGER ── */
+.hdr__hamburger {
+  display: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(184, 93, 56, 0.08);
+  border: none;
+  color: #7a5c50;
+  cursor: pointer;
+  place-items: center;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.hdr__hamburger:hover {
+  background: rgba(184, 93, 56, 0.16);
+  color: #b85d38;
+  transform: scale(1.08);
+}
+
+.hdr__hamburger:active {
+  transform: scale(0.95);
+}
+#panierHeader{
+  display: none;
+}
+@media (max-width: 900px) {
+  .hdr__actions { display: none; }
+  .hdr__hamburger { display: grid; }
+  #panierHeader{
+  display: grid;
+}
+}
 /* ── USER MENU ───────────────────────────────────── */
 
 .hdr__user-menu {
@@ -2285,60 +2334,259 @@ img  { display: block; max-width: 100%; }
   z-index: 2;
 }
 
-/* ── Artisan cards ── */
-.pg-artisan-card {
-  min-width: 220px;
-  width: 220px;
-  border-radius: 12px;
+/* ── Premium Artisan Card v2 ── */
+.pg-artisan-card2 {
+  min-width: 300px;
+  width: 300px;
+  border-radius: 16px;
   overflow: hidden;
-  border: 1px solid rgba(201,160,85,0.15);
-  background: #111;
+  border: 1px solid rgba(201, 160, 85, 0.2);
+  background: #111008;
   cursor: pointer;
   flex-shrink: 0;
-  transition: border-color 0.25s;
+  transition: border-color 0.25s, transform 0.25s;
+  padding: 16px 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
-.pg-artisan-card:hover { border-color: rgba(201,160,85,0.4); }
+.pg-artisan-card2:hover {
+  border-color: rgba(201, 160, 85, 0.5);
+  transform: translateY(-2px);
+}
 
-.pg-artisan-card__img-wrap { position: relative; }
-.pg-artisan-card__img-fallback {
-  width: 100%;
-  height: 220px;
+/* ── Top row: badge + avatar + meta + wishlist ── */
+.pg-artisan-card2__top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+  padding-top: 8px; /* room for badge */
+}
+
+/* PREMIUM badge — sits above the avatar */
+.pg-premium-badge {
+  position: absolute;
+  top: -8px;
+  left: 0;
+  background: #C9A055;
+  color: #1a0f00;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+/* Avatar */
+.pg-artisan-card2__avatar-wrap {
+  flex-shrink: 0;
+  margin-top: 12px; /* push below badge */
+}
+.pg-artisan-card2__avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(201, 160, 85, 0.4);
+  display: block;
+}
+.pg-artisan-card2__avatar-fallback {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 2px solid rgba(201, 160, 85, 0.4);
   background: linear-gradient(135deg, #2a1f10, #3a2a15);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 52px;
-  font-weight: 600;
+  font-size: 26px;
+  font-weight: 700;
   color: #C9A055;
-  font-family: "Cormorant Garamond", serif;
-}
-.pg-artisan-card__img {
-  width: 100%;
-  height: 220px;
-  object-fit: cover;
-  display: block;
-  filter: saturate(0.85);
 }
 
-.pg-artisan-card__body { padding: 14px 16px 16px; }
-.pg-artisan-card__name { font-size: 12px; font-weight: 600; color: #F8F3EC; margin-bottom: 3px; }
-.pg-artisan-card__spec { font-size: 11px; color: rgba(248,243,236,0.5); margin-bottom: 2px; }
-.pg-artisan-card__loc { font-size: 11px; color: rgba(248,243,236,0.35); margin-bottom: 10px; }
-.pg-artisan-card__rating { font-size: 12px; color: #C9A055; margin-bottom: 12px; }
-.pg-artisan-card__rating span { color: rgba(248,243,236,0.4); }
-.pg-artisan-card__btn {
-  width: 100%;
-  padding: 8px;
-  background: #C9A055;
-  border: none;
-  border-radius: 6px;
-  color: #1a0f00;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  letter-spacing: 0.3px;
+/* Meta block */
+.pg-artisan-card2__meta {
+  flex: 1;
+  min-width: 0;
+  padding-top: 14px; /* align with avatar top after badge offset */
 }
-.pg-artisan-card__btn:hover { background: #d4aa60; }
+.pg-artisan-card2__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #F8F3EC;
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pg-artisan-card2__spec {
+  font-size: 12px;
+  color: rgba(248, 243, 236, 0.5);
+  margin: 0 0 4px;
+}
+.pg-artisan-card2__loc {
+  font-size: 11px;
+  color: rgba(248, 243, 236, 0.4);
+  margin: 0 0 5px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.pg-artisan-card2__rating {
+  font-size: 12px;
+  color: #C9A055;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.pg-artisan-card2__rating span {
+  color: rgba(248, 243, 236, 0.4);
+  font-size: 11px;
+}
+
+/* Wishlist heart */
+.pg-artisan-card2__wish {
+  background: none;
+  border: none;
+  color: rgba(248, 243, 236, 0.35);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  margin-top: 14px;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+.pg-artisan-card2__wish:hover,
+.pg-artisan-card2__wish--active {
+  color: #e05252;
+}
+
+/* ── Divider ── */
+.pg-artisan-card2__divider {
+  height: 1px;
+  background: rgba(201, 160, 85, 0.12);
+  margin: 14px 0 12px;
+}
+
+/* ── Product mini-grid ── */
+.pg-artisan-card2__products {
+  display: grid;
+grid-template-columns: repeat(3, 80px);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+/* Each product cell */
+.pg-artisan-prod {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+}
+.pg-artisan-prod__img-wrap {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  aspect-ratio: 1;
+  background: #1d160a;
+}
+.pg-artisan-prod__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+.pg-artisan-prod:hover .pg-artisan-prod__img {
+  transform: scale(1.06);
+}
+.pg-artisan-prod__fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+/* Price badge — bottom-left overlay */
+.pg-artisan-prod__price {
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  background: rgba(15, 10, 3, 0.82);
+  color: #F8F3EC;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 4px;
+  line-height: 1.4;
+  backdrop-filter: blur(2px);
+}
+
+.pg-artisan-prod__name {
+  font-size: 10px;
+  color: rgba(248, 243, 236, 0.65);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+.pg-artisan-prod__rating {
+  font-size: 10px;
+  color: #C9A055;
+  margin: 0;
+}
+
+/* ── CTA button ── */
+.pg-artisan-card2__cta {
+  border-top: 1px solid rgba(201, 160, 85, 0.12);
+  padding: 12px 0;
+  margin: 0 -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+.pg-artisan-card2__btn {
+  width: 100%;
+  padding: 11px;
+  background: transparent;
+  border: 1px solid rgba(201, 160, 85, 0.3);
+  border-radius: 10px;
+  color: #C9A055;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.pg-artisan-card2__btn:hover {
+  background: #C9A055;
+  border-color: #C9A055;
+  color: #1a0f00;
+}
+.pg-artisan-card2__no-products {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background: rgba(201,160,85,0.04);
+  border: 1px dashed rgba(201,160,85,0.15);
+}
+.pg-artisan-card2__no-products p {
+  font-size: 11px;
+  color: rgba(248,243,236,0.25);
+}
 
 /* ── Horizontal product cards ── */
 .pg-prod-card-h {
@@ -8429,7 +8677,7 @@ tbody td {
 
 /* Danger icon button (cancel) */
 .icon-btn-danger { color: #E53E3E; }
-.icon-btn-danger:hover { background: #FFF5F5; }
+.icon-btn-danger:hover { background: #FFF5F5; border-color: red;}
 .icon-btn-danger:disabled { opacity: 0.3; cursor: not-allowed; }
 /* ============================================================
    PROFILE DASHBOARD ARTISAN — pda-*
