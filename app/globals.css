@@ -2324,12 +2324,20 @@ img  { display: block; max-width: 100%; }
   overflow-x: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  scroll-padding-left: 80px; /* matches your horizontal padding */
+
 }
 .pg-premium__carousel::-webkit-scrollbar { display: none; }
-
+/* Add to your existing CSS */
+.pg-premium__carousel::after {
+  content: '';
+  display: block;
+  min-width: 80px; /* matches left padding */
+  flex-shrink: 0;
+}
 .pg-premium-badge {
   position: absolute;
-  top: 12px;
+  top: 52px;
   left: 12px;
   background: #C9A055;
   color: #1a0f00;
@@ -2627,7 +2635,19 @@ img  { display: block; max-width: 100%; }
   justify-content: center;
   font-size: 48px;
 }
-
+.pg-premium-badge-prod {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: #C9A055;
+  color: #1a0f00;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  z-index: 2;
+}
 .pg-wishlist-btn {
   position: absolute;
   top: 10px;
@@ -2648,11 +2668,12 @@ img  { display: block; max-width: 100%; }
 
 .pg-prod-card-h__body { padding: 12px 14px 14px; }
 .pg-prod-card-h__name {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
   color: #F8F3EC;
   margin-bottom: 3px;
   line-height: 1.3;
+  width: 100%;
 }
 .pg-prod-card-h__by { font-size: 11px; color: rgba(248,243,236,0.4); margin-bottom: 8px; }
 .pg-prod-card-h__footer { display: flex; align-items: center; justify-content: space-between; }
@@ -2673,7 +2694,42 @@ img  { display: block; max-width: 100%; }
   font-size: 14px;
 }
 .pg-cart-btn:hover { background: rgba(201,160,85,0.25); }
+/* ── Carousel wrapper ── */
+.pg-premium__carousel-wrap {
+  position: relative;
+}
 
+/* ── Floating side arrows ── */
+.pg-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(201, 160, 85, 0.4);
+  background: rgba(10, 10, 10, 0.88);
+  color: #C9A055;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+}
+.pg-carousel-arrow:hover {
+  background: #C9A055;
+  border-color: #C9A055;
+  color: #1a0f00;
+  transform: translateY(-50%) scale(1.06);
+}
+.pg-carousel-arrow--left  { left: 20px; }
+.pg-carousel-arrow--right { right: 20px; }
+
+@media (max-width: 768px) {
+  .pg-carousel-arrow { display: none; }
+}
 /* ══════════════════════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════════════════════ */

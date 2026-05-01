@@ -7,8 +7,7 @@ import { motion, useScroll, useTransform, Variants } from "framer-motion";
 import Image1 from "../images/hero-artisan.jpg";
 import Image2 from "../images/Untitled.png";
 import story from "../images/story.jpg";
-import { ShoppingBag } from "lucide-react";
-
+import { ShoppingBag, ChevronLeft, ChevronRight } from "lucide-react";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -351,11 +350,9 @@ function PremiumArtisans({ allProducts }: { allProducts: Product[] }) {
       .finally(() => setLoading(false));
   }, []);
 
-  // ✅ Filter products per artisan from the shared allProducts list
   const getProductsForArtisan = (artisan: any): Product[] => {
     const artisanDocId = artisan._id;
     const artisanUserId = artisan.user?._id;
-
     return allProducts
       .filter((p) => {
         if (!p.artisan) return false;
@@ -373,7 +370,6 @@ function PremiumArtisans({ allProducts }: { allProducts: Product[] }) {
     setWished((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // ── Skeleton ──
   if (loading)
     return (
       <section className="pg-premium-section">
@@ -388,27 +384,30 @@ function PremiumArtisans({ allProducts }: { allProducts: Product[] }) {
             <p className="pg-premium__sub">Ces artisans soutiennent notre plateforme et sont mis en avant</p>
           </div>
         </div>
-        <div className="pg-premium__carousel">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="pg-artisan-card2" style={{ opacity: 0.3 }}>
-              <div className="pg-artisan-card2__top">
-                <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#2a1f10", flexShrink: 0 }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ height: 14, background: "#2a1f10", borderRadius: 4, marginBottom: 8, width: "70%" }} />
-                  <div style={{ height: 10, background: "#2a1f10", borderRadius: 4, width: "50%" }} />
+        <div className="pg-premium__carousel-wrap">
+          <div className="pg-premium__carousel">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="pg-artisan-card2" style={{ opacity: 0.3 }}>
+                <div className="pg-artisan-card2__top">
+                  <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#2a1f10", flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ height: 14, background: "#2a1f10", borderRadius: 4, marginBottom: 8, width: "70%" }} />
+                    <div style={{ height: 10, background: "#2a1f10", borderRadius: 4, width: "50%" }} />
+                  </div>
+                </div>
+                <div className="pg-artisan-card2__divider" />
+                <div className="pg-artisan-card2__products">
+                  {[1, 2, 3].map((j) => (
+                    <div key={j} style={{ background: "#1a1208", borderRadius: 8, aspectRatio: "1", height: 90 }} />
+                  ))}
+                </div>
+                <div className="pg-artisan-card2__cta">
+                  <div style={{ height: 38, background: "#1a1208", borderRadius: 8 }} />
                 </div>
               </div>
-              <div className="pg-artisan-card2__divider" />
-              <div className="pg-artisan-card2__products">
-                {[1, 2, 3].map((j) => (
-                  <div key={j} style={{ background: "#1a1208", borderRadius: 8, aspectRatio: "1", height: 90 }} />
-                ))}
-              </div>
-              <div className="pg-artisan-card2__cta">
-                <div style={{ height: 38, background: "#1a1208", borderRadius: 8 }} />
-              </div>
-            </div>
-          ))}
+            ))}
+            <div style={{ minWidth: 80, flexShrink: 0 }} aria-hidden="true" />
+          </div>
         </div>
       </section>
     );
@@ -431,115 +430,133 @@ function PremiumArtisans({ allProducts }: { allProducts: Product[] }) {
           <button className="pg-premium__link" onClick={() => router.push("/Artisans")}>
             Voir tous les artisans
           </button>
-          <button className="pg-nav-btn" onClick={() => scroll(-1)}>‹</button>
-          <button className="pg-nav-btn" onClick={() => scroll(1)}>›</button>
         </div>
       </div>
 
-      <div className="pg-premium__carousel" ref={carouselRef}>
-        {artisans.map((a) => {
-          const name = a.user?.name ?? a.name ?? "Artisan";
-          const userId = a.user?._id ?? a._id;
-          const photo = a.profilePhoto ?? a.user?.image ?? null;
-          const products = getProductsForArtisan(a);
+      <div className="pg-premium__carousel-wrap">
+        <button
+          className="pg-carousel-arrow pg-carousel-arrow--left"
+          onClick={() => scroll(-1)}
+          aria-label="Précédent"
+        >
+          <ChevronLeft size={22} strokeWidth={2} />
+        </button>
 
-          return (
-            <article
-              key={a._id}
-              className="pg-artisan-card2"
-              onClick={() => router.push(`/Artisans/${userId}`)}
-            >
-              {/* ── Top row ── */}
-              <div className="pg-artisan-card2__top">
-                <span className="pg-premium-badge">PREMIUM</span>
+        <div className="pg-premium__carousel" ref={carouselRef}>
+          {artisans.map((a) => {
+            const name = a.user?.name ?? a.name ?? "Artisan";
+            const userId = a.user?._id ?? a._id;
+            const photo = a.profilePhoto ?? a.user?.image ?? null;
+            const products = getProductsForArtisan(a);
 
-                <div className="pg-artisan-card2__avatar-wrap">
-                  {photo ? (
-                    <img src={photo} alt={name} className="pg-artisan-card2__avatar" />
-                  ) : (
-                    <div className="pg-artisan-card2__avatar-fallback">
-                      {name.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                </div>
+            return (
+              <article
+                key={a._id}
+                className="pg-artisan-card2"
+                onClick={() => router.push(`/Artisans/${userId}`)}
+              >
+                <div className="pg-artisan-card2__top">
+                  <span className="pg-premium-badge">PREMIUM</span>
 
-                <div className="pg-artisan-card2__meta">
-                  <h4 className="pg-artisan-card2__name">{name}</h4>
-                  {a.specialite && (
-                    <p className="pg-artisan-card2__spec">{a.specialite}</p>
-                  )}
-                  {a.region && (
-                    <p className="pg-artisan-card2__loc">
-                      <Pin /> {a.region}, Tunisie
-                    </p>
-                  )}
-                  {a.rating != null && (
-                    <p className="pg-artisan-card2__rating">
-                      ★ {a.rating}{" "}
-                      <span>
-                        ({a.reviewCount ?? 0})
-                        {a.salesCount != null && ` | ${a.salesCount} ventes`}
-                      </span>
-                    </p>
-                  )}
-                </div>
-
-                <button
-                  className={`pg-artisan-card2__wish${wished[a._id] ? " pg-artisan-card2__wish--active" : ""}`}
-                  onClick={(e) => toggleWish(a._id, e)}
-                  aria-label="Favoris"
-                >
-                  {wished[a._id] ? "♥" : "♡"}
-                </button>
-              </div>
-
-              <div className="pg-artisan-card2__divider" />
-
-              {/* ── Product grid ── */}
-              {products.length > 0 ? (
-                <div className="pg-artisan-card2__products">
-                  {products.map((prod) => (
-                    <div
-                      key={prod._id}
-                      className="pg-artisan-prod"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(`/boutique/${prod._id}`);
-                      }}
-                    >
-                      <div className="pg-artisan-prod__img-wrap">
-                        {prod.images?.[0] ? (
-                          <img src={prod.images[0]} alt={prod.title} className="pg-artisan-prod__img" />
-                        ) : (
-                          <div className="pg-artisan-prod__fallback">🏺</div>
-                        )}
-                        <span className="pg-artisan-prod__price">
-                          {prod.price?.toLocaleString("fr-FR")} DT
-                        </span>
+                  <div className="pg-artisan-card2__avatar-wrap">
+                    {photo ? (
+                      <img src={photo} alt={name} className="pg-artisan-card2__avatar" />
+                    ) : (
+                      <div className="pg-artisan-card2__avatar-fallback">
+                        {name.charAt(0).toUpperCase()}
                       </div>
-                      <p className="pg-artisan-prod__name">{prod.title}</p>
-                      {prod.rating != null && (
-                        <p className="pg-artisan-prod__rating">★ {prod.rating}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="pg-artisan-card2__no-products">
-                  <p>Aucun produit pour l&apos;instant</p>
-                </div>
-              )}
+                    )}
+                  </div>
 
-              {/* ── CTA ── */}
-              <div className="pg-artisan-card2__cta">
-                <button className="pg-artisan-card2__btn">
-                  <ShoppingBag size={15} strokeWidth={2} />
-                  Voir la boutique
-                </button>
-              </div>
-            </article>
-          );
-        })}
+                  <div className="pg-artisan-card2__meta">
+                    <h4 className="pg-artisan-card2__name">{name}</h4>
+                    {a.specialite && (
+                      <p className="pg-artisan-card2__spec">{a.specialite}</p>
+                    )}
+                    {a.region && (
+                      <p className="pg-artisan-card2__loc">
+                        <Pin /> {a.region}, Tunisie
+                      </p>
+                    )}
+                    {a.rating != null && (
+                      <p className="pg-artisan-card2__rating">
+                        ★ {a.rating}{" "}
+                        <span>
+                          ({a.reviewCount ?? 0})
+                          {a.salesCount != null && ` | ${a.salesCount} ventes`}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    className={`pg-artisan-card2__wish${wished[a._id] ? " pg-artisan-card2__wish--active" : ""}`}
+                    onClick={(e) => toggleWish(a._id, e)}
+                    aria-label="Favoris"
+                  >
+                    {wished[a._id] ? "♥" : "♡"}
+                  </button>
+                </div>
+
+                <div className="pg-artisan-card2__divider" />
+
+                {products.length > 0 ? (
+                  <div className="pg-artisan-card2__products">
+                    {products.map((prod) => (
+                      <div
+                        key={prod._id}
+                        className="pg-artisan-prod"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/boutique/${prod._id}`);
+                        }}
+                      >
+                        <div className="pg-artisan-prod__img-wrap">
+                          {prod.images?.[0] ? (
+                            <img src={prod.images[0]} alt={prod.title} className="pg-artisan-prod__img" />
+                          ) : (
+                            <div className="pg-artisan-prod__fallback">🏺</div>
+                          )}
+                          <span className="pg-artisan-prod__price">
+                            {prod.price?.toLocaleString("fr-FR")} DT
+                          </span>
+                        </div>
+                        <p className="pg-artisan-prod__name">{prod.title}</p>
+                        {prod.rating != null && (
+                          <p className="pg-artisan-prod__rating">★ {prod.rating}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="pg-artisan-card2__no-products">
+                    <p>Aucun produit pour l&apos;instant</p>
+                  </div>
+                )}
+
+                <div className="pg-artisan-card2__cta">
+                  <Link
+                    href={`/Artisanprofile/${userId}`}
+                    className="pg-artisan-card2__btn"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ShoppingBag size={15} strokeWidth={2} />
+                    Voir la boutique
+                  </Link>
+                </div>
+              </article>
+            );
+          })}
+          <div style={{ minWidth: 80, flexShrink: 0 }} aria-hidden="true" />
+        </div>
+
+        <button
+          className="pg-carousel-arrow pg-carousel-arrow--right"
+          onClick={() => scroll(1)}
+          aria-label="Suivant"
+        >
+          <ChevronRight size={22} strokeWidth={2} />
+        </button>
       </div>
     </section>
   );
@@ -556,7 +573,6 @@ function PremiumProducts({
   const carouselRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // ✅ Use shared allProducts — no separate fetch needed
   const products = allProducts.filter((p) => p.isHome === true).slice(0, 8);
 
   const scroll = (dir: number) =>
@@ -588,55 +604,65 @@ function PremiumProducts({
           <button className="pg-premium__link" onClick={() => router.push("/boutique")}>
             Voir tous les produits
           </button>
-          <button className="pg-nav-btn" onClick={() => scroll(-1)}>‹</button>
-          <button className="pg-nav-btn" onClick={() => scroll(1)}>›</button>
         </div>
       </div>
 
-      <div className="pg-premium__carousel" ref={carouselRef}>
-        {products.map((p) => (
-          <article
-            key={p._id}
-            className="pg-prod-card-h"
-            onClick={() => router.push(`/boutique/${p._id}`)}
-          >
-            <div className="pg-prod-card-h__img-wrap">
-              {p.images?.[0] ? (
-                <img src={p.images[0]} alt={p.title} className="pg-prod-card-h__img" />
-              ) : (
-                <div className="pg-prod-card-h__fallback">🏺</div>
-              )}
-              <span className="pg-premium-badge">PREMIUM</span>
-              <button
-                className="pg-wishlist-btn"
-                onClick={(e) => e.stopPropagation()}
-                aria-label="Favoris"
-              >
-                ♡
-              </button>
-            </div>
-            <div className="pg-prod-card-h__body">
-              <h4 className="pg-prod-card-h__name">{p.title}</h4>
-              {getArtisanName(p.artisan) && (
-                <p className="pg-prod-card-h__by">Par {getArtisanName(p.artisan)}</p>
-              )}
-              <div className="pg-prod-card-h__footer">
-                <div>
-                  <span className="pg-prod-card-h__price">
-                    {p.price.toLocaleString("fr-FR")} DT
-                  </span>
-                </div>
-                <button
-                  className="pg-cart-btn"
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label="Ajouter au panier"
-                >
-                  <ShoppingBag size={18} />
-                </button>
+      <div className="pg-premium__carousel-wrap">
+        <button
+          className="pg-carousel-arrow pg-carousel-arrow--left"
+          onClick={() => scroll(-1)}
+          aria-label="Précédent"
+        >
+          <ChevronLeft size={22} strokeWidth={2} />
+        </button>
+
+        <div className="pg-premium__carousel" ref={carouselRef}>
+          {products.map((p) => (
+            <article
+              key={p._id}
+              className="pg-prod-card-h"
+              onClick={() => router.push(`/boutique/${p._id}`)}
+            >
+              <div className="pg-prod-card-h__img-wrap">
+                {p.images?.[0] ? (
+                  <img src={p.images[0]} alt={p.title} className="pg-prod-card-h__img" />
+                ) : (
+                  <div className="pg-prod-card-h__fallback">🏺</div>
+                )}
+                <span className="pg-premium-badge-prod">PREMIUM</span>
               </div>
-            </div>
-          </article>
-        ))}
+              <div className="pg-prod-card-h__body">
+                <h4 className="pg-prod-card-h__name">{p.title}</h4>
+                {getArtisanName(p.artisan) && (
+                  <p className="pg-prod-card-h__by">Par {getArtisanName(p.artisan)}</p>
+                )}
+                <div className="pg-prod-card-h__footer">
+                  <div>
+                    <span className="pg-prod-card-h__price">
+                      {p.price.toLocaleString("fr-FR")} DT
+                    </span>
+                  </div>
+                  <button
+                    className="pg-cart-btn"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label="Ajouter au panier"
+                  >
+                    <ShoppingBag size={18} />
+                  </button>
+                </div>
+              </div>
+            </article>
+          ))}
+          <div style={{ minWidth: 80, flexShrink: 0 }} aria-hidden="true" />
+        </div>
+
+        <button
+          className="pg-carousel-arrow pg-carousel-arrow--right"
+          onClick={() => scroll(1)}
+          aria-label="Suivant"
+        >
+          <ChevronRight size={22} strokeWidth={2} />
+        </button>
       </div>
     </section>
   );
