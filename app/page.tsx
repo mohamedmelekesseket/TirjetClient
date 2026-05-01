@@ -563,6 +563,7 @@ function PremiumArtisans({ allProducts }: { allProducts: Product[] }) {
 }
 
 // ─── Premium Products Carousel ────────────────────────────────────────────────
+
 function PremiumProducts({
   allProducts,
   categories,

@@ -20,6 +20,7 @@ interface Product {
   stock: number;
   isApproved: boolean;
   createdAt: string;
+  views:Number;
 }
 
 const statusLabel = (p: Product) =>
@@ -341,8 +342,14 @@ export default function ProductsPage() {
                       <span className="product-card-meta-label">Statut</span>
                       <span className="product-card-meta-val">{label}</span>
                     </div>
+                    <div className="product-card-meta-item">
+                      <span className="product-card-meta-label">Vues</span>
+                      <span className="product-card-meta-val">
+                        {(p.views ?? 0).toLocaleString('fr-FR')}
+                      </span>
+                    </div>
                   </div>
-
+                  
                   <div className="product-card-actions">
                     <Link
                       href={`/dashboard/artisan/products/${p._id}/edit`}

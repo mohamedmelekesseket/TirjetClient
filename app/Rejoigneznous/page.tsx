@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, LogIn } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 
@@ -37,35 +37,31 @@ function useInView(threshold = 0.1) {
 }
 
 export default function RejoindrePage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const apiToken = (session as any)?.apiToken as string | undefined;
 
-  const [submitted, setSubmitted] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
-  const [focused, setFocused] = useState<string | null>(null);
-  const [values, setValues] = useState({
-    nom: "",
-    email: "",
-    telephone: "",
-    ville: "",
-    specialite: "",
-    histoire: "",
-  });
+  // Email comes from session — never entered manually
+  const sessionEmail = session?.user?.email ?? "";
+  const sessionName  = session?.user?.name  ?? "";
 
-  const [heroIn, setHeroIn] = useState(false);
-  useEffect(() => {
-    const t = setTimeout(() => setHeroIn(true), 80);
-    return () => clearTimeout(t);
-  }, []);
+  const [submitted, setSubmitted]   = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [apiError, setApiError]     = useState<string | null>(null);
+  const [focused, setFocused]       = useState<string | null>(null);
+
+  const [values, setValues] = useState({
+    nom:       "",
+    telephone: "",
+    ville:     "",
+    specialite:"",
+    histoire:  "",
+  });
 
   const formSect = useInView(0.05);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    setValues((v) => ({ ...v, [e.target.name]: e.target.value }));
-  };
+  ) => setValues((v) => ({ ...v, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -73,29 +69,24 @@ export default function RejoindrePage() {
     setSubmitting(true);
 
     try {
-      // Build FormData so images can be added later if needed
       const formData = new FormData();
-      formData.append("phone", values.telephone);
-      formData.append("region", values.ville);
-      formData.append("specialite", values.specialite);
+      formData.append("phone",       values.telephone);
+      formData.append("region",      values.ville);
+      formData.append("specialite",  values.specialite);
       formData.append("description", values.histoire);
+      // email is read server-side from req.user (JWT) — no need to send it
 
       const headers: HeadersInit = {};
       if (apiToken) headers["Authorization"] = `Bearer ${apiToken}`;
-      // ⚠️ Do NOT set Content-Type — browser sets it with boundary for FormData
 
-      const res = await fetch(`${API}/api/artisans/apply`, {
+      const res  = await fetch(`${API}/api/artisans/apply`, {
         method: "POST",
         headers,
         body: formData,
       });
-
       const data = await res.json();
 
-      if (!res.ok) {
-        // "already submitted" or server error
-        throw new Error(data.message || "Erreur lors de l'envoi");
-      }
+      if (!res.ok) throw new Error(data.message || "Erreur lors de l'envoi");
 
       setSubmitted(true);
     } catch (err: any) {
@@ -107,6 +98,9 @@ export default function RejoindrePage() {
 
   const filled = (name: string) =>
     values[name as keyof typeof values].length > 0;
+
+  // ── Loading state ──────────────────────────────────────────────
+  if (status === "loading") return null; // or a spinner
 
   return (
     <div className="rj-page">
@@ -120,7 +114,7 @@ export default function RejoindrePage() {
       <section className="rj-form-section" ref={formSect.ref}>
         <div className={`rj-form-wrap${formSect.visible ? " rj-form-wrap--in" : ""}`}>
 
-          {/* Left panel */}
+          {/* ── Left aside (unchanged) ───────────────────────────── */}
           <aside className="rj-form-aside">
             <p className="rj-eyebrow rj-eyebrow--gold">VOTRE CANDIDATURE</p>
             <h2 className="rj-aside__title">Devenez<br /><em>artisan partenaire</em></h2>
@@ -151,76 +145,117 @@ export default function RejoindrePage() {
             </div>
           </aside>
 
-          {/* Form card */}
+          {/* ── Form card ────────────────────────────────────────── */}
           <div className="rj-form-card">
-            {submitted ? (
+
+            {/* ══ NOT LOGGED IN ══ */}
+            {!session ? (
+              <div className="rj-gate">
+                <div className="rj-gate__icon" aria-hidden="true">
+                  <LogIn size={32} />
+                </div>
+                <h3 className="rj-gate__title">Connexion requise</h3>
+                <p className="rj-gate__desc">
+                  Pour soumettre votre candidature, vous devez d'abord
+                  vous connecter à votre compte.
+                </p>
+                <Link href="/connexion" className="rj-btn rj-btn--gold">
+                  Se connecter →
+                </Link>
+                <p className="rj-gate__sub">
+                  Pas encore de compte ?{" "}
+                  <Link href="/inscription">Créer un compte</Link>
+                </p>
+              </div>
+            ) :
+
+            /* ══ SUCCESS ══ */
+            submitted ? (
               <div className="rj-success">
                 <div className="rj-success__icon" aria-hidden="true">
                   <CheckCircle2 size={28} />
                 </div>
                 <h3 className="rj-success__title">Candidature envoyée !</h3>
                 <p className="rj-success__desc">
-                  Merci {values.nom.split(" ")[0]}. Notre équipe vous contactera
-                  sous 48h à l'adresse <strong>{values.email}</strong>.
+                  Merci {(values.nom || sessionName).split(" ")[0]}. Notre équipe
+                  vous contactera sous 48h à l'adresse{" "}
+                  <strong>{sessionEmail}</strong>.
                 </p>
                 <button
                   className="rj-btn rj-btn--gold"
-                  onClick={() => { setSubmitted(false); setValues({ nom: "", email: "", telephone: "", ville: "", specialite: "", histoire: "" }); }}
+                  onClick={() => {
+                    setSubmitted(false);
+                    setValues({ nom: "", telephone: "", ville: "", specialite: "", histoire: "" });
+                  }}
                 >
                   Nouvelle candidature
                 </button>
               </div>
-            ) : (
+            ) :
+
+            /* ══ FORM (logged in) ══ */
+            (
               <>
                 <div className="rj-form-header">
                   <p className="rj-eyebrow">INFORMATIONS</p>
                   <h3 className="rj-form-title">Votre profil artisan</h3>
+
+                  {/* Connected-as badge */}
+                  <div className="rj-session-badge">
+                    <span className="rj-session-badge__dot" aria-hidden="true" />
+                    Connecté en tant que <strong>{sessionEmail}</strong>
+                  </div>
                 </div>
 
-                {/* ✅ API error banner */}
                 {apiError && (
                   <div style={{
                     background: "#FFF5F5", border: "1px solid #FEB2B2",
                     color: "#C53030", borderRadius: "8px",
-                    padding: "12px 16px", marginBottom: "16px", fontSize: "0.875rem"
+                    padding: "12px 16px", marginBottom: "16px", fontSize: "0.875rem",
                   }}>
                     {apiError}
                   </div>
                 )}
 
                 <div className="rj-fields">
-                  {/* Row 1 — Nom + Email */}
-                  <div className="rj-row">
-                    <div className={`rj-field${focused === "nom" ? " rj-field--focus" : ""}${filled("nom") ? " rj-field--filled" : ""}`}>
-                      <label className="rj-label" htmlFor="nom">Nom complet</label>
-                      <input id="nom" name="nom" type="text" className="rj-input"
-                        placeholder="Fatma Ben Amor" value={values.nom}
-                        onChange={handleChange} onFocus={() => setFocused("nom")} onBlur={() => setFocused(null)} />
-                      <span className="rj-field__line" />
-                    </div>
-                    <div className={`rj-field${focused === "email" ? " rj-field--focus" : ""}${filled("email") ? " rj-field--filled" : ""}`}>
-                      <label className="rj-label" htmlFor="email">Adresse email</label>
-                      <input id="email" name="email" type="email" className="rj-input"
-                        placeholder="fatma@exemple.com" value={values.email}
-                        onChange={handleChange} onFocus={() => setFocused("email")} onBlur={() => setFocused(null)} />
-                      <span className="rj-field__line" />
-                    </div>
+                  {/* Row 1 — Nom (full row, email removed) */}
+                  <div className={`rj-field rj-field--full${focused === "nom" ? " rj-field--focus" : ""}${filled("nom") ? " rj-field--filled" : ""}`}>
+                    <label className="rj-label" htmlFor="nom">Nom complet</label>
+                    <input
+                      id="nom" name="nom" type="text" className="rj-input"
+                      placeholder={sessionName || "Fatma Ben Amor"}
+                      value={values.nom}
+                      onChange={handleChange}
+                      onFocus={() => setFocused("nom")}
+                      onBlur={() => setFocused(null)}
+                    />
+                    <span className="rj-field__line" />
                   </div>
 
                   {/* Row 2 — Téléphone + Ville */}
                   <div className="rj-row">
                     <div className={`rj-field${focused === "telephone" ? " rj-field--focus" : ""}${filled("telephone") ? " rj-field--filled" : ""}`}>
                       <label className="rj-label" htmlFor="telephone">Téléphone</label>
-                      <input id="telephone" name="telephone" type="tel" className="rj-input"
-                        placeholder="+216 00 000 000" value={values.telephone}
-                        onChange={handleChange} onFocus={() => setFocused("telephone")} onBlur={() => setFocused(null)} />
+                      <input
+                        id="telephone" name="telephone" type="tel" className="rj-input"
+                        placeholder="+216 00 000 000"
+                        value={values.telephone}
+                        onChange={handleChange}
+                        onFocus={() => setFocused("telephone")}
+                        onBlur={() => setFocused(null)}
+                      />
                       <span className="rj-field__line" />
                     </div>
                     <div className={`rj-field${focused === "ville" ? " rj-field--focus" : ""}${filled("ville") ? " rj-field--filled" : ""}`}>
                       <label className="rj-label" htmlFor="ville">Ville / Région</label>
-                      <input id="ville" name="ville" type="text" className="rj-input"
-                        placeholder="Gafsa, Sejnane, Matmata" value={values.ville}
-                        onChange={handleChange} onFocus={() => setFocused("ville")} onBlur={() => setFocused(null)} />
+                      <input
+                        id="ville" name="ville" type="text" className="rj-input"
+                        placeholder="Gafsa, Sejnane, Matmata"
+                        value={values.ville}
+                        onChange={handleChange}
+                        onFocus={() => setFocused("ville")}
+                        onBlur={() => setFocused(null)}
+                      />
                       <span className="rj-field__line" />
                     </div>
                   </div>
@@ -228,9 +263,11 @@ export default function RejoindrePage() {
                   {/* Spécialité */}
                   <div className={`rj-field rj-field--full${focused === "specialite" ? " rj-field--focus" : ""}${filled("specialite") ? " rj-field--filled" : ""}`}>
                     <label className="rj-label" htmlFor="specialite">Spécialité</label>
-                    <select id="specialite" name="specialite" className="rj-select"
+                    <select
+                      id="specialite" name="specialite" className="rj-select"
                       value={values.specialite} onChange={handleChange}
-                      onFocus={() => setFocused("specialite")} onBlur={() => setFocused(null)}>
+                      onFocus={() => setFocused("specialite")} onBlur={() => setFocused(null)}
+                    >
                       <option value="" disabled>Choisissez votre spécialité…</option>
                       {specialites.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
@@ -245,10 +282,12 @@ export default function RejoindrePage() {
                   {/* Histoire */}
                   <div className={`rj-field rj-field--full rj-field--textarea${focused === "histoire" ? " rj-field--focus" : ""}${filled("histoire") ? " rj-field--filled" : ""}`}>
                     <label className="rj-label" htmlFor="histoire">Votre histoire</label>
-                    <textarea id="histoire" name="histoire" className="rj-textarea" rows={6}
+                    <textarea
+                      id="histoire" name="histoire" className="rj-textarea" rows={6}
                       placeholder="Racontez-nous votre parcours, votre inspiration, ce qui rend votre travail unique…"
                       value={values.histoire} onChange={handleChange}
-                      onFocus={() => setFocused("histoire")} onBlur={() => setFocused(null)} />
+                      onFocus={() => setFocused("histoire")} onBlur={() => setFocused(null)}
+                    />
                     <span className="rj-field__line" />
                     <span className="rj-char-count">{values.histoire.length} / 600</span>
                   </div>

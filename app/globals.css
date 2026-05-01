@@ -2606,8 +2606,9 @@ img  { display: block; max-width: 100%; }
 
 /* ── Horizontal product cards ── */
 .pg-prod-card-h {
-  width: 220px;
+  width: 250px;
   min-width: 220px;
+  height: 300px;
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid #C9A055;
@@ -6203,7 +6204,75 @@ img { display: block; max-width: 100%; }
   color: #c9a96e;
   font-weight: 400;
 }
+/* ── Not-logged-in gate ─────────────────────────── */
+.rj-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 2rem;
+  gap: 1rem;
+  height: 100%;
+}
 
+.rj-gate__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #fdf6ec;          /* or your theme's light gold */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b8892a;
+  margin-bottom: 0.5rem;
+}
+
+.rj-gate__title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.rj-gate__desc {
+  color: #666;
+  max-width: 320px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.rj-gate__sub {
+  font-size: 0.875rem;
+  color: #888;
+  margin-top: 0.5rem;
+}
+
+.rj-gate__sub a {
+  color: #b8892a;
+  text-decoration: underline;
+}
+
+/* ── Session badge (shown inside the form) ─────── */
+.rj-session-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: #666;
+  background: #f5f5f5;
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+.rj-session-badge__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #38a169;         /* green = connected */
+  flex-shrink: 0;
+}
 /* ── RESPONSIVE ── */
 @media (max-width: 1024px) {
   .rj-form-wrap {
