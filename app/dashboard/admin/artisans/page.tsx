@@ -95,15 +95,7 @@ function RankPopover({
 
   return (
     <div style={{ position: "relative", display: "inline-block" }}>
-      <button
-        className="icon-btn"
-        title="Définir le classement"
-        onClick={() => setOpen((o) => !o)}
-        disabled={loading}
-        style={{ color: current ? "#92650A" : undefined }}
-      >
-        {loading ? "..." : <Trophy size={15} color={current ? "#E6B332" : "#888"} />}
-      </button>
+      
 
       {open && (
         <>
@@ -388,21 +380,27 @@ export default function AdminArtisansPage() {
     Authorization: `Bearer ${apiToken}`,
   });
 
-  const fetchArtisans = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`${API}/api/artisans`, { headers: getHeaders() });
-      if (res.status === 401) throw new Error("Non autorisé — session expirée ?");
-      if (!res.ok) throw new Error("Erreur lors du chargement des artisans");
-      const data = await res.json();
-      setArtisans(data.artisans || data.data || []);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+const fetchArtisans = async () => {
+  setLoading(true);
+  setError(null);
+  try {
+    const res = await fetch(`${API}/api/artisans`, { headers: getHeaders() });
+    if (res.status === 401) throw new Error("Non autorisé — session expirée ?");
+    if (!res.ok) throw new Error("Erreur lors du chargement des artisans");
+    const data = await res.json();
+    const sorted = (data.artisans || data.data || []).sort((a: Artisan, b: Artisan) => {
+      if (a.rank == null && b.rank == null) return 0;
+      if (a.rank == null) return 1;  // unranked go to bottom
+      if (b.rank == null) return -1; // ranked come first
+      return a.rank - b.rank;        // sort by rank ascending
+    });
+    setArtisans(sorted);
+  } catch (err: any) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     if (apiToken) fetchArtisans();

@@ -278,7 +278,7 @@ export default function AdminProductsPage() {
             <span className="search-bar-icon"><Search size={16} /></span>
             <input
               className="search-bar-input"
-              placeholder="Rechercher un produit..."
+              placeholder="Rechercher par Artisan..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />

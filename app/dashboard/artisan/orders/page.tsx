@@ -7,7 +7,7 @@ import { Eye, X, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-const ALL_STATUSES = ["pending",  "shipped", "delivered","paid", "cancelled"] as const;
+const ALL_STATUSES = ["pending", "shipped", "delivered", "cancelled"] as const;
 type Status = (typeof ALL_STATUSES)[number];
 
 interface Order {
@@ -28,13 +28,11 @@ interface Order {
     notes?: string;
   };
 }
-
 const STATUS_CONFIG: Record<Status, { label: string; badgeClass: string; dot: string; desc: string; gradient: string }> = {
   pending:   { label: "En attente", badgeClass: "badge-warning", dot: "#F59E0B", desc: "Commande reçue, en attente de traitement.",  gradient: "linear-gradient(135deg,#F59E0B,#D97706)" },
   shipped:   { label: "En cours",   badgeClass: "badge-primary", dot: "#8B5CF6", desc: "Le colis est en préparation ou expédié.",     gradient: "linear-gradient(135deg,#8B5CF6,#6D28D9)" },
   delivered: { label: "Livré",      badgeClass: "badge-success", dot: "#0B9E5E", desc: "Commande reçue par le client.",               gradient: "linear-gradient(135deg,#0B9E5E,#047857)" },
   cancelled: { label: "Annulé",     badgeClass: "badge-danger",  dot: "#E53E3E", desc: "Commande annulée définitivement.",            gradient: "linear-gradient(135deg,#E53E3E,#C53030)" },
-  paid:      { label: "Payé",       badgeClass: "badge-primary", dot: "#0234AB", desc: "Paiement confirmé par le client.",            gradient: "linear-gradient(135deg,#0234AB,#1a4fd4)" },
 };
 
 const TABS = ["Toutes", "En attente", "En cours", "Livrées", "Annulées"] as const;
