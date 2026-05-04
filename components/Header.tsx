@@ -46,8 +46,8 @@ const links: NavLink[] = [
     href: "/TourismeetLoisir",
     label: "Tourisme et Loisir",
     dropdown: [
-      { label: "Maisons d'hôtes amazighes",      href: "/TourismeetLoisir/maisons-amazighes" },
-      { label: "Maisons d'hôtes traditionnelles", href: "/TourismeetLoisir/maisons-traditionnelles" },
+      { label: "Maisons d'hôtes",      href: "/TourismeetLoisir/maisonsdhotes" },
+      // { label: "Maisons d'hôtes traditionnelles", href: "/TourismeetLoisir/maisons-traditionnelles" },
       { label: "Excursions",                     href: "/TourismeetLoisir/excursions" },
     ],
   },
