@@ -5,6 +5,7 @@ import Providers from "@/components/Providers";
 import LayoutWrapper from "@/components/LayoutWrapper";
 import AppToaster from "@/components/AppToaster";
 import { fontDisplay, fontSans } from "@/lib/font";
+import { Analytics } from '@vercel/analytics/react';
 
 export const metadata = {
   title: "Tirjet",
@@ -38,6 +39,8 @@ export default function RootLayout({
           </LayoutWrapper>
           <AppToaster />
         </Providers>
+
+        <Analytics />
       </body>
     </html>
   );
