@@ -18,6 +18,8 @@ const adminNav: NavItem[] = [
   { label: 'categories',        href: '/dashboard/admin/categories ',  icon: '◉' },
   { label: 'Utilisateurs',    href: '/dashboard/admin/users',     icon: '◎' },
   { label: 'Statistiques',    href: '/dashboard/admin/stats',     icon: '◇' },
+  { label: "Maisons d'Hôtes",    href: '/dashboard/admin/maisonsdhotes',     icon: '◇' },
+  { label: 'Excursions',    href: '/dashboard/admin/excursions',     icon: '◇' },
 ];
 
 export default function Sidebar({ role }: { role: 'artisan' | 'admin' }) {
