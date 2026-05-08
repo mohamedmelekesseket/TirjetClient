@@ -67,7 +67,7 @@ export default function CategoryPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy]           = useState("newest");
-  const [priceRange, setPriceRange]   = useState<[number, number]>([0, 5000]);
+  const [priceRange, setPriceRange]   = useState<[number, number]>([0, 1000]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [viewMode, setViewMode]       = useState<"grid" | "list">("grid");
   const [sortOpen, setSortOpen]       = useState(false);
@@ -324,7 +324,7 @@ export default function CategoryPage() {
           <div className="cat__toolbar-right">
             <span className="cat__count">{`${filtered.length} pièce${filtered.length !== 1 ? "s" : ""}`}</span>
 
-            <div className="cat__sort-wrap" style={{ position: "relative" }}>
+            {/* <div className="cat__sort-wrap" style={{ position: "relative" }}>
               <button className="cat__sort-btn" onClick={() => setSortOpen((v) => !v)}>
                 {SORT_OPTIONS.find((o) => o.value === sortBy)?.label}
                 <ChevronDown size={13} />
@@ -352,14 +352,14 @@ export default function CategoryPage() {
                   </>
                 )}
               </AnimatePresence>
-            </div>
+            </div> */}
 
-            <div className="cat__view-toggle">
+            {/* <div className="cat__view-toggle">
               <button className={`cat__view-btn${viewMode === "grid" ? " cat__view-btn--active" : ""}`}
                 onClick={() => setViewMode("grid")} aria-label="Vue grille"><Grid3X3 size={15} /></button>
               <button className={`cat__view-btn${viewMode === "list" ? " cat__view-btn--active" : ""}`}
                 onClick={() => setViewMode("list")} aria-label="Vue liste"><LayoutList size={15} /></button>
-            </div>
+            </div> */}
 
             <button className="cat__filter-toggle" onClick={() => setSidebarOpen((v) => !v)}>
               <SlidersHorizontal size={15} /> Filtres
@@ -429,22 +429,22 @@ export default function CategoryPage() {
             <div className="cat__range-wrap">
               <div className="cat__range-track" />
               <div className="cat__range-fill" style={{
-                left:  `${(priceRange[0] / 5000) * 100}%`,
-                right: `${100 - (priceRange[1] / 5000) * 100}%`,
+                left:  `${(priceRange[0] / 1000) * 100}%`,
+                right: `${100 - (priceRange[1] / 1000) * 100}%`,
               }} />
-              <input type="range" min={0} max={5000} step={50} value={priceRange[0]}
+              <input type="range" min={0} max={1000} step={50} value={priceRange[0]}
                 onChange={(e) => setPriceRange(([, max]) => [Math.min(+e.target.value, max - 50), max])}
                 className="cat__range-input" />
-              <input type="range" min={0} max={5000} step={50} value={priceRange[1]}
+              <input type="range" min={0} max={1000} step={50} value={priceRange[1]}
                 onChange={(e) => setPriceRange(([min]) => [min, Math.max(+e.target.value, min + 50)])}
                 className="cat__range-input" />
             </div>
-            <div className="cat__range-labels"><span>0</span><span>5 000 TND</span></div>
+            <div className="cat__range-labels"><span>0</span><span>1 000 TND</span></div>
           </div>
 
-          {(searchQuery || priceRange[0] > 0 || priceRange[1] < 5000) && (
+          {(searchQuery || priceRange[0] > 0 || priceRange[1] < 1000) && (
             <button className="cat__sidebar-reset"
-              onClick={() => { setSearchQuery(""); setPriceRange([0, 5000]); }}>
+              onClick={() => { setSearchQuery(""); setPriceRange([0, 1000]); }}>
               <X size={12} /> Réinitialiser
             </button>
           )}

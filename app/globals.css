@@ -12251,7 +12251,7 @@ tbody td {
   flex-shrink: 0;
   background: var(--c-surface);
   border-right: 1px solid var(--c-sand);
-  min-height: calc(100vh - 200px);
+  min-height: 800px;
   padding: 40px 28px;
   position: sticky;
   top: 57px;
@@ -12691,6 +12691,8 @@ input[type="range"].cat__range-input::-webkit-slider-thumb {
   }
   .cat__sidebar--mobile-open {
     display: block;
+    z-index: 1100;
+
   }
   .cat__sidebar-close {
     display: flex;

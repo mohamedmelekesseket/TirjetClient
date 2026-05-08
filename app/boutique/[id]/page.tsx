@@ -647,6 +647,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     <textarea
                       className="pd-review-form__textarea"
                       rows={3}
+                      style={{color:"black"}}
                       placeholder="Partagez votre expérience…"
                       value={newContent}
                       onChange={e => setNewContent(e.target.value)}
