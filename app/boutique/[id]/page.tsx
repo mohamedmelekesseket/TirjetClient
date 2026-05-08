@@ -478,11 +478,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               ? <span className="pd-badge pd-badge--green">En stock ({product.stock})</span>
               : <span className="pd-badge pd-badge--red">Épuisé</span>}
 
-            {/* ── View counter ────────────────────────────────────────────── */}
-            <span className="pd-views-badge">
-              <Eye size={13} style={{ marginRight: 4, opacity: 0.7 }} />
-              {(product.views ?? 0).toLocaleString("fr-TN")} vue{product.views !== 1 ? "s" : ""}
-            </span>
           </div>
 
           <h1 className="pd-info__title">{product.title}</h1>

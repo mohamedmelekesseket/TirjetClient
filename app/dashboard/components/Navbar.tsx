@@ -14,19 +14,23 @@ interface NavItem {
 }
 
 const artisanNav: NavItem[] = [
-  { label: 'Tableau de bord', href: '/dashboard/artisan', icon: '⬡' },
-  { label: 'Mes Produits', href: '/dashboard/artisan/products', icon: '◈' },
+  { label: 'Tableau de bord', href: '/dashboard/artisan', icon: '◉' },
+  { label: 'Mes Produits', href: '/dashboard/artisan/products', icon: '◉' },
   { label: 'Commandes', href: '/dashboard/artisan/orders', icon: '◉' },
-  { label: 'Mon Profil', href: '/dashboard/artisan/profile', icon: '◎' },
+  { label: 'Mon Profil', href: '/dashboard/artisan/profile', icon: '◉' },
 ];
 
+
 const adminNav: NavItem[] = [
-  { label: 'Tableau de bord', href: '/dashboard/admin', icon: '⬡' },
-  { label: 'Artisans', href: '/dashboard/admin/artisans', icon: '◈' },
-  { label: 'Produits', href: '/dashboard/admin/products', icon: '◉' },
-  { label: 'Categories', href: '/dashboard/admin/categories', icon: '◇' },
-  { label: 'Utilisateurs', href: '/dashboard/admin/users', icon: '◎' },
-  { label: 'Statistiques', href: '/dashboard/admin/stats', icon: '◇' },
+  { label: 'Tableau de bord', href: '/dashboard/admin',           icon: '◉' },
+  { label: 'Artisans',        href: '/dashboard/admin/artisans',  icon: '◉' },
+  { label: 'Produits',        href: '/dashboard/admin/products',  icon: '◉' },
+  { label: 'Orders',    href: '/dashboard/admin/orders',     icon: '◉' },
+  { label: 'categories',        href: '/dashboard/admin/categories ',  icon: '◉' },
+  { label: 'Utilisateurs',    href: '/dashboard/admin/users',     icon: '◉' },
+  { label: 'Statistiques',    href: '/dashboard/admin/stats',     icon: '◉' },
+  { label: "Maisons d'Hôtes",    href: '/dashboard/admin/maisonsdhotes',     icon: '◉' },
+  { label: 'Excursions',    href: '/dashboard/admin/excursions',     icon: '◉' },
 ];
 
 export default function Navbar({ title, role }: { title: string; role: Role }) {

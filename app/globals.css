@@ -9380,6 +9380,7 @@ tbody td {
   background: rgba(10, 15, 44, 0.35);
   backdrop-filter: blur(4px);
   z-index: 999;
+  background-color: var(--warm-muted);
 }
 
 .dash-mobile-drawer {
@@ -9427,6 +9428,7 @@ tbody td {
   color: #0A0F2C;
   text-decoration: none;
   transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  background-color: #1448C9;
 }
 .dash-mobile-nav-link:hover {
   transform: translateY(-1px);
@@ -9437,8 +9439,8 @@ tbody td {
   border-color: rgba(2,52,171,0.25);
   box-shadow: 0 10px 24px rgba(2,52,171,0.12);
 }
-.dash-mobile-nav-icon { width: 26px; height: 26px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: rgba(2,52,171,0.08); color: #0234AB; flex-shrink: 0; }
-.dash-mobile-nav-label { font-size: 0.95rem; font-weight: 650; }
+.dash-mobile-nav-icon { width: 26px; height: 26px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: white; color: #0234AB; flex-shrink: 0; }
+.dash-mobile-nav-label { font-size: 0.95rem; font-weight: 650;color: white; }
 
 @keyframes slideUpDash {
   from { transform: translateY(14px); opacity: 0; }

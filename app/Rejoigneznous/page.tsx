@@ -201,10 +201,10 @@ export default function RejoindrePage() {
                   <h3 className="rj-form-title">Votre profil artisan</h3>
 
                   {/* Connected-as badge */}
-                  <div className="rj-session-badge">
+                  {/* <div className="rj-session-badge">
                     <span className="rj-session-badge__dot" aria-hidden="true" />
                     Connecté en tant que <strong>{sessionEmail}</strong>
-                  </div>
+                  </div> */}
                 </div>
 
                 {apiError && (

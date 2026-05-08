@@ -453,7 +453,7 @@ function PremiumArtisans({ allProducts }: { allProducts: Product[] }) {
               <article
                 key={a._id}
                 className="pg-artisan-card2"
-                onClick={() => router.push(`/Artisans/${userId}`)}
+                onClick={() => router.push(`/Artisanprofile/${userId}`)}
               >
                 <div className="pg-artisan-card2__top">
                   <span className="pg-premium-badge">PREMIUM</span>

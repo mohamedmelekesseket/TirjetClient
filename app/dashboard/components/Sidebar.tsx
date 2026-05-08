@@ -5,21 +5,23 @@ import { usePathname } from 'next/navigation';
 interface NavItem { label: string; href: string; icon: string; }
 
 const artisanNav: NavItem[] = [
-  { label: 'Tableau de bord', href: '/dashboard/artisan',          icon: '⬡' },
-  { label: 'Mes Produits',    href: '/dashboard/artisan/products', icon: '◈' },
-  { label: 'Commandes',       href: '/dashboard/artisan/orders',   icon: '◉' },
-  { label: 'Mon Profil',      href: '/dashboard/artisan/profile',  icon: '◎' },
+  { label: 'Tableau de bord', href: '/dashboard/artisan', icon: '◉' },
+  { label: 'Mes Produits', href: '/dashboard/artisan/products', icon: '◉' },
+  { label: 'Commandes', href: '/dashboard/artisan/orders', icon: '◉' },
+  { label: 'Mon Profil', href: '/dashboard/artisan/profile', icon: '◉' },
 ];
 
+
 const adminNav: NavItem[] = [
-  { label: 'Tableau de bord', href: '/dashboard/admin',           icon: '⬡' },
-  { label: 'Artisans',        href: '/dashboard/admin/artisans',  icon: '◈' },
+  { label: 'Tableau de bord', href: '/dashboard/admin',           icon: '◉' },
+  { label: 'Artisans',        href: '/dashboard/admin/artisans',  icon: '◉' },
   { label: 'Produits',        href: '/dashboard/admin/products',  icon: '◉' },
+  { label: 'Orders',    href: '/dashboard/admin/orders',     icon: '◉' },
   { label: 'categories',        href: '/dashboard/admin/categories ',  icon: '◉' },
-  { label: 'Utilisateurs',    href: '/dashboard/admin/users',     icon: '◎' },
-  { label: 'Statistiques',    href: '/dashboard/admin/stats',     icon: '◇' },
-  { label: "Maisons d'Hôtes",    href: '/dashboard/admin/maisonsdhotes',     icon: '◇' },
-  { label: 'Excursions',    href: '/dashboard/admin/excursions',     icon: '◇' },
+  { label: 'Utilisateurs',    href: '/dashboard/admin/users',     icon: '◉' },
+  { label: 'Statistiques',    href: '/dashboard/admin/stats',     icon: '◉' },
+  { label: "Maisons d'Hôtes",    href: '/dashboard/admin/maisonsdhotes',     icon: '◉' },
+  { label: 'Excursions',    href: '/dashboard/admin/excursions',     icon: '◉' },
 ];
 
 export default function Sidebar({ role }: { role: 'artisan' | 'admin' }) {
