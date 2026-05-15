@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react";
 import { Badge, Leaf, Languages, Zap } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-
+import logo from '../icon.png'
 const PILL_TAGS = [
   { Icon: Zap, text: "Droits" },
   { Icon: Leaf, text: "Culture" },
@@ -175,7 +175,7 @@ export default function LoginPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15, duration: 0.5 }}
           >
-            <div className="lp-logo-icon">
+            {/* <div className="lp-logo-icon">
               <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect width="36" height="36" rx="9" fill="url(#lp-grad)" />
                 <path d="M8 20l10 5 10-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
@@ -188,7 +188,8 @@ export default function LoginPage() {
                   </linearGradient>
                 </defs>
               </svg>
-            </div>
+            </div> */}
+            <img src={logo.src} alt="" />
           </motion.div>
 
           {/* Heading */}

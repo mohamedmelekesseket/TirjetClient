@@ -64,7 +64,6 @@ export default function CompactFooter() {
             <h3 className="art-compact-title">Navigation</h3>
             <ul className="art-compact-list">
               <li><Link href="/">Accueil</Link></li>
-              <li><Link href="/boutique">Marketplace</Link></li>
               <li><Link href="/apropos">À propos</Link></li>
             </ul>
           </motion.div>
@@ -74,7 +73,7 @@ export default function CompactFooter() {
             <h3 className="art-compact-title">Artisans</h3>
             <ul className="art-compact-list">
               <li><Link href="/Rejoigneznous">Devenir artisan</Link></li>
-              <li><Link href="/connexion">Connexion</Link></li>
+              <li><Link href="/Artisans">Artisans</Link></li>
             </ul>
           </motion.div>
 

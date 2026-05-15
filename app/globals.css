@@ -3161,7 +3161,6 @@ img  { display: block; max-width: 100%; }
   background-image:
     repeating-linear-gradient(0deg, #C9A055 0px, #C9A055 1px, transparent 1px, transparent 60px),
     repeating-linear-gradient(90deg, #C9A055 0px, #C9A055 1px, transparent 1px, transparent 60px);
-  pointer-events: none;
 }
 
 /* Warm glow blobs */
@@ -3185,7 +3184,7 @@ img  { display: block; max-width: 100%; }
 
 .pg-cta__inner {
   position: relative;
-  z-index: 1;
+  z-index: 11;
   max-width: 580px;
   margin: 0 auto;
 }
