@@ -1,5 +1,4 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Lora:ital,wght@0,400;0,500;1,400&family=Noto+Sans+Tifinagh&display=swap');
 
 @theme inline {
   --color-background: var(--background);
@@ -491,7 +490,7 @@ a {
 
 .hdr__flyout-cat-name {
   margin: 0 0 3px;
-  font-family: "Playfair Display", serif;
+  font-family: "Inter", sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: #2c1810;
@@ -1272,7 +1271,7 @@ a {
 .privacy-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #faf6f1 0%, #f5ede3 50%, #faf6f1 100%);
-  font-family: 'Cormorant Garamond', 'Georgia', serif;
+  font-family: "Inter", sans-serif;
   color: #2c1810;
   padding: 120px 24px 80px;
 }
@@ -1452,7 +1451,7 @@ a {
   padding-top: 30px;
   min-height: 100vh;
   background: linear-gradient(160deg, #fdf6ec 0%, #f5e9d5 40%, #faf4ec 100%);
-  font-family: 'Cormorant Garamond', 'Georgia', serif;
+  font-family: "Inter", sans-serif;
   color: #2c1810;
   position: relative;
   overflow-x: hidden;
@@ -1668,7 +1667,7 @@ a {
   font-weight: 700;
   color: #cd8550;
   line-height: 1;
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: "Inter", sans-serif;
   letter-spacing: -0.02em;
 }
 .profile-stat-label {
@@ -1923,7 +1922,7 @@ img  { display: block; max-width: 100%; }
 
 /* ── Root ─────────────────────────────────────────────────────────────────── */
 .pg-main {
-  font-family: "DM Sans", sans-serif;
+  font-family: "Inter", sans-serif;
   background: #F8F3EC;
   color: #16110C;
   overflow-x: hidden;
@@ -1946,7 +1945,7 @@ img  { display: block; max-width: 100%; }
 .pg-ornament { color: currentColor; }
 
 .pg-h2 {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: clamp(2.2rem, 4vw, 3.4rem);
   font-weight: 400;
   color: #16110C;
@@ -1975,7 +1974,7 @@ img  { display: block; max-width: 100%; }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12.5px;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -2083,7 +2082,7 @@ img  { display: block; max-width: 100%; }
 .pg-hero__body--in { opacity: 1; transform: translateY(0); }
 
 .pg-hero__h1 {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: clamp(68px, 9vw, 118px);
   font-weight: 300;
   line-height: 0.9;
@@ -2130,7 +2129,7 @@ img  { display: block; max-width: 100%; }
 }
 
 .pg-hero__stat-n {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: 28px;
   font-weight: 400;
   color: #C9A055;
@@ -2226,7 +2225,7 @@ img  { display: block; max-width: 100%; }
 .pg-val-card__icon svg { width: 20px; height: 20px; }
 
 .pg-val-card__title {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: 22px;
   font-weight: 500;
   color: #16110C;
@@ -2271,7 +2270,7 @@ img  { display: block; max-width: 100%; }
 }
 
 .pg-premium__h2 {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: 22px;
   font-weight: 600;
   color: #F8F3EC;
@@ -2871,7 +2870,7 @@ img  { display: block; max-width: 100%; }
   gap: 10px;
 }
 .pg-story__badge-num {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: 42px;
   font-weight: 300;
   line-height: 1;
@@ -2911,7 +2910,7 @@ img  { display: block; max-width: 100%; }
 
 .pg-story__stat { display: flex; flex-direction: column; gap: 2px; }
 .pg-story__stat-n {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: 32px;
   font-weight: 400;
   color: #C9A055;
@@ -2928,7 +2927,7 @@ img  { display: block; max-width: 100%; }
 .tjs {
   background: #f6efe6;
   padding: 80px 0 10px;
-  font-family: 'Lato', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 /* ══ HEAD ══ */
@@ -2945,7 +2944,7 @@ img  { display: block; max-width: 100%; }
 }
 
 .tjs-h2 {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: "Inter", sans-serif;
   font-size: 48px;
   font-weight: 600;
   color: #1c120b;
@@ -3072,7 +3071,7 @@ img  { display: block; max-width: 100%; }
 }
 
 .tjs-card__name {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: "Inter", sans-serif;
   font-size: 20px;
   font-weight: 600;
   color: #1a120a;
@@ -3190,7 +3189,7 @@ img  { display: block; max-width: 100%; }
 }
 
 .pg-cta__h2 {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: clamp(2.8rem, 5.5vw, 4.8rem);
   font-weight: 300;
   color: #F8F3EC;
@@ -3296,7 +3295,7 @@ body {
 /* ── PAGE ── */
 .boutique__page {
   background: var(--parchment);
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   color: var(--ink);
   min-height: 100vh;
 }
@@ -3318,7 +3317,7 @@ body {
 }
 
 .boutique__hero-eyebrow {
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   font-weight: 300;
   font-size: 10px;
   letter-spacing: 4px;
@@ -3328,7 +3327,7 @@ body {
 }
 
 .boutique__hero-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: "Inter", sans-serif;
   font-weight: 300;
   font-size: clamp(52px, 6vw, 84px);
   line-height: 0.95;
@@ -3399,7 +3398,7 @@ body {
   background: transparent;
   border: none;
   outline: none;
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13px;
   font-weight: 300;
   color: rgba(245,240,232,0.8);
@@ -3415,7 +3414,7 @@ body {
   background: transparent;
   border: 1px solid rgba(201,169,110,0.25);
   color: rgba(245,240,232,0.5);
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 9px;
   font-weight: 400;
   letter-spacing: 2.5px;
@@ -3478,7 +3477,7 @@ body {
   background: transparent;
   border: 1px solid rgb(255, 255, 255);
   color: rgb(255, 255, 255);
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 9px;
   font-weight: 400;
   letter-spacing: 1.5px;
@@ -3590,7 +3589,7 @@ input[type="range"].boutique__price-slider::-moz-range-thumb {
   background: rgba(201,169,110,0.08);
   border: 1px solid rgba(201,169,110,0.28);
   color: var(--gold);
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 9px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
@@ -3605,7 +3604,7 @@ input[type="range"].boutique__price-slider::-moz-range-thumb {
   background: transparent;
   border: none;
   color: rgba(245,240,232,0.25);
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 9px;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -3713,7 +3712,7 @@ input[type="range"].boutique__price-slider::-moz-range-thumb {
   text-transform: uppercase;
   font-weight: 400;
   padding: 6px 12px;
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   backdrop-filter: blur(4px);
 }
 
@@ -3754,7 +3753,7 @@ input[type="range"].boutique__price-slider::-moz-range-thumb {
 }
 
 .boutique__card-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: "Inter", sans-serif;
   font-size: 22px;
   font-weight: 400;
   line-height: 1.1;
@@ -3763,7 +3762,7 @@ input[type="range"].boutique__price-slider::-moz-range-thumb {
 }
 
 .boutique__card-price {
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 15px;
   font-weight: 500;
   color: var(--terracotta);
@@ -3844,7 +3843,7 @@ input[type="range"].boutique__price-slider::-moz-range-thumb {
   cursor: pointer;
   border: none;
   width: 100%;
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   transition: background 0.3s ease;
 }
 
@@ -3865,7 +3864,7 @@ input[type="range"].boutique__price-slider::-moz-range-thumb {
 }
 
 .boutique__value-num {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: "Inter", sans-serif;
   font-size: 40px;
   font-weight: 300;
   font-style: italic;
@@ -3985,7 +3984,7 @@ input[type="range"].boutique__price-slider::-moz-range-thumb {
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 100vh;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -4073,7 +4072,7 @@ background-size: 250px 250px;
 }
 
 .lp-left__title {
-  font-family: "Playfair Display", serif;
+  font-family: "Inter", sans-serif;
   font-size: clamp(1.5rem, 2.4vw, 2rem);
   font-weight: 800;
   color: #ffffff;
@@ -4188,7 +4187,7 @@ background-size: 250px 250px;
 }
 
 .lp-card__heading h1 {
-  font-family: "Playfair Display", serif;
+  font-family: "Inter", sans-serif;
   font-size: 22px;
   font-weight: 800;
   color: #1c1917;
@@ -4218,7 +4217,7 @@ background-size: 250px 250px;
   width: 100%;
   padding: 14px 22px;
   border-radius: 12px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 14.5px;
   font-weight: 500;
   cursor: pointer;
@@ -4330,7 +4329,7 @@ background-size: 250px 250px;
   background-color: #ffffff;
   background-image: radial-gradient(circle at 1px 1px, rgba(184,92,56,0.07) 1px, transparent 0);
   background-size: 28px 28px;
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   color: #2d1f14;
   min-height: 100vh;
 }
@@ -4353,7 +4352,7 @@ background-size: 250px 250px;
 }
 
 .artisans-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: "Inter", sans-serif;
   font-size: clamp(40px, 5vw, 64px);
   font-weight: 600;
   line-height: 1.1;
@@ -4437,7 +4436,7 @@ background-size: 250px 250px;
 }
 
 .artisan-name {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: "Inter", sans-serif;
   font-size: 32px;
   font-weight: 600;
   color: #2d1f14;
@@ -4468,7 +4467,7 @@ background-size: 250px 250px;
 .artisan-quote {
   border-left: 3px solid #b85c38;
   padding-left: 16px;
-  font-family: 'Cormorant Garamond', serif;
+  font-family: "Inter", sans-serif;
   font-style: italic;
   font-size: 18px;
   color: #2d1f14;
@@ -4488,7 +4487,7 @@ background-size: 250px 250px;
   background: transparent;
   border: none;
   padding: 0;
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 1.5px;
@@ -4529,7 +4528,7 @@ background-size: 250px 250px;
 }
 
 .cta-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: "Inter", sans-serif;
   font-size: clamp(36px, 4vw, 56px);
   font-weight: 400;
   color: #f5f0e8;
@@ -4550,7 +4549,7 @@ background-size: 250px 250px;
   color: #ffffff;
   border: none;
   padding: 14px 36px;
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 2px;
@@ -4598,7 +4597,7 @@ background-size: 250px 250px;
 img { display: block; max-width: 100%; }
 
 .artp-root {
-  font-family: "DM Sans", sans-serif;
+  font-family: "Inter", sans-serif;
   background: #FAF7F2;
   color: #16110C;
   padding-top: 9%;
@@ -4669,7 +4668,7 @@ img { display: block; max-width: 100%; }
   border-radius: 14px;
   background: #EDE6DB;
   display: flex; align-items: center; justify-content: center;
-  font-family: "Cormorant Garamond", serif; font-size: 48px; color: #C9A055;
+  font-family: "Inter", sans-serif; font-size: 48px; color: #C9A055;
   border: 3px solid #ffffff;
   box-shadow: 0 4px 20px rgba(22,17,12,0.1);
 }
@@ -4683,7 +4682,7 @@ img { display: block; max-width: 100%; }
 /* Meta */
 .artp-hero__meta { flex: 1; min-width: 0; }
 .artp-hero__name-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
-.artp-hero__name { font-family: "Cormorant Garamond", serif; font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 600; color: #16110C; line-height: 1; }
+.artp-hero__name { font-family: "Inter", sans-serif; font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 600; color: #16110C; line-height: 1; }
 .artp-hero__specialty-pill { display: inline-flex; align-items: center; background: #000000; color: #fff; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; padding: 4px 14px; border-radius: 50px; }
 .artp-hero__sub-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 .artp-hero__sub-item { display: flex; align-items: center; gap: 5px; font-size: 13px; color: #7A6F66; }
@@ -4692,7 +4691,7 @@ img { display: block; max-width: 100%; }
 .artp-hero__ctas { display: flex; gap: 10px; flex-shrink: 0; }
 .artp-hero__btn-contact, .artp-hero__btn-call {
   display: inline-flex; align-items: center; gap: 8px;
-  font-family: "DM Sans", sans-serif; font-size: 13.5px; font-weight: 600;
+  font-family: "Inter", sans-serif; font-size: 13.5px; font-weight: 600;
   border: none; border-radius: 50px; padding: 11px 22px;
   cursor: pointer; transition: transform 0.2s, box-shadow 0.2s, background 0.2s; white-space: nowrap;
 }
@@ -4728,7 +4727,7 @@ img { display: block; max-width: 100%; }
   box-shadow: 0 4px 24px rgba(22,17,12,0.05);
 }
 .artp-info-card__title {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: 20px; font-weight: 600; color: #16110C;
   margin-bottom: 20px;
 }
@@ -4751,7 +4750,7 @@ img { display: block; max-width: 100%; }
   background: #FAF7F2; border-radius: 10px; padding: 12px 6px;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
 }
-.artp-info-card__stat-n { font-family: "Cormorant Garamond", serif; font-size: 22px; font-weight: 500; color: #E8724A; line-height: 1; }
+.artp-info-card__stat-n { font-family: "Inter", sans-serif; font-size: 22px; font-weight: 500; color: #E8724A; line-height: 1; }
 .artp-info-card__stat-l { font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; color: #9A8E85; text-transform: uppercase; }
 
 /* Badges */
@@ -4762,13 +4761,13 @@ img { display: block; max-width: 100%; }
    TABS
 ══════════════════════════════════════════════════════════════════════════════ */
 .artp-tabs { display: flex; border-bottom: 1px solid #EDE6DB; margin-bottom: 28px; }
-.artp-tabs__tab { padding: 16px 26px; background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; font-family: "DM Sans", sans-serif; font-size: 13px; font-weight: 500; color: #9A8E85; cursor: pointer; transition: color 0.2s, border-color 0.2s; }
+.artp-tabs__tab { padding: 16px 26px; background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; font-family: "Inter", sans-serif; font-size: 13px; font-weight: 500; color: #9A8E85; cursor: pointer; transition: color 0.2s, border-color 0.2s; }
 .artp-tabs__tab:hover { color: #E8724A; }
 .artp-tabs__tab--active { color: #16110C; border-bottom-color: #E8724A; }
 
 /* ── Filters ──────────────────────────────────────────────────────────────── */
 .artp-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
-.artp-filter-btn { padding: 7px 18px; background: transparent; border: 1.5px solid #EDE6DB; border-radius: 50px; font-family: "DM Sans", sans-serif; font-size: 12px; font-weight: 500; color: #7A6F66; cursor: pointer; transition: all 0.2s; }
+.artp-filter-btn { padding: 7px 18px; background: transparent; border: 1.5px solid #EDE6DB; border-radius: 50px; font-family: "Inter", sans-serif; font-size: 12px; font-weight: 500; color: #7A6F66; cursor: pointer; transition: all 0.2s; }
 .artp-filter-btn:hover { border-color: #E8724A; color: #E8724A; }
 .artp-filter-btn--active { background: #E8724A; border-color: #E8724A; color: #fff; }
 
@@ -4913,7 +4912,7 @@ img { display: block; max-width: 100%; }
 }
 
 .artp-prod-card__title {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: 18px;
   font-weight: 400;
   color: #16110C;
@@ -4923,7 +4922,7 @@ img { display: block; max-width: 100%; }
 }
 
 .artp-prod-card__price {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: 18px;
   font-weight: 400;
   color: #C9A055;
@@ -4979,7 +4978,7 @@ img { display: block; max-width: 100%; }
 .artp-section-eyebrow { font-size: 10px; font-weight: 600; letter-spacing: 0.26em; text-transform: uppercase; color: #E8724A; margin-bottom: 12px; display: block; }
 .artp-about { display: flex; flex-direction: column; gap: 56px; }
 .artp-about__split { display: grid; grid-template-columns: 1fr 1fr; gap: 52px; align-items: start; }
-.artp-about__heading { font-family: "Cormorant Garamond", serif; font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 400; color: #16110C; line-height: 1.1; margin-bottom: 18px; }
+.artp-about__heading { font-family: "Inter", sans-serif; font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 400; color: #16110C; line-height: 1.1; margin-bottom: 18px; }
 .artp-about__heading em { font-style: italic; color: #E8724A; }
 .artp-about__bio { font-size: 14.5px; font-weight: 300; line-height: 1.82; color: #6A5E55; margin-bottom: 24px; }
 .artp-about__details { border: 1px solid #EDE6DB; border-radius: 10px; overflow: hidden; }
@@ -4998,7 +4997,7 @@ img { display: block; max-width: 100%; }
 .artp-about__stats { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #EDE6DB; border-radius: 12px; overflow: hidden; background: #fff; }
 .artp-about__stat { display: flex; flex-direction: column; align-items: center; padding: 30px 16px; border-right: 1px solid #EDE6DB; gap: 5px; }
 .artp-about__stat:last-child { border-right: none; }
-.artp-about__stat-n { font-family: "Cormorant Garamond", serif; font-size: 32px; font-weight: 400; color: #E8724A; line-height: 1; }
+.artp-about__stat-n { font-family: "Inter", sans-serif; font-size: 32px; font-weight: 400; color: #E8724A; line-height: 1; }
 .artp-about__stat-l { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #9A8E85; text-align: center; }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -5007,9 +5006,9 @@ img { display: block; max-width: 100%; }
 .artp-cta-banner { background: #16110C; text-align: center; padding: 96px 80px; position: relative; overflow: hidden; border-top: 1px solid rgba(201,160,85,0.1); }
 .artp-cta-banner__pattern { position: absolute; inset: 0; opacity: 0.025; background-image: repeating-linear-gradient(0deg, #E8724A 0, #E8724A 1px, transparent 1px, transparent 64px), repeating-linear-gradient(90deg, #E8724A 0, #E8724A 1px, transparent 1px, transparent 64px); pointer-events: none; }
 .artp-cta-banner__eyebrow { font-size: 9px; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; color: #E8724A; margin-bottom: 14px; position: relative; z-index: 1; }
-.artp-cta-banner__title { font-family: "Cormorant Garamond", serif; font-size: clamp(2.4rem, 5vw, 4.2rem); font-weight: 300; color: #F8F3EC; line-height: 1; margin-bottom: 16px; position: relative; z-index: 1; }
+.artp-cta-banner__title { font-family: "Inter", sans-serif; font-size: clamp(2.4rem, 5vw, 4.2rem); font-weight: 300; color: #F8F3EC; line-height: 1; margin-bottom: 16px; position: relative; z-index: 1; }
 .artp-cta-banner__sub { font-size: 14px; font-weight: 300; line-height: 1.8; color: rgba(248,243,236,0.45); max-width: 420px; margin: 0 auto 38px; position: relative; z-index: 1; }
-.artp-cta-banner__btn { display: inline-flex; align-items: center; gap: 6px; padding: 13px 28px; background: #E8724A; color: #fff; font-family: "DM Sans", sans-serif; font-size: 13px; font-weight: 600; text-decoration: none; border: none; cursor: pointer; border-radius: 50px; box-shadow: 0 4px 18px rgba(232,114,74,0.35); transition: background 0.2s; position: relative; z-index: 1; }
+.artp-cta-banner__btn { display: inline-flex; align-items: center; gap: 6px; padding: 13px 28px; background: #E8724A; color: #fff; font-family: "Inter", sans-serif; font-size: 13px; font-weight: 600; text-decoration: none; border: none; cursor: pointer; border-radius: 50px; box-shadow: 0 4px 18px rgba(232,114,74,0.35); transition: background 0.2s; position: relative; z-index: 1; }
 .artp-cta-banner__btn:hover { background: #d4643d; }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -5063,7 +5062,7 @@ img { display: block; max-width: 100%; }
 
 /* ── Root ─────────────────────────────────────────────────────── */
 .ap-main {
-  font-family: "DM Sans", sans-serif;
+  font-family: "Inter", sans-serif;
   background: #ffffff;
   color: #1c1917;
   overflow-x: hidden;
@@ -5102,7 +5101,7 @@ img { display: block; max-width: 100%; }
 }
 
 .ap-section-title {
-  font-family: "Playfair Display", serif;
+  font-family: "Inter", sans-serif;
   font-size: clamp(2rem, 3.5vw, 3rem);
   font-weight: 900;
   color: #1c1917;
@@ -5147,7 +5146,7 @@ img { display: block; max-width: 100%; }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 14px;
   font-weight: 600;
   padding: 14px 28px;
@@ -5265,7 +5264,7 @@ img { display: block; max-width: 100%; }
 }
 
 .ap-hero__title {
-  font-family: "Playfair Display", serif;
+  font-family: "Inter", sans-serif;
   font-size: clamp(3rem, 6vw, 5.5rem);
   font-weight: 900;
   color: #ffffff;
@@ -5275,7 +5274,7 @@ img { display: block; max-width: 100%; }
 }
 
 .ap-hero__subtitle {
-  font-family: "Playfair Display", serif;
+  font-family: "Inter", sans-serif;
   font-size: clamp(1.1rem, 2vw, 1.5rem);
   font-style: italic;
   color: rgba(255,255,255,0.75);
@@ -5322,7 +5321,7 @@ img { display: block; max-width: 100%; }
 .ap-hero__stat:last-child { border-right: none; }
 
 .ap-hero__stat-num {
-  font-family: "Playfair Display", serif;
+  font-family: "Inter", sans-serif;
   font-size: 2.4rem;
   font-weight: 900;
   color: #fff;
@@ -5493,7 +5492,7 @@ img { display: block; max-width: 100%; }
 }
 
 .ap-how-card__head h3 {
-  font-family: "Playfair Display", serif;
+  font-family: "Inter", sans-serif;
   font-size: 20px;
   font-weight: 800;
   color: #1c1917;
@@ -5551,7 +5550,7 @@ img { display: block; max-width: 100%; }
 }
 
 .ap-value__title {
-  font-family: "Playfair Display", serif;
+  font-family: "Inter", sans-serif;
   font-size: clamp(2rem, 4vw, 3.2rem);
   font-weight: 900;
   color: #fff;
@@ -5608,7 +5607,7 @@ img { display: block; max-width: 100%; }
 }
 
 .ap-join__title {
-  font-family: "Playfair Display", serif;
+  font-family: "Inter", sans-serif;
   font-size: clamp(2.4rem, 5vw, 3.8rem);
   font-weight: 900;
   color: #1c1917;
@@ -5695,7 +5694,7 @@ img { display: block; max-width: 100%; }
 
 /* ── PAGE ── */
 .rj-page {
-  font-family: "DM Sans", sans-serif;
+  font-family: "Inter", sans-serif;
   background: #2e2720;
   color: #f5f0e8;
   min-height: 100vh;
@@ -5759,7 +5758,7 @@ img { display: block; max-width: 100%; }
 .rj-hero__content--in { opacity: 1; transform: translateY(0); }
 
 .rj-hero__title {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: clamp(52px, 6.5vw, 88px);
   font-weight: 300;
   line-height: 0.95;
@@ -5794,7 +5793,7 @@ img { display: block; max-width: 100%; }
 }
 
 .rj-hero__stat-num {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: 28px;
   font-weight: 400;
   color: #c9a96e;
@@ -5867,7 +5866,7 @@ img { display: block; max-width: 100%; }
 }
 
 .rj-aside__title {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: 40px;
   font-weight: 300;
   line-height: 1.05;
@@ -5901,7 +5900,7 @@ img { display: block; max-width: 100%; }
 }
 
 .rj-step__num {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: 22px;
   font-weight: 300;
   font-style: italic;
@@ -5962,7 +5961,7 @@ img { display: block; max-width: 100%; }
 }
 
 .rj-form-title {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: 32px;
   font-weight: 400;
   color: #f5f0e8;
@@ -6015,7 +6014,7 @@ img { display: block; max-width: 100%; }
   border: none;
   border-bottom: 1px solid rgba(245,240,232,0.12);
   outline: none;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 15px;
   font-weight: 300;
   color: #f5f0e8;
@@ -6140,7 +6139,7 @@ img { display: block; max-width: 100%; }
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 1.5px;
@@ -6186,7 +6185,7 @@ img { display: block; max-width: 100%; }
 }
 
 .rj-success__title {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: 32px;
   font-weight: 400;
   color: #f5f0e8;
@@ -6329,7 +6328,7 @@ img { display: block; max-width: 100%; }
 
 /* ── Root ─────────────────────────────────────────────────────────────────── */
 .pd-root {
-  font-family: "DM Sans", sans-serif;
+  font-family: "Inter", sans-serif;
   background: white;
   color: #16110C;
   min-height: 100vh;
@@ -6440,6 +6439,7 @@ img { display: block; max-width: 100%; }
   border-radius: 6px;
   background: #EDE6DB;
   aspect-ratio: 3 / 4;
+  width: 500px;
 }
 
 .pd-gallery__main-img {
@@ -6595,8 +6595,8 @@ img { display: block; max-width: 100%; }
 
 /* Title */
 .pd-info__title {
-  font-family: "Cormorant Garamond", serif;
-  font-size: clamp(2rem, 3.5vw, 3rem);
+  font-family: "Inter", sans-serif;
+  font-size: 17px;
   font-weight: 400;
   color: #16110C;
   line-height: 1.06;
@@ -6625,8 +6625,8 @@ img { display: block; max-width: 100%; }
   margin-bottom: 18px;
 }
 .pd-info__price {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 2.2rem;
+  font-family: "Inter", sans-serif;
+  font-size: 28px;
   font-weight: 400;
   color: black;
   line-height: 1;
@@ -6649,7 +6649,9 @@ img { display: block; max-width: 100%; }
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 18px 0;
+  padding: 18px 10px;
+  background-color: black;
+  color: white;
 }
 .pd-artisan-row__avatar {
   width: 46px;
@@ -6660,11 +6662,11 @@ img { display: block; max-width: 100%; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: 20px;
-  color: white;
+  color: black;
   flex-shrink: 0;
-  background-color: black;
+  background-color: white;
 }
 .pd-artisan-row__avatar img { width: 100%; height: 100%; object-fit: cover; }
 .pd-artisan-row__text {
@@ -6683,7 +6685,7 @@ img { display: block; max-width: 100%; }
 .pd-artisan-row__name {
   font-size: 14.5px;
   font-weight: 500;
-  color: #16110C;
+  color: white;
 }
 .pd-artisan-row__loc {
   font-size: 11px;
@@ -6725,7 +6727,7 @@ img { display: block; max-width: 100%; }
 .pd-qty__btn {
   width: 40px;
   height: 48px;
-  background: #F8F3EC;
+  background: white;
   border: none;
   font-size: 18px;
   color: #16110C;
@@ -6754,7 +6756,7 @@ img { display: block; max-width: 100%; }
   background: #16110C;
   color: #F8F3EC;
   border: none;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -6826,7 +6828,7 @@ img { display: block; max-width: 100%; }
   padding: 16px 28px;
   background: none;
   border: none;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.05em;
@@ -6915,7 +6917,7 @@ img { display: block; max-width: 100%; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: 18px;
   color: #C9A055;
   flex-shrink: 0;
@@ -6957,7 +6959,7 @@ img { display: block; max-width: 100%; }
 }
 
 .pd-related__title {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: clamp(1.8rem, 3vw, 2.6rem);
   font-weight: 400;
   color: #16110C;
@@ -7043,7 +7045,7 @@ img { display: block; max-width: 100%; }
 .pd-rel-card__body { padding: 18px 18px 20px; }
 
 .pd-rel-card__name {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: 18px;
   font-weight: 400;
   color: #16110C;
@@ -7064,7 +7066,7 @@ img { display: block; max-width: 100%; }
   align-items: center;
 }
 .pd-rel-card__price {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "Inter", sans-serif;
   font-size: 18px;
   font-weight: 400;
   color: #C9A055;
@@ -7217,7 +7219,7 @@ img { display: block; max-width: 100%; }
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 html {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 16px;
   color: #0A0F2C;
   background: #EEF2FF;
@@ -7228,8 +7230,8 @@ html {
 
 
 a { text-decoration: none; color: inherit; }
-button { font-family: 'DM Sans', sans-serif; cursor: pointer; }
-input, select, textarea { font-family: 'DM Sans', sans-serif; }
+button { font-family: "Inter", sans-serif; cursor: pointer; }
+input, select, textarea { font-family: "Inter", sans-serif; }
 ul { list-style: none; }
 img { display: block; max-width: 100%; }
 
@@ -7423,7 +7425,7 @@ img { display: block; max-width: 100%; }
 }
 
 .sidebar-brand-name {
-  font-family: 'Playfair Display', serif;
+  font-family: "Inter", sans-serif;
   font-size: 1.15rem;
   font-weight: 700;
   color: white;
@@ -7602,7 +7604,7 @@ img { display: block; max-width: 100%; }
 .navbar-breadcrumb-sep { color: rgba(2,52,171,0.22); font-size: 0.9rem; }
 
 .navbar-breadcrumb-current {
-  font-family: 'Playfair Display', serif;
+  font-family: "Inter", sans-serif;
   font-size: 0.95rem;
   font-weight: 600;
   color: #0A0F2C;
@@ -7750,7 +7752,7 @@ img { display: block; max-width: 100%; }
 }
 
 .page-title {
-  font-family: 'Playfair Display', serif;
+  font-family: "Inter", sans-serif;
   font-size: 2rem;
   font-weight: 700;
   color: #0A0F2C;
@@ -7847,7 +7849,7 @@ img { display: block; max-width: 100%; }
 }
 
 .stat-card-value {
-  font-family: 'Playfair Display', serif;
+  font-family: "Inter", sans-serif;
   font-size: 1.8rem;
   font-weight: 700;
   color: #0A0F2C;
@@ -7890,7 +7892,7 @@ img { display: block; max-width: 100%; }
 }
 
 .card-title {
-  font-family: 'Playfair Display', serif;
+  font-family: "Inter", sans-serif;
   font-size: 1.05rem;
   font-weight: 600;
   color: #0A0F2C;
@@ -8687,7 +8689,7 @@ tbody td {
 .tips-card-icon { font-size: 1.6rem; margin-bottom: 10px; color: #F5A623; }
 
 .tips-card-title {
-  font-family: 'Playfair Display', serif;
+  font-family: "Inter", sans-serif;
   font-size: 1rem;
   font-weight: 600;
   margin-bottom: 12px;
@@ -8781,7 +8783,7 @@ tbody td {
 }
 
 .order-stat-mini-value {
-  font-family: 'Playfair Display', serif;
+  font-family: "Inter", sans-serif;
   font-size: 1.4rem;
   font-weight: 700;
   color: #0A0F2C;
@@ -8860,7 +8862,7 @@ tbody td {
   border-radius: 20px;
   background: linear-gradient(135deg, #0234AB, #1a4fd4);
   color: white;
-  font-family: 'Playfair Display', serif;
+  font-family: "Inter", sans-serif;
   font-size: 1.6rem;
   font-weight: 700;
   display: flex;
@@ -8876,7 +8878,7 @@ tbody td {
 }
 
 .pda-name {
-  font-family: 'Playfair Display', serif;
+  font-family: "Inter", sans-serif;
   font-size: 1.2rem;
   font-weight: 700;
   color: #0A0F2C;
@@ -8978,7 +8980,7 @@ tbody td {
   border-radius: 14px;
   background: linear-gradient(135deg, #0234AB, #1a4fd4);
   color: white;
-  font-family: 'Playfair Display', serif;
+  font-family: "Inter", sans-serif;
   font-size: 1.1rem;
   font-weight: 700;
   display: flex;
@@ -9871,7 +9873,7 @@ tbody td {
   font-size: 1.4rem;
   font-weight: 700;
   color: #b85d38;
-  font-family: "Playfair Display", serif;
+  font-family: "Inter", sans-serif;
 }
 .cat-card-icon {
   width: 52px;
@@ -10555,7 +10557,7 @@ tbody td {
   cursor: pointer;
   text-align: left;
   transition: background 0.18s ease, border-color 0.18s ease;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .acp-vendor-row:hover {
@@ -10581,7 +10583,7 @@ tbody td {
 .acp-vendor-avatar--fallback {
   background: linear-gradient(135deg, #0234AB, #1a4fd4);
   color: #fff;
-  font-family: 'Playfair Display', serif;
+  font-family: "Inter", sans-serif;
   font-size: 0.95rem;
   font-weight: 700;
   display: flex;
@@ -11921,7 +11923,7 @@ tbody td {
 .cat__page {
   min-height: 100vh;
   background: var(--c-cream);
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   color: var(--c-ink);
 }
 
@@ -12003,7 +12005,7 @@ tbody td {
 
 /* ── Hero text ─────────────────────────────────────────────────────────────── */
 .cat__hero-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: "Inter", sans-serif;
   font-weight: 300;
   font-size: clamp(42px, 5vw, 72px);
   line-height: 1;
@@ -12034,7 +12036,7 @@ tbody td {
   background: rgba(200, 165, 90, 0.08);
   border: 1px solid rgba(200, 165, 90, 0.3);
   color: var(--c-cream);
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 10px;
   font-weight: 400;
   letter-spacing: 1.5px;
@@ -12104,7 +12106,7 @@ tbody td {
   background: transparent;
   border: none;
   outline: none;
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 300;
   color: rgba(246, 241, 233, 0.75);
@@ -12149,7 +12151,7 @@ tbody td {
   background: transparent;
   border: 1px solid rgba(200, 165, 90, 0.2);
   color: rgba(246, 241, 233, 0.5);
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 10px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
@@ -12186,7 +12188,7 @@ tbody td {
   background: transparent;
   border: none;
   color: rgba(246, 241, 233, 0.5);
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 10px;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -12232,7 +12234,7 @@ tbody td {
   background: transparent;
   border: 1px solid rgba(200, 165, 90, 0.22);
   color: rgba(246, 241, 233, 0.5);
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 10px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
@@ -12437,7 +12439,7 @@ input[type="range"].cat__range-input::-webkit-slider-thumb {
   background: transparent;
   border: 1px solid rgba(181, 82, 51, 0.25);
   color: var(--c-terra);
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 9px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
@@ -12609,7 +12611,7 @@ input[type="range"].cat__range-input::-webkit-slider-thumb {
   color: var(--c-cream);
   border: none;
   padding: 10px 24px;
-  font-family: 'Jost', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 10px;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -12776,8 +12778,8 @@ input[type="range"].cat__range-input::-webkit-slider-thumb {
   --cult-ochre:      #9B6E20;
   --cult-dark:       #1e1410;
 
-  --cult-ff-title:   'Cormorant Garamond', Georgia, serif;
-  --cult-ff-body:    'Lora', Georgia, serif;
+  --cult-ff-title:   "Inter", sans-serif;
+  --cult-ff-body:    "Inter", sans-serif;
   --cult-ff-tif:     'Noto Sans Tifinagh', serif;
   --cult-ff-mono:    'Courier New', monospace;
 }
@@ -14575,7 +14577,7 @@ aside {
    MAISONS D'HÔTES — TUNISIAN PLATFORM
    All classes prefixed: maisonsdhotes-*
 ═══════════════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&display=swap');
+/* Using Inter font only */
 
 /* ── TOKENS ── */
 .maisonsdhotes-root,
@@ -14602,7 +14604,7 @@ aside {
   --mdh-rust:     #b85c38;
 
   --mdh-font-display: 'Cormorant Garamond', Georgia, serif;
-  --mdh-font-body:    'DM Sans', 'Helvetica Neue', sans-serif;
+  --mdh-font-body:    "Inter", sans-serif;
 
   --mdh-r-sm: 8px;
   --mdh-r:    16px;

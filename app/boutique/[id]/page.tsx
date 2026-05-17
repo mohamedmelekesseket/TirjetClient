@@ -484,7 +484,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
           <div className="pd-info__price-row">
             <span className="pd-info__price">{product.price.toLocaleString("fr-TN")} TND</span>
-            <span className="pd-info__price-sub">TVA incluse · Livraison gratuite</span>
           </div>
 
           <p className="pd-info__short-desc">{product.description}</p>
