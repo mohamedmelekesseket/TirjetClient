@@ -138,7 +138,7 @@ export default function AboutPage() {
         </div>
 
         {/* Stats bar */}
-        <div className={`ap-hero__stats ${heroIn ? "ap-hero__stats--in" : ""}`}>
+        {/* <div className={`ap-hero__stats ${heroIn ? "ap-hero__stats--in" : ""}`}>
           {stats.map((s) => (
             <div key={s.label} className="ap-hero__stat">
               <span className="ap-hero__stat-num">
@@ -147,7 +147,7 @@ export default function AboutPage() {
               <span className="ap-hero__stat-lbl">{s.label}</span>
             </div>
           ))}
-        </div>
+        </div> */}
       </section>
 
       {/* ══ PRÉSENTATION ══════════════════════════════════════════════════ */}

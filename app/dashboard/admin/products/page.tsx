@@ -15,6 +15,7 @@ interface Product {
   price: number;
   category: string | { _id: string; name: string; slug?: string; mainCategory?: any };
   stock: number;
+  views: number;
   isApproved: boolean;
   isReported?: boolean;
   isHome?: boolean;
@@ -351,7 +352,7 @@ export default function AdminProductsPage() {
                   <th>Catégorie</th>
                   <th>Prix</th>
                   <th>Stock</th>
-                  <th>Signalé</th>
+                  <th>Views</th>
                   <th>Accueil</th>
                   <th>Statut</th>
                   <th>Actions</th>
@@ -400,10 +401,7 @@ export default function AdminProductsPage() {
                         </td>
                         <td className="td-mono">{p.stock}</td>
                         <td>
-                          {p.isReported
-                            ? <span className="badge badge-danger"><Flag size={14} style={{ marginRight: 6 }} />Signalé</span>
-                            : <span style={{ color: "#8B9AB5", fontSize: "0.82rem" }}>—</span>
-                          }
+                          {p.views}
                         </td>
 
                         {/* ── NEW: isHome column ── */}

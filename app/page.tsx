@@ -186,14 +186,14 @@ function Hero() {
           </motion.button>
         </div>
         <div className="pg-hero__rule" />
-        <div className="pg-hero__stats">
+        {/* <div className="pg-hero__stats">
           {[["150+", "Artisans"], ["2 000+", "Créations"], ["24", "Gouvernorats"]].map(([n, l]) => (
             <div key={l} className="pg-hero__stat">
               <span className="pg-hero__stat-n">{n}</span>
               <span className="pg-hero__stat-l">{l}</span>
             </div>
           ))}
-        </div>
+        </div> */}
       </div>
 
       <div className="pg-scroll-cue">
@@ -755,14 +755,14 @@ function Story() {
           Chaque produit sur notre plateforme raconte une histoire — celle d&apos;un savoir-faire
           transmis de génération en génération, d&apos;une culture riche et vivante.
         </p>
-        <div className="pg-story__stats">
+        {/* <div className="pg-story__stats">
           {[["150+", "Artisans"], ["2K+", "Créations"]].map(([n, l]) => (
             <div key={l} className="pg-story__stat">
               <span className="pg-story__stat-n">{n}</span>
               <span className="pg-story__stat-l">{l}</span>
             </div>
           ))}
-        </div>
+        </div> */}
         <motion.button
           className="pg-btn pg-btn--dark"
           whileHover={{ scale: 1.02 }}
