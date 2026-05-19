@@ -315,47 +315,7 @@ export default function AdminEditCulturePage({ params }: { params: Promise<{ id:
             </div>
           </div>
 
-          {/* Tags */}
-          <div className="mh-card mh-anim-fade-up mh-anim-d2">
-            <div className="mh-card-header">
-              <h2 className="mh-card-title">Mots-clés & Thématiques</h2>
-              <span className="mh-card-hint">{tags.length} sélectionné(s)</span>
-            </div>
-            <div className="mh-card-body">
-              <div className="mh-amenity-wrap">
-                {PRESET_TAGS.map(t => (
-                  <button
-                    key={t} type="button"
-                    className={`mh-amenity-tag${tags.includes(t) ? ' selected' : ''}`}
-                    onClick={() => toggleTag(t)}
-                  >
-                    {tags.includes(t) && <span>✓</span>} {t}
-                  </button>
-                ))}
-              </div>
-              <div className="mh-amenity-add-wrap">
-                <input
-                  className="mh-amenity-add-input"
-                  value={tagInput}
-                  onChange={e => setTagInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomTag(); } }}
-                  placeholder="Ajouter un mot-clé personnalisé…"
-                />
-                <button type="button" className="mh-amenity-add-btn" onClick={addCustomTag}>
-                  + Ajouter
-                </button>
-              </div>
-              {tags.length > 0 && (
-                <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {tags.map(t => (
-                    <span key={t} className="mh-amenity-tag removable" onClick={() => removeTag(t)}>
-                      {t} <X size={11} />
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+
 
           {/* Images */}
           <div className="mh-card mh-anim-fade-up mh-anim-d3">
