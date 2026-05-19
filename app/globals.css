@@ -14117,6 +14117,7 @@ button { cursor: pointer; }
   transition: transform 0.25s, box-shadow 0.25s;
   opacity: 0;
   animation: langue-cardIn 0.75s ease both;
+  min-height: 450px;
 }
 
 .langue-pub-card:hover {
@@ -14159,6 +14160,7 @@ button { cursor: pointer; }
   letter-spacing: 2px;
   text-transform: uppercase;
   opacity: 0.5;
+  color:white;
 }
 
 .langue-pub-visual-symbol {

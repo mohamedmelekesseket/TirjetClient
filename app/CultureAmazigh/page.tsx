@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -345,7 +346,7 @@ function CategoriesSection() {
         {CATEGORIES.map((cat) => {
           const Illus = CatIllustrations[cat.color];
           return (
-            <a key={cat.id} href={`#${cat.slug}`} className="cult-cat-card" data-color={cat.color}>
+            <Link key={cat.id} href={`/CultureAmazigh/${cat.slug}`} className="cult-cat-card" data-color={cat.color}>
               <div className="cult-cat-card-top">
                 <div className="cult-cat-illus">
                   <Illus />
@@ -360,7 +361,7 @@ function CategoriesSection() {
                   <span className="cult-cat-arrow">→</span>
                 </div>
               </div>
-            </a>
+            </Link>
           );
         })}
       </div>

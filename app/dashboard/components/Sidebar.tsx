@@ -13,15 +13,16 @@ const artisanNav: NavItem[] = [
 
 
 const adminNav: NavItem[] = [
-  { label: 'Tableau de bord', href: '/dashboard/admin',           icon: '◉' },
-  { label: 'Artisans',        href: '/dashboard/admin/artisans',  icon: '◉' },
-  { label: 'Produits',        href: '/dashboard/admin/products',  icon: '◉' },
-  { label: 'Orders',    href: '/dashboard/admin/orders',     icon: '◉' },
-  { label: 'categories',        href: '/dashboard/admin/categories ',  icon: '◉' },
-  { label: 'Utilisateurs',    href: '/dashboard/admin/users',     icon: '◉' },
-  { label: 'Statistiques',    href: '/dashboard/admin/stats',     icon: '◉' },
-  { label: "Maisons d'Hôtes",    href: '/dashboard/admin/maisonsdhotes',     icon: '◉' },
-  { label: 'Excursions',    href: '/dashboard/admin/excursions',     icon: '◉' },
+  { label: 'Tableau de bord',href: '/dashboard/admin',           icon: '◉' },
+  { label: 'Artisans',href: '/dashboard/admin/artisans',  icon: '◉' },
+  { label: 'Produits',href: '/dashboard/admin/products',  icon: '◉' },
+  { label: 'Orders',href: '/dashboard/admin/orders',     icon: '◉' },
+  { label: 'categories',href: '/dashboard/admin/categories ',  icon: '◉' },
+  { label: 'Utilisateurs',href: '/dashboard/admin/users',     icon: '◉' },
+  { label: 'Statistiques',href: '/dashboard/admin/stats',     icon: '◉' },
+  { label: "Maisons d'Hôtes",href: '/dashboard/admin/maisonsdhotes',     icon: '◉' },
+  { label: "Culture Amazigh",href: '/dashboard/admin/cultureamazigh',     icon: '◉' },
+  { label: 'Excursions',href: '/dashboard/admin/excursions',     icon: '◉' },
 ];
 
 export default function Sidebar({ role }: { role: 'artisan' | 'admin' }) {
