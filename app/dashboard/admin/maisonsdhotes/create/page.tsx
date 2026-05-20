@@ -46,7 +46,7 @@ const PRESET_AMENITIES = [
 ];
 
 // ── Validation ─────────────────────────────────────────────────────────────
-function validate(form: FormState, vendorId: string): FieldError {
+function validate(form: FormState, mode: 'admin' | 'vendor', vendorId: string): FieldError {
   const errors: FieldError = {};
   if (!form.name.trim())         errors.name         = 'Le nom est requis.';
   if (!form.description.trim())  errors.description  = 'La description est requise.';
@@ -54,7 +54,7 @@ function validate(form: FormState, vendorId: string): FieldError {
   if (!form.location.trim())     errors.location     = 'La localisation est requise.';
   if (!form.pricePerNight || Number(form.pricePerNight) <= 0)
                                   errors.pricePerNight = 'Prix invalide.';
-  if (!vendorId)                  errors.vendor       = 'Veuillez sélectionner un hôte.';
+  if (mode === 'vendor' && !vendorId) errors.vendor  = 'Veuillez sélectionner un hôte.';
   return errors;
 }
 
@@ -86,7 +86,7 @@ export default function AdminCreateMaisonPage() {
   const [vendorSearching, setVendorSearching] = useState(false);
   const [selectedVendor, setSelectedVendor]   = useState<Vendor | null>(null);
   const vendorDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  const [mode, setMode] = useState<'admin' | 'vendor'>('admin');
   useEffect(() => {
     if (vendorDebounce.current) clearTimeout(vendorDebounce.current);
     if (!vendorEmail.trim()) { setVendorResults([]); return; }
@@ -148,7 +148,7 @@ export default function AdminCreateMaisonPage() {
 
   // ── Submit ────────────────────────────────────────────────────────────────
   const submit = async () => {
-    const errs = validate(form, selectedVendor?._id ?? '');
+    const errs = validate(form, mode, selectedVendor?._id ?? '');
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
     try {
@@ -157,11 +157,18 @@ export default function AdminCreateMaisonPage() {
 
       const body = new FormData();
       Object.entries(form).forEach(([k, v]) => { if (v) body.append(k, v); });
-      body.append('hostId', selectedVendor!._id);
       amenities.forEach(a => body.append('amenities', a));
       images.forEach(img => body.append('images', img));
 
-      const res = await fetch(`${API}/api/maisons-dhotes/admin/for-vendor`, {
+      let endpoint = '';
+      if (mode === 'admin') {
+        endpoint = `${API}/api/maisons-dhotes/admin/create`;
+      } else {
+        body.append('hostId', selectedVendor!._id);
+        endpoint = `${API}/api/maisons-dhotes/admin/for-vendor`;
+      }
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { Authorization: `Bearer ${apiToken}` },
         body,
@@ -170,9 +177,10 @@ export default function AdminCreateMaisonPage() {
       if (res.status === 401) throw new Error('Non autorisé — session expirée ?');
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
+        console.error('Server error payload:', payload);   // ← ADD THIS
         throw new Error(payload?.message ?? `Erreur ${res.status}`);
       }
-      router.push('/dashboard/admin/maisons-dhotes');
+      router.push('/dashboard/admin/maisonsdhotes');
     } catch (err: any) {
       setServerError(err.message);
     } finally {
@@ -423,67 +431,52 @@ export default function AdminCreateMaisonPage() {
           <div className="mh-create-side">
 
             {/* Vendor search */}
+            {/* Publication mode */}
             <div className="mh-card mh-anim-fade-up mh-anim-d1">
               <div className="mh-card-header">
-                <h2 className="mh-card-title">Hôte *</h2>
-                {selectedVendor && (
-                  <span className="mh-badge mh-badge-success" style={{ fontSize: '0.7rem' }}>
-                    Sélectionné
-                  </span>
-                )}
+                <h2 className="mh-card-title">Mode de publication</h2>
               </div>
-              <div className="mh-card-body">
-                <div className="mh-form-group">
-                  <label className="mh-form-label">Rechercher par email</label>
-                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                    <Search size={15} style={{ position: 'absolute', left: 12, color: '#8B9AB5', pointerEvents: 'none' }} />
-                    <input
-                      type="email" value={vendorEmail}
-                      onChange={e => { setVendorEmail(e.target.value); if (selectedVendor) setSelectedVendor(null); setErrors(p => ({ ...p, vendor: undefined })); }}
-                      className={`mh-form-input${errors.vendor ? ' error' : ''}`}
-                      style={{ paddingLeft: 36, paddingRight: selectedVendor ? 36 : 12 }}
-                      placeholder="hote@email.com"
-                      autoComplete="off"
-                    />
-                    {vendorSearching
-                      ? <Loader2 size={14} style={{ position: 'absolute', right: 12, color: '#8B9AB5' }} className="mh-spin" />
-                      : selectedVendor
-                      ? (
-                        <button type="button" onClick={clearVendor}
-                          style={{ position: 'absolute', right: 10, background: 'none', border: 'none', cursor: 'pointer', color: '#8B9AB5', padding: 0, display: 'flex', alignItems: 'center' }}>
-                          <X size={14} />
-                        </button>
-                      )
-                      : null}
+              <div className="mh-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('admin');
+                    setSelectedVendor(null);
+                    setVendorEmail('');
+                    setErrors(p => ({ ...p, vendor: undefined }));
+                  }}
+                  style={{
+                    padding: '12px 14px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+                    border: `2px solid ${mode === 'admin' ? '#7C3AED' : '#E2E8F0'}`,
+                    background: mode === 'admin' ? '#F5F3FF' : '#fff',
+                    transition: 'all 0.18s',
+                  }}
+                >
+                  <div style={{ fontWeight: 650, color: mode === 'admin' ? '#7C3AED' : '#2D3748', fontSize: '0.875rem' }}>
+                    🧑‍💼 Publier en tant qu'admin
                   </div>
-                  {errors.vendor && <span className="mh-form-error">{errors.vendor}</span>}
-                </div>
+                  <div style={{ fontSize: '0.77rem', color: '#8B9AB5', marginTop: 3 }}>
+                    Vous êtes l'auteur — publication auto-approuvée
+                  </div>
+                </button>
 
-                {vendorResults.length > 0 && (
-                  <div className="mh-vendor-results">
-                    {vendorResults.map(v => (
-                      <button key={v._id} type="button" className="mh-vendor-result-item" onClick={() => pickVendor(v)}>
-                        <div className="mh-vendor-avatar">
-                          {v.image ? <img src={v.image} alt={v.name} /> : v.name[0].toUpperCase()}
-                        </div>
-                        <div style={{ minWidth: 0 }}>
-                          <div className="mh-vendor-name">{v.name}</div>
-                          <div className="mh-vendor-email">{v.email}</div>
-                        </div>
-                      </button>
-                    ))}
+                <button
+                  type="button"
+                  onClick={() => setMode('vendor')}
+                  style={{
+                    padding: '12px 14px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+                    border: `2px solid ${mode === 'vendor' ? '#0B9E5E' : '#E2E8F0'}`,
+                    background: mode === 'vendor' ? '#F0FDF4' : '#fff',
+                    transition: 'all 0.18s',
+                  }}
+                >
+                  <div style={{ fontWeight: 650, color: mode === 'vendor' ? '#0B9E5E' : '#2D3748', fontSize: '0.875rem' }}>
+                    👤 Publier pour un hôte
                   </div>
-                )}
-
-                {selectedVendor && (
-                  <div className="mh-vendor-selected">
-                    <UserCheck size={16} style={{ color: '#0B9E5E', flexShrink: 0 }} />
-                    <div style={{ minWidth: 0 }}>
-                      <div className="mh-vendor-name">{selectedVendor.name}</div>
-                      <div className="mh-vendor-email">{selectedVendor.email}</div>
-                    </div>
+                  <div style={{ fontSize: '0.77rem', color: '#8B9AB5', marginTop: 3 }}>
+                    Associe la maison à un compte hôte existant
                   </div>
-                )}
+                </button>
               </div>
             </div>
 
@@ -543,7 +536,9 @@ export default function AdminCreateMaisonPage() {
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                 {submitting
                   ? <><Loader2 size={16} className="mh-spin" /> Publication…</>
-                  : '✦ Publier la maison d\'hôte'}
+                  : mode === 'admin'
+                  ? '✦ Publier en tant qu\'admin'
+                  : '✦ Publier pour l\'hôte'}
               </button>
             </div>
           </div>

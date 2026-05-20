@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useSession } from "next-auth/react";
 
 /* ─────────────────────────────────────────────
    CONFIG
@@ -21,7 +22,7 @@ const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1585208798174-6cedd86e019a?w=800&q=80";
 
 /* ─────────────────────────────────────────────
-   TYPES  — mirrors MaisonDhote mongoose schema
+   TYPES
 ───────────────────────────────────────────── */
 interface Maison {
   _id: string;
@@ -126,10 +127,6 @@ function TypeBadge({ type }: { type: Maison["type"] }) {
 
 /* ─────────────────────────────────────────────
    IMAGE CAROUSEL
-   Arrows are absolutely positioned siblings of
-   the track inside .maisonsdhotes-card-img-wrap
-   (which has overflow:hidden). They stay within
-   the container bounds and fade in on card hover.
 ───────────────────────────────────────────── */
 function ImageCarousel({ images, alt }: { images: string[]; alt: string }) {
   const [idx, setIdx] = useState(0);
@@ -153,7 +150,6 @@ function ImageCarousel({ images, alt }: { images: string[]; alt: string }) {
 
   return (
     <>
-      {/* ── Sliding track ── */}
       <div className="maisonsdhotes-carousel-track" ref={trackRef}>
         {images.map((src, i) => (
           <div key={i} className="maisonsdhotes-carousel-slide">
@@ -170,7 +166,6 @@ function ImageCarousel({ images, alt }: { images: string[]; alt: string }) {
         ))}
       </div>
 
-      {/* ── Arrows (only when > 1 image) ── */}
       {images.length > 1 && (
         <>
           <button
@@ -197,7 +192,6 @@ function ImageCarousel({ images, alt }: { images: string[]; alt: string }) {
             </svg>
           </button>
 
-          {/* Dots */}
           <div className="mdh-dots">
             {images.map((_, i) => (
               <button
@@ -209,7 +203,6 @@ function ImageCarousel({ images, alt }: { images: string[]; alt: string }) {
             ))}
           </div>
 
-          {/* Counter */}
           <span className="mdh-img-counter">{idx + 1} / {images.length}</span>
         </>
       )}
@@ -218,165 +211,449 @@ function ImageCarousel({ images, alt }: { images: string[]; alt: string }) {
 }
 
 /* ─────────────────────────────────────────────
-   HOUSE CARD — all schema fields
+   RESERVATION MODAL
 ───────────────────────────────────────────── */
-function HouseCard({ maison }: { maison: Maison }) {
-  const [saved, setSaved] = useState(false);
+function ReservationModal({
+  maison,
+  apiToken,
+  onClose,
+}: {
+  maison: Maison;
+  apiToken?: string;
+  onClose: () => void;
+}) {
+  const today = new Date().toISOString().split("T")[0];
 
-  const images  = maison.images?.length ? maison.images : [FALLBACK_IMAGE];
-  const tag     = normalizeTag(maison.tag);
-  const nights  = maison.minNights ?? 1;
-  const badge   = maison.isEditorsPick
-    ? "Editor's Pick"
-    : maison.isFeatured ? "Most Loved" : null;
-  const listed  = timeAgo(maison.createdAt);
+  const [checkIn,  setCheckIn]  = useState("");
+  const [checkOut, setCheckOut] = useState("");
+  const [guests,   setGuests]   = useState(1);
+  const [phone,    setPhone]    = useState("");
+  const [message,  setMessage]  = useState("");
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState<string | null>(null);
+  const [success,  setSuccess]  = useState(false);
+
+  // Close on Escape key
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  // Prevent body scroll while modal is open
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  const nights = checkIn && checkOut
+    ? Math.ceil(
+        (new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86_400_000
+      )
+    : 0;
+  const total = nights > 0 ? nights * maison.pricePerNight : 0;
+
+  const submit = async () => {
+    setError(null);
+    if (!checkIn || !checkOut)
+      return setError("Please select check-in and check-out dates.");
+    if (nights <= 0)
+      return setError("Check-out must be after check-in.");
+    if (maison.minNights && nights < maison.minNights)
+      return setError(`Minimum stay is ${maison.minNights} night(s).`);
+    if (!apiToken)
+      return setError("You must be logged in to make a reservation.");
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/api/reservations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiToken}`,
+        },
+        body: JSON.stringify({
+          maisonId: maison._id,
+          checkIn,
+          checkOut,
+          guests,
+          phone,
+          message,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message ?? `Error ${res.status}`);
+      setSuccess(true);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <article className="maisonsdhotes-card">
-
-      {/* ── Image column ── */}
-      <div className="maisonsdhotes-card-img-wrap">
-        <ImageCarousel images={images} alt={maison.name} />
-
-        {/* Wishlist */}
-        <button
-          className={`maisonsdhotes-save-btn${saved ? " maisonsdhotes-save-btn-active" : ""}`}
-          onClick={(e) => { e.stopPropagation(); setSaved(!saved); }}
-          aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
-        >
-          <svg viewBox="0 0 24 24" width={18} height={18}>
-            <path
-              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-              fill={saved ? "currentColor" : "none"}
-              stroke="currentColor"
-              strokeWidth={1.8}
-            />
-          </svg>
-        </button>
-
-        {badge && <span className="maisonsdhotes-badge">{badge}</span>}
-        {tag   && <div  className="maisonsdhotes-card-tag">{tag.toUpperCase()}</div>}
-      </div>
-
-      {/* ── Info column ── */}
-      <div className="maisonsdhotes-card-body">
-
-        {/* Top: name + type badge + price */}
-        <div className="maisonsdhotes-card-top">
-          <div className="mdh-title-block">
-            <div className="mdh-name-row">
-              <h3 className="maisonsdhotes-card-name">{maison.name}</h3>
-              <TypeBadge type={maison.type} />
-            </div>
-            <p className="maisonsdhotes-card-loc">
-              <svg viewBox="0 0 24 24" width={12} height={12} fill="currentColor">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-              </svg>
-              {[maison.governorate, maison.region, maison.location]
-                .filter(Boolean)
-                .join(" · ")}
+    <div className="mdh-modal-overlay" onClick={onClose}>
+      <div
+        className="mdh-modal"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Reserve ${maison.name}`}
+      >
+        {/* ── Header ── */}
+        <div className="mdh-modal-header">
+          <div>
+            <p className="mdh-modal-kicker">✦ Reserve your stay</p>
+            <h2 className="mdh-modal-title">{maison.name}</h2>
+            <p className="mdh-modal-sub">
+              {maison.pricePerNight.toLocaleString("fr-FR")}{" "}
+              {maison.currency ?? "TND"} / night
+              {maison.minNights && maison.minNights > 1 && (
+                <> · {maison.minNights} nights min.</>
+              )}
             </p>
           </div>
-
-          <div className="maisonsdhotes-card-price-block">
-            <span className="maisonsdhotes-price-num">
-              {(maison.pricePerNight ?? 0).toLocaleString("fr-FR")}
-              <span className="mdh-currency"> {maison.currency ?? "TND"}</span>
-            </span>
-            <span className="maisonsdhotes-price-night">/night</span>
-            <span className="mdh-min-nights-pill">
-              {nights} night{nights > 1 ? "s" : ""} min.
-            </span>
-          </div>
+          <button className="mdh-modal-close" onClick={onClose} aria-label="Close">
+            <svg viewBox="0 0 24 24" width={20} height={20} fill="none"
+              stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
-        {/* Description */}
-        <p className="maisonsdhotes-card-desc">{maison.description}</p>
+        {success ? (
+          /* ── Success state ── */
+          <div className="mdh-modal-success">
+            <div className="mdh-success-icon">✓</div>
+            <h3>Reservation Sent!</h3>
+            <p>
+              Your request has been sent to the host.<br />
+              You'll hear back shortly.
+            </p>
+            <button className="mdh-modal-btn" onClick={onClose}>
+              Close
+            </button>
+          </div>
+        ) : (
+          <div className="mdh-modal-body">
 
-        {/* Amenities */}
-        {!!maison.amenities?.length && (
-          <div className="maisonsdhotes-amenities">
-            {maison.amenities.map((a) => (
-              <span key={a} className="maisonsdhotes-amenity">{a}</span>
-            ))}
+            {/* Dates row */}
+            <div className="mdh-modal-dates">
+              <div className="mdh-modal-field">
+                <label>Check-in</label>
+                <input
+                  type="date"
+                  min={today}
+                  value={checkIn}
+                  onChange={(e) => { setCheckIn(e.target.value); setError(null); }}
+                  className="mdh-modal-input"
+                />
+              </div>
+              <div className="mdh-modal-field">
+                <label>Check-out</label>
+                <input
+                  type="date"
+                  min={checkIn || today}
+                  value={checkOut}
+                  onChange={(e) => { setCheckOut(e.target.value); setError(null); }}
+                  className="mdh-modal-input"
+                />
+              </div>
+            </div>
+
+            {/* Guests */}
+            <div className="mdh-modal-field">
+              <label>Guests</label>
+              <input
+                type="number"
+                min={1}
+                max={20}
+                value={guests}
+                onChange={(e) => setGuests(Math.max(1, Number(e.target.value)))}
+                className="mdh-modal-input"
+              />
+            </div>
+
+            {/* Phone */}
+            <div className="mdh-modal-field">
+              <label>
+                Your phone{" "}
+                <span className="mdh-optional">(optional)</span>
+              </label>
+              <input
+                type="tel"
+                placeholder="+216 XX XXX XXX"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="mdh-modal-input"
+              />
+            </div>
+
+            {/* Message */}
+            <div className="mdh-modal-field">
+              <label>
+                Message to host{" "}
+                <span className="mdh-optional">(optional)</span>
+              </label>
+              <textarea
+                rows={3}
+                placeholder="Tell the host about your trip…"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="mdh-modal-input mdh-modal-textarea"
+              />
+            </div>
+
+            {/* Price summary */}
+            {nights > 0 && (
+              <div className="mdh-modal-summary">
+                <div className="mdh-summary-row">
+                  <span>
+                    {maison.pricePerNight.toLocaleString("fr-FR")}{" "}
+                    {maison.currency ?? "TND"} × {nights} night
+                    {nights > 1 ? "s" : ""}
+                  </span>
+                  <span>
+                    {total.toLocaleString("fr-FR")} {maison.currency ?? "TND"}
+                  </span>
+                </div>
+                <div className="mdh-summary-total">
+                  <span>Total</span>
+                  <span>
+                    {total.toLocaleString("fr-FR")} {maison.currency ?? "TND"}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {error && <p className="mdh-modal-error">{error}</p>}
+
+            <button
+              className="mdh-modal-btn"
+              onClick={submit}
+              disabled={loading}
+            >
+              {loading ? (
+                <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth={2.5}
+                    style={{ animation: "mdh-spin 0.8s linear infinite" }}>
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" strokeLinecap="round" />
+                  </svg>
+                  Sending…
+                </span>
+              ) : (
+                <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                  <svg viewBox="0 0 24 24" width={15} height={15} fill="none"
+                    stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <path d="M16 2v4M8 2v4M3 10h18" />
+                  </svg>
+                  Request Reservation
+                </span>
+              )}
+            </button>
+
           </div>
         )}
-
-        {/* Contact — phone & website */}
-        {(maison.phone || maison.website) && (
-          <div className="mdh-contact-row">
-            {maison.phone && (
-              <a href={`tel:${maison.phone}`} className="mdh-contact-chip">
-                <svg viewBox="0 0 24 24" width={13} height={13} fill="currentColor">
-                  <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
-                </svg>
-                {maison.phone}
-              </a>
-            )}
-            {maison.website && (
-              <a
-                href={maison.website.startsWith("http") ? maison.website : `https://${maison.website}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mdh-contact-chip"
-              >
-                <svg viewBox="0 0 24 24" width={13} height={13} fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-                </svg>
-                Website
-              </a>
-            )}
-          </div>
-        )}
-
-        {/* Footer: rating + meta */}
-        <div className="maisonsdhotes-card-footer">
-          <div className="maisonsdhotes-rating-row">
-            <Stars rating={maison.rating ?? 0} />
-            <span className="maisonsdhotes-rating-num">
-              {(maison.rating ?? 0).toFixed(1)}
-            </span>
-            <span className="maisonsdhotes-rating-count">
-              ({maison.reviewCount ?? 0} reviews)
-            </span>
-          </div>
-
-          <div className="mdh-meta-row">
-            {maison.host?.name && (
-              <span className="mdh-meta-chip">
-                <svg viewBox="0 0 24 24" width={12} height={12} fill="currentColor">
-                  <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-                </svg>
-                {maison.host.name}
-              </span>
-            )}
-            {(maison.views ?? 0) > 0 && (
-              <span className="mdh-meta-chip">
-                <svg viewBox="0 0 24 24" width={12} height={12} fill="currentColor">
-                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                </svg>
-                {(maison.views!).toLocaleString()}
-              </span>
-            )}
-            {listed && (
-              <span className="mdh-meta-chip">
-                <svg viewBox="0 0 24 24" width={12} height={12} fill="currentColor">
-                  <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm4.24 16L11 13V7h1.5v5.25l4.5 2.67-.77 1.08z" />
-                </svg>
-                {listed}
-              </span>
-            )}
-          </div>
-        </div>
       </div>
-    </article>
+    </div>
   );
 }
 
 /* ─────────────────────────────────────────────
-   PAGE  ← default export required by Next.js
+   HOUSE CARD
+───────────────────────────────────────────── */
+function HouseCard({
+  maison,
+  apiToken,
+}: {
+  maison: Maison;
+  apiToken?: string;
+}) {
+  const [saved,     setSaved]     = useState(false);
+  const [showModal, setShowModal] = useState(false);
+
+  const images = maison.images?.length ? maison.images : [FALLBACK_IMAGE];
+  const tag    = normalizeTag(maison.tag);
+  const nights = maison.minNights ?? 1;
+  const badge  = maison.isEditorsPick
+    ? "Editor's Pick"
+    : maison.isFeatured ? "Most Loved" : null;
+  const listed = timeAgo(maison.createdAt);
+
+  return (
+    <>
+      <article className="maisonsdhotes-card">
+
+        {/* ── Image column ── */}
+        <div className="maisonsdhotes-card-img-wrap">
+          <ImageCarousel images={images} alt={maison.name} />
+
+          <button
+            className={`maisonsdhotes-save-btn${saved ? " maisonsdhotes-save-btn-active" : ""}`}
+            onClick={(e) => { e.stopPropagation(); setSaved(!saved); }}
+            aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
+          >
+            <svg viewBox="0 0 24 24" width={18} height={18}>
+              <path
+                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                fill={saved ? "currentColor" : "none"}
+                stroke="currentColor"
+                strokeWidth={1.8}
+              />
+            </svg>
+          </button>
+
+          {badge && <span className="maisonsdhotes-badge">{badge}</span>}
+          {tag   && <div  className="maisonsdhotes-card-tag">{tag.toUpperCase()}</div>}
+        </div>
+
+        {/* ── Info column ── */}
+        <div className="maisonsdhotes-card-body">
+
+          <div className="maisonsdhotes-card-top">
+            <div className="mdh-title-block">
+              <div className="mdh-name-row">
+                <h3 className="maisonsdhotes-card-name">{maison.name}</h3>
+                <TypeBadge type={maison.type} />
+              </div>
+              <p className="maisonsdhotes-card-loc">
+                <svg viewBox="0 0 24 24" width={12} height={12} fill="currentColor">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                </svg>
+                {[maison.governorate, maison.region, maison.location]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            </div>
+
+            <div className="maisonsdhotes-card-price-block">
+              <span className="maisonsdhotes-price-num">
+                {(maison.pricePerNight ?? 0).toLocaleString("fr-FR")}
+                <span className="mdh-currency"> {maison.currency ?? "TND"}</span>
+              </span>
+              <span className="maisonsdhotes-price-night">/night</span>
+              <span className="mdh-min-nights-pill">
+                {nights} night{nights > 1 ? "s" : ""} min.
+              </span>
+            </div>
+          </div>
+
+          <p className="maisonsdhotes-card-desc">{maison.description}</p>
+
+          {!!maison.amenities?.length && (
+            <div className="maisonsdhotes-amenities">
+              {maison.amenities.map((a) => (
+                <span key={a} className="maisonsdhotes-amenity">{a}</span>
+              ))}
+            </div>
+          )}
+
+          {(maison.phone || maison.website) && (
+            <div className="mdh-contact-row">
+              {maison.phone && (
+                <a href={`tel:${maison.phone}`} className="mdh-contact-chip">
+                  <svg viewBox="0 0 24 24" width={13} height={13} fill="currentColor">
+                    <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
+                  </svg>
+                  {maison.phone}
+                </a>
+              )}
+              {maison.website && (
+                <a
+                  href={maison.website.startsWith("http") ? maison.website : `https://${maison.website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mdh-contact-chip"
+                >
+                  <svg viewBox="0 0 24 24" width={13} height={13} fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                  </svg>
+                  Website
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* Footer: rating + meta */}
+          {/* <div className="maisonsdhotes-card-footer">
+            <div className="maisonsdhotes-rating-row">
+              <Stars rating={maison.rating ?? 0} />
+              <span className="maisonsdhotes-rating-num">
+                {(maison.rating ?? 0).toFixed(1)}
+              </span>
+              <span className="maisonsdhotes-rating-count">
+                ({maison.reviewCount ?? 0} reviews)
+              </span>
+            </div>
+
+            <div className="mdh-meta-row">
+              {maison.host?.name && (
+                <span className="mdh-meta-chip">
+                  <svg viewBox="0 0 24 24" width={12} height={12} fill="currentColor">
+                    <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+                  </svg>
+                  {maison.host.name}
+                </span>
+              )}
+              {(maison.views ?? 0) > 0 && (
+                <span className="mdh-meta-chip">
+                  <svg viewBox="0 0 24 24" width={12} height={12} fill="currentColor">
+                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                  </svg>
+                  {(maison.views!).toLocaleString()}
+                </span>
+              )}
+              {listed && (
+                <span className="mdh-meta-chip">
+                  <svg viewBox="0 0 24 24" width={12} height={12} fill="currentColor">
+                    <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm4.24 16L11 13V7h1.5v5.25l4.5 2.67-.77 1.08z" />
+                  </svg>
+                  {listed}
+                </span>
+              )}
+            </div>
+          </div> */}
+
+          {/* ── Reserve button ── */}
+          <div className="mdh-reserve-wrap">
+            <button
+              className="mdh-reserve-btn"
+              onClick={(e) => { e.stopPropagation(); setShowModal(true); }}
+            >
+              <svg viewBox="0 0 24 24" width={15} height={15} fill="none"
+                stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <path d="M16 2v4M8 2v4M3 10h18" />
+              </svg>
+              Reserve
+            </button>
+          </div>
+
+        </div>
+      </article>
+
+      {/* ── Modal — rendered outside article to avoid stacking context issues ── */}
+      {showModal && (
+        <ReservationModal
+          maison={maison}
+          apiToken={apiToken}
+          onClose={() => setShowModal(false)}
+        />
+      )}
+    </>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   PAGE
 ───────────────────────────────────────────── */
 export default function Page() {
+  const { data: session } = useSession();
+  const apiToken = (session as any)?.apiToken as string | undefined;
+
   const [active, setActive]   = useState("All");
   const [search, setSearch]   = useState("");
   const [maisons, setMaisons] = useState<Maison[]>([]);
@@ -402,7 +679,6 @@ export default function Page() {
 
   useEffect(() => { fetchMaisons(); }, [fetchMaisons]);
 
-  /* Client-side filter */
   const filtered = maisons.filter((m) => {
     if (m.isSuspended || !m.isApproved) return false;
     const matchTag =
@@ -512,7 +788,6 @@ export default function Page() {
           ))}
         </div>
 
-        {/* Loading */}
         {loading && (
           <div className="maisonsdhotes-loading">
             <div className="maisonsdhotes-spinner" />
@@ -520,7 +795,6 @@ export default function Page() {
           </div>
         )}
 
-        {/* Error */}
         {!loading && error && (
           <div className="maisonsdhotes-error">
             <p>⚠ {error}</p>
@@ -530,7 +804,6 @@ export default function Page() {
           </div>
         )}
 
-        {/* Cards */}
         {!loading && !error && (
           <div className="maisonsdhotes-list">
             {filtered.length === 0 ? (
@@ -539,27 +812,13 @@ export default function Page() {
                 <p>Try adjusting your search or filter.</p>
               </div>
             ) : (
-              filtered.map((m) => <HouseCard key={m._id} maison={m} />)
+              filtered.map((m) => (
+                <HouseCard key={m._id} maison={m} apiToken={apiToken} />
+              ))
             )}
           </div>
         )}
       </main>
-
-      {/* ── FOOTER BANNER ── */}
-      {/* <section className="maisonsdhotes-footer-banner">
-        <h2>List Your Maison d'Hôtes</h2>
-        <p>
-          Join our community of hosts and share your home with travelers seeking
-          authentic, meaningful experiences across Tunisia.
-        </p>
-        <button className="maisonsdhotes-footer-cta">
-          Become a Host
-          <svg viewBox="0 0 24 24" width={16} height={16}
-            fill="none" stroke="white" strokeWidth={2}>
-            <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-      </section> */}
     </div>
   );
 }

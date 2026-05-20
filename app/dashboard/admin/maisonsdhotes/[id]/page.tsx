@@ -187,7 +187,7 @@ export default function AdminEditMaisonPage({ params }: { params: Promise<{ id: 
 
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
       setSaveSuccess(true);
-      setTimeout(() => router.push('/dashboard/admin/maisons-dhotes'), 1200);
+      setTimeout(() => router.push('/dashboard/admin/maisonsdhotes'), 1200);
     } catch (err: any) {
       setSaveError(err.message);
     } finally {
