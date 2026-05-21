@@ -461,7 +461,7 @@ export default function UserProfile() {
           </motion.div>
 
           {/* ── Stats boxes ── */}
-          <motion.div
+          {/* <motion.div
             className="profile-stats"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -477,7 +477,7 @@ export default function UserProfile() {
                 <span className="profile-stat-label">{label}</span>
               </div>
             ))}
-          </motion.div>
+          </motion.div> */}
         </div>
       </motion.section>
 
