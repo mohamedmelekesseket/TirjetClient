@@ -168,14 +168,7 @@ function Hero() {
           artisans de Tunisie. Chaque objet porte une histoire, un territoire.
         </p>
         <div className="pg-hero__ctas">
-          <motion.button
-            className="pg-btn pg-btn--amber"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => router.push("/boutique")}
-          >
-            Explorer la boutique →
-          </motion.button>
+
           <motion.button
             className="pg-btn pg-btn--ghost"
             whileHover={{ scale: 1.02 }}
@@ -320,11 +313,11 @@ function CategoriesSection({ categories, loading }: CategoriesSectionProps) {
         </div>
       )}
 
-      <div className="tjs-cta">
+      {/* <div className="tjs-cta">
         <Link href="/boutique" className="tjs-btn">
           Voir toutes les catégories →
         </Link>
-      </div>
+      </div> */}
     </section>
   );
 }
@@ -602,9 +595,7 @@ function PremiumProducts({
           <p className="pg-premium__sub">Les meilleures créations sélectionnées par notre équipe</p>
         </div>
         <div className="pg-premium__nav">
-          <button className="pg-premium__link" onClick={() => router.push("/boutique")}>
-            Voir tous les produits
-          </button>
+          
         </div>
       </div>
 

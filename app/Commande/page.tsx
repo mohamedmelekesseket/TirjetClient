@@ -373,7 +373,7 @@ async function handleConfirm() {
           </div>
 
           <div className="cart-summary__badges" style={{ marginBottom: 0 }}>
-            {["Paiement sécurisé", "Livraison 3–5 jours", "Retour sous 14 jours"].map(b => (
+            {[ "Livraison 3–5 jours"].map(b => (
               <span key={b} className="cart-summary__badge">{b}</span>
             ))}
           </div>

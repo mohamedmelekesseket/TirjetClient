@@ -492,9 +492,9 @@ export default function PanierPage() {
 
                   <div className="cart-summary__badges">
                     {[
-                      { icon: <ShieldCheck size={13} />, label: "Paiement sécurisé" },
+                      // { icon: <ShieldCheck size={13} />, label: "Paiement sécurisé" },
                       { icon: <Truck size={13} />,        label: "Livraison 3–5 jours" },
-                      { icon: <RotateCcw size={13} />,    label: "Retour sous 14 jours" },
+                      // { icon: <RotateCcw size={13} />,    label: "Retour sous 14 jours" },
                     ].map(b => (
                       <span key={b.label} className="cart-summary__badge">
                         {b.icon} {b.label}
