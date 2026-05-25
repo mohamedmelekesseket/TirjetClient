@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import {
   Menu, User, LogOut, X, ShoppingBag,
   ChevronDown, ShieldUser, ChevronRight, ArrowUpRight,
@@ -12,6 +12,7 @@ import { signOut, useSession } from "next-auth/react";
 import logo from "../images/logo2 (2).png";
 
 const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/categories?mainCategory=artisanat`;
+const MAISONS_API = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/maisons-dhotes?limit=1&approved=true`;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Level4 { _id: string; name: string; slug: string; productCount?: number; }
@@ -24,35 +25,6 @@ interface Category {
 
 interface NavDropdownItem { label: string; href: string; }
 interface NavLink { href: string; label: string; dropdown?: NavDropdownItem[]; }
-
-const links: NavLink[] = [
-  { href: "/", label: "Accueil" },
-  {
-    href: "/CultureAmazigh",
-    label: "Culture Amazigh",
-    dropdown: [
-      { label: "Langue amazigh",             href: "/CultureAmazigh/langueAmazigh" },
-      { label: "Événements & traditions",     href: "/CultureAmazigh/evenements" },
-      { label: "Symboles et motifs berbères", href: "/CultureAmazigh/symboles" },
-      { label: "Musique amazigh",             href: "/CultureAmazigh/musique" },
-      { label: "Patrimoine et Traditions",    href: "/CultureAmazigh/patrimoine" },
-      { label: "Agriculture amazigh",         href: "/CultureAmazigh/agriculture" },
-      { label: "Architecture amazigh",        href: "/CultureAmazigh/architecture" },
-      { label: "Documentation",              href: "/CultureAmazigh/documentation" },
-    ],
-  },
-  { href: "/Artisans", label: "Artisans" },
-  {
-    href: "/TourismeetLoisir",
-    label: "Tourisme et Loisir",
-    dropdown: [
-      { label: "Maisons d'hôtes",      href: "/TourismeetLoisir/maisonsdhotes" },
-      // { label: "Maisons d'hôtes traditionnelles", href: "/TourismeetLoisir/maisons-traditionnelles" },
-      // { label: "Excursions",                     href: "/TourismeetLoisir/excursions" },
-    ],
-  },
-  { href: "/apropos", label: "À propos" },
-];
 
 // ─── Small nav dropdown ───────────────────────────────────────────────────────
 const NavItem = ({ link, isActive }: { link: NavLink; isActive: boolean }) => {
@@ -123,6 +95,7 @@ const Header = () => {
   const [menuOpen,     setMenuOpen]     = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [categories,   setCategories]   = useState<Category[]>([]);
+  const [maisonsExist, setMaisonsExist] = useState(false);
 
   // Mega-menu
   const [megaOpen, setMegaOpen] = useState(false);
@@ -136,6 +109,45 @@ const Header = () => {
   const [mobileActiveCat, setMobileActiveCat] = useState<string | null>(null);
   const [mobileActiveL2,  setMobileActiveL2]  = useState<string | null>(null);
   const [mobileNavOpen,   setMobileNavOpen]   = useState<string | null>(null);
+
+  // ── Dynamic links based on maisonsExist ────────────────────────────────────
+  const links: NavLink[] = useMemo(() => [
+    { href: "/", label: "Accueil" },
+    {
+      href: "/CultureAmazigh",
+      label: "Culture Amazigh",
+      dropdown: [
+        { label: "Langue amazigh",             href: "/CultureAmazigh/langueAmazigh" },
+        { label: "Événements & traditions",     href: "/CultureAmazigh/evenements" },
+        { label: "Symboles et motifs berbères", href: "/CultureAmazigh/symboles" },
+        { label: "Musique amazigh",             href: "/CultureAmazigh/musique" },
+        { label: "Patrimoine et Traditions",    href: "/CultureAmazigh/patrimoine" },
+        { label: "Agriculture amazigh",         href: "/CultureAmazigh/agriculture" },
+        { label: "Architecture amazigh",        href: "/CultureAmazigh/architecture" },
+        { label: "Documentation",              href: "/CultureAmazigh/documentation" },
+      ],
+    },
+    { href: "/Artisans", label: "Artisans" },
+...(maisonsExist ? [{
+  href: "/TourismeetLoisir",
+  label: "Tourisme et Loisir",
+  dropdown: [
+    { label: "Maisons d'hôtes", href: "/TourismeetLoisir/maisonsdhotes" },
+  ],
+}] : []),
+    { href: "/apropos", label: "À propos" },
+  ], [maisonsExist]);
+
+  // ── Fetch maisons existence ─────────────────────────────────────────────────
+  useEffect(() => {
+    fetch(MAISONS_API)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        const list = data?.maisons ?? data ?? [];
+        setMaisonsExist(Array.isArray(list) && list.length > 0);
+      })
+      .catch(() => {});
+  }, []);
 
   // ── Fetch categories ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -287,7 +299,6 @@ const Header = () => {
                   </div>
                 )}
 
-                
                 <button
                   onClick={() => router.push("/Panier")}
                   className="hdr__icon-btn"

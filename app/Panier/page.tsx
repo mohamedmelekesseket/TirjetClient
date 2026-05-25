@@ -380,9 +380,9 @@ export default function PanierPage() {
                 <div className="cart-empty__icon"><ShoppingBag size={52} strokeWidth={1.1} /></div>
                 <h2 className="cart-empty__title">Votre panier est vide</h2>
                 <p className="cart-empty__sub">Découvrez nos créations artisanales uniques</p>
-                <Link href="/boutique" className="cart-checkout-btn" style={{ width: "auto", padding: "0.85rem 2rem" }}>
+                {/* <Link href="/boutique" className="cart-checkout-btn" style={{ width: "auto", padding: "0.85rem 2rem" }}>
                   Explorer la boutique →
-                </Link>
+                </Link> */}
               </motion.div>
 
             /* Items */
