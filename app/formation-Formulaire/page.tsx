@@ -31,6 +31,7 @@ interface FormData {
   niveauTifinagh: string;
   // Step 3
   attentes: string[];
+  motivation: string;
 }
 
 const initialData: FormData = {
@@ -45,6 +46,7 @@ const initialData: FormData = {
   niveauEcrit: "",
   niveauTifinagh: "",
   attentes: [],
+  motivation: "",
 };
 
 const steps = [
@@ -115,10 +117,10 @@ function FieldLabel({ children, required = true }: { children: React.ReactNode; 
 // ─── Page ─────────────────────────────────────────────────────────────────
 export default function FormulaireAmazighPage() {
   const router = useRouter();
-  const [step, setStep] = useState(2);
+  const [step, setStep] = useState(0);
   const [data, setData] = useState<FormData>(initialData);
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState(true);
 
   const set = <K extends keyof FormData>(key: K, value: FormData[K]) =>
     setData((d) => ({ ...d, [key]: value }));
@@ -148,7 +150,7 @@ export default function FormulaireAmazighPage() {
       return data.niveauOral && data.niveauEcrit && data.niveauTifinagh;
     }
     if (step === 2) {
-      return data.attentes.length > 0;
+      return data.attentes.length > 0 && data.motivation && data.motivation.trim().length > 0;
     }
     return false;
   };
@@ -441,8 +443,13 @@ export default function FormulaireAmazighPage() {
                     />
                   ))}
                 </div>
-                <FieldLabel>Pourquoi souhaitez-vous rejoindre notre formation ?</FieldLabel>
-                <textarea/>
+                <FieldLabel required>Pourquoi souhaitez-vous rejoindre notre formation ?</FieldLabel>
+                <textarea
+                  style={{width:"90%",backgroundColor:"white",color:"black",padding:"10px 10px",minHeight:"100px"}}
+                  value={data.motivation}
+                  onChange={(e) => set("motivation", e.target.value)}
+                  placeholder="Expliquez vos motivations personnelles ou professionnelles..."
+                />
               </motion.div>
             )}
           </AnimatePresence>

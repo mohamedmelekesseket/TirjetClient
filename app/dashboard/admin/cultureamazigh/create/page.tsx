@@ -438,7 +438,7 @@ export default function AdminCreateCulturePage() {
                     style={{
                       padding: '10px 16px', fontSize: '0.83rem', fontWeight: mediaTab === tab ? 650 : 400,
                       color: mediaTab === tab ? '#7C3AED' : '#8B9AB5',
-                      borderBottom: `2px solid ${mediaTab === tab ? '#7C3AED' : 'transparent'}`,
+                      border: `2px solid ${mediaTab === tab ? '#7C3AED' : 'transparent'}`,
                       background: 'none', borderRadius: 0,
                       cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
                       marginBottom: -1, transition: 'all 0.15s',

@@ -2345,11 +2345,14 @@ img  { display: block; max-width: 100%; }
   min-height: 100vh;
   background: linear-gradient(180deg, #fbf3e9 0%, #f8f0e5 100%);
   padding: 40px 20px 80px;
+  background-color: #000;
+  
 }
 
 .fam-wrap {
   max-width: 720px;
   margin: 0 auto;
+  margin-top: 10%;
 }
 
 .fam-back {
@@ -2676,6 +2679,10 @@ img  { display: block; max-width: 100%; }
   border-radius: 20px;
   padding: 60px 40px;
   text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
 }
 
 .fam-success__icon {
