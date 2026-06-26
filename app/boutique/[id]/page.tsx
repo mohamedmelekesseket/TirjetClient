@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, X, Loader2, Package, Eye } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useApiToken } from "@/lib/useApiToken";
 import { showSuccessToast } from "@/lib/toast";
 import { useCart } from "../../context/CartContext";
 
@@ -173,7 +173,7 @@ function Gallery({ images }: { images: string[] }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { data: session } = useSession();
+  const { apiToken, session } = useApiToken();
   const router = useRouter();
   const { addToCart } = useCart();
 
@@ -293,7 +293,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   }, [activeTab, currentId]);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
-  const getToken = () => (session as any)?.apiToken as string | undefined;
   const currentUserId = (session as any)?.apiUser?._id as string | undefined;
 
   // ── Handlers ───────────────────────────────────────────────────────────────
@@ -356,11 +355,10 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const token = getToken();
-      if (!token) { setSubmitError("Vous devez être connecté pour laisser un avis."); return; }
+      if (!apiToken) { setSubmitError("Vous devez être connecté pour laisser un avis."); return; }
       const res = await fetch(`${API}/api/products/${currentId}/comments`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiToken}` },
         body: JSON.stringify({ rating: newRating, content: newContent }),
       });
       if (!res.ok) throw new Error((await res.json()).message);
@@ -380,10 +378,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const token = getToken();
       const res = await fetch(`${API}/api/products/${currentId}/comments/${editingId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiToken}` },
         body: JSON.stringify({ rating: newRating, content: newContent }),
       });
       if (!res.ok) throw new Error((await res.json()).message);
@@ -400,10 +397,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   async function handleDeleteComment(commentId: string) {
     if (!confirm("Supprimer cet avis ?")) return;
     try {
-      const token = getToken();
       const res = await fetch(`${API}/api/products/${currentId}/comments/${commentId}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${apiToken}` },
       });
       if (!res.ok) throw new Error((await res.json()).message);
       setComments(prev => prev.filter(c => c._id !== commentId));

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useApiToken } from "@/lib/useApiToken";
 import { Check, Plus, Eye, Flag, Gem, Package, Search, Shirt, Lamp, X, Loader2, Home } from "lucide-react";
 import type { ComponentType } from "react";
 import Link from "next/link";
@@ -81,12 +81,10 @@ const statusClass: Record<string, string> = {
 };
 
 export default function AdminProductsPage() {
-  const { data: session, status: sessionStatus } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken, isLoading: tokenLoading } = useApiToken();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<FilterTab>("Tous");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -101,7 +99,6 @@ export default function AdminProductsPage() {
 
   const fetchProducts = async () => {
     setLoading(true);
-    setError(null);
     try {
       const res = await fetch(`${API}/api/products?limit=100`, { headers: getHeaders() });
       if (res.status === 401) throw new Error("Non autorisé — session expirée ?");
@@ -110,7 +107,7 @@ export default function AdminProductsPage() {
       console.log("total:", data.products.length);
       setProducts(data.products || data.data || []);
     } catch (err: any) {
-      setError(err.message);
+      showErrorToast(err.message);
     } finally {
       setLoading(false);
     }
@@ -203,8 +200,7 @@ export default function AdminProductsPage() {
     home: products.filter((p) => p.isHome === true).length, // ← NEW
   };
 
-  const isSessionLoading =
-    sessionStatus === "loading" || (!apiToken && sessionStatus === "authenticated");
+  const isSessionLoading = tokenLoading || (!apiToken);
 
   return (
     <div>
@@ -335,14 +331,8 @@ export default function AdminProductsPage() {
         {!isSessionLoading && loading && (
           <div style={{ padding: "40px", textAlign: "center", color: "#8B9AB5" }}>Chargement...</div>
         )}
-        {!isSessionLoading && error && (
-          <div style={{ padding: "24px", textAlign: "center", color: "#E53E3E" }}>
-            {error}{" "}
-            <button className="btn btn-secondary" onClick={fetchProducts}>Réessayer</button>
-          </div>
-        )}
 
-        {!isSessionLoading && !loading && !error && (
+        {!isSessionLoading && !loading && (
           <div className="table-wrap">
             <table>
               <thead>

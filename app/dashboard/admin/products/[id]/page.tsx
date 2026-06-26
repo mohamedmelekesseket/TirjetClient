@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, use, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useApiToken } from '@/lib/useApiToken';
 import { Loader2, ShieldCheck, ShieldOff, Home, Tag, ToggleLeft, ToggleRight, AlertTriangle } from 'lucide-react';
 import UploadImage from '@/app/dashboard/components/UploadImage';
 
@@ -35,8 +35,7 @@ interface AdminToggles {
 export default function AdminEditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const { data: session } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken } = useApiToken();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<FormState>({

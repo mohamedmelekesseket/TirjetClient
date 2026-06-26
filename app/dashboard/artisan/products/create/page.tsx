@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useApiToken } from '@/lib/useApiToken';
 import { Loader2, X, ImagePlus } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -42,8 +42,7 @@ function validate(form: FormState): FieldError {
 
 export default function CreateProductPage() {
   const router = useRouter();
-  const { data: session } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken } = useApiToken();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<FormState>({

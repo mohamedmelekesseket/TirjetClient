@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Check, Heart, HeartOff, Search, SlidersHorizontal, X, Loader2, Package } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useApiToken } from "@/lib/useApiToken";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -41,8 +41,7 @@ interface Product {
 type FilterGroup = "cat" | "region" | "mat";
 
 export default function Boutique() {
-  const { data: session } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken, session } = useApiToken();
   const router = useRouter();
 
   const [products, setProducts]   = useState<Product[]>([]);

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { useSession } from "next-auth/react";
+import { useApiToken } from "@/lib/useApiToken";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -44,11 +44,9 @@ const CartContext = createContext<CartContextType | null>(null); // ← was miss
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const { data: session, status } = useSession();
+  const { apiToken, session, isLoading } = useApiToken();
   const [cart, setCart] = useState<Cart>({ items: [], total: 0 });
   const [loading, setLoading] = useState(false);
-
-  const apiToken = (session as any)?.apiToken as string | undefined;
 
   const fetchCart = useCallback(async () => {
     if (!apiToken) {
@@ -71,9 +69,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [apiToken]);
 
   useEffect(() => {
-    if (status === "loading") return;
+    if (isLoading) return;
     fetchCart();
-  }, [fetchCart, status]);
+  }, [fetchCart, isLoading]);
 
   const addToCart = async (productId: string, quantity = 1) => {
     if (!apiToken) throw new Error("Not authenticated");

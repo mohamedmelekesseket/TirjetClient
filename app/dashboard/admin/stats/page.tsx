@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useApiToken } from '@/lib/useApiToken';
 import { Loader2, TrendingUp, ShoppingCart, Users, Eye } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -67,8 +67,7 @@ const CAT_COLORS  = ['#0234AB', '#1a4fd4', '#0B9E5E', '#F5A623', '#8B5CF6', '#EF
 
 // ── Component ──────────────────────────────────────────────────────────────────
 export default function AdminStatsPage() {
-  const { data: session } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken } = useApiToken();
 
   const [loading, setLoading]         = useState(true);
   const [kpi, setKpi]                 = useState<KPI | null>(null);

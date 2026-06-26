@@ -7,7 +7,9 @@ import { motion, useScroll, useTransform, Variants } from "framer-motion";
 import Image1 from "../images/hero-artisan.jpg";
 import Image2 from "../images/Untitled.png";
 import story from "../images/story.jpg";
-import { ShoppingBag, ChevronLeft, ChevronRight } from "lucide-react";
+import { ShoppingBag, ChevronLeft, ChevronRight,Sparkles  } from "lucide-react";
+import tifinaghImg from "../images/langue.jpg"
+import { useApiToken } from "@/lib/useApiToken";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -703,6 +705,93 @@ function Values() {
     </section>
   );
 }
+// ─── Values ───────────────────────────────────────────────────────────────────
+
+function LangueAmazigh() {
+  const router = useRouter();
+
+  return (
+    <section className="pg-langueAmazigh">
+      <div className="pg-langueAmazigh__inner">
+        <motion.div
+          className="pg-langueAmazigh__left"
+          initial={{ opacity: 0, x: -40 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div className="pg-langueAmazigh__head">
+            <button>
+              <Sparkles size={14} /> Nouvelle formation · ⵜⵉⵔⵊⵜ
+            </button>
+          </div>
+
+          <h2 className="pg-langueAmazigh__title">
+            Apprenez la<br />
+            <span className="pg-langueAmazigh__highlight">langue Amazigh</span><br />
+            avec passion.
+          </h2>
+
+          <p className="pg-langueAmazigh__desc">
+            Envie de découvrir ou de perfectionner votre langue Amazigh ?
+            Rejoignez une formation immersive autour de la conversation, de
+            l&apos;alphabet Tifinagh, de la grammaire et de la culture millénaire Amazigh.
+          </p>
+
+          <div className="pg-langueAmazigh__ctas">
+            <motion.button
+              className="pg-langueAmazigh__btn-primary"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => router.push("/formation-Formulaire")}
+            >
+              Remplir le formulaire →
+            </motion.button>
+            <motion.button
+              className="pg-langueAmazigh__btn-secondary"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => router.push("/apropos")}
+            >
+              En savoir plus
+            </motion.button>
+          </div>
+
+          {/* <div className="pg-langueAmazigh__stats">
+            <div className="pg-langueAmazigh__stat">
+              <span className="pg-langueAmazigh__stat-n">100%</span>
+              <span className="pg-langueAmazigh__stat-l">IMMERSIF</span>
+            </div>
+            <div className="pg-langueAmazigh__stat">
+              <span className="pg-langueAmazigh__stat-n">5★</span>
+              <span className="pg-langueAmazigh__stat-l">MODULES</span>
+            </div>
+            <div className="pg-langueAmazigh__stat">
+              <span className="pg-langueAmazigh__stat-n">∞</span>
+              <span className="pg-langueAmazigh__stat-l">CULTURE</span>
+            </div>
+          </div> */}
+        </motion.div>
+
+        <motion.div
+          className="pg-langueAmazigh__right"
+          initial={{ opacity: 0, x: 40 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.8, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div className="pg-langueAmazigh__imgwrap">
+            <img src={tifinaghImg.src} alt="Tifinagh authentique" />
+            <div className="pg-langueAmazigh__badge">
+              <span className="pg-langueAmazigh__badge-tag">ⵜⵉⵎⵍⵉ.ⵟ</span>
+              <span className="pg-langueAmazigh__badge-label">Tifinagh authentique</span>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
 
 // ─── Story ────────────────────────────────────────────────────────────────────
 function Story() {
@@ -820,18 +909,19 @@ export default function Page() {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
+  const { apiToken, session, status, update } = useApiToken();
 
   useEffect(() => {
     fetch(`${API}/api/categories`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.data) {
-          setCategories(data.data.filter((c: Category) => c.isActive).slice(0, 7));
-        }
-      })
-      .catch(() => {})
-      .finally(() => setCategoriesLoading(false));
-  }, []);
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data?.data) {
+            setCategories(data.data.filter((c: Category) => c.isActive).slice(0, 7));
+          }
+        })
+        .catch(() => {})
+        .finally(() => setCategoriesLoading(false));
+    }, []);
 
   // ✅ Single shared fetch — used by PremiumArtisans, PremiumProducts, and Products
 useEffect(() => {
@@ -856,6 +946,7 @@ useEffect(() => {
       <CategoriesSection categories={categories} loading={categoriesLoading} />
       <PremiumArtisans allProducts={allProducts} />
       <PremiumProducts allProducts={allProducts} categories={categories} />
+      <LangueAmazigh />
       <Values />
       <Story />
       <CTA />

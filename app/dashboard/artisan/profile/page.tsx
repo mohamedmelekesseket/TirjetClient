@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useSession } from 'next-auth/react';
+import { useApiToken } from '@/lib/useApiToken';
+import { showSuccessToast, showErrorToast } from '@/lib/toast';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -30,9 +31,8 @@ interface FormState {
 }
 
 export default function ProfilePage() {
-  const { data: session } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
-  const user = (session as any)?.user;
+  const { apiToken, session } = useApiToken();
+  const user = session?.user;
 
   const [form, setForm] = useState<FormState>({
     phone: '',
@@ -45,8 +45,6 @@ export default function ProfilePage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isApproved, setIsApproved] = useState(false);
 
   // Profile photo state
@@ -65,7 +63,6 @@ export default function ProfilePage() {
     if (!apiToken) return;
     const load = async () => {
       setLoading(true);
-      setError(null);
       try {
         const res = await fetch(`${API}/api/artisans/me`, { headers });
         if (res.status === 404) { setLoading(false); return; }
@@ -82,7 +79,7 @@ export default function ProfilePage() {
           website:     data.website     ?? '',
         });
       } catch (err: any) {
-        setError(err.message);
+        showErrorToast(err.message);
       } finally {
         setLoading(false);
       }
@@ -121,8 +118,6 @@ export default function ProfilePage() {
 
 const handleSave = async () => {
   setSaving(true);
-  setError(null);
-  setSuccessMsg(null);
   try {
     const body = new FormData();
     body.append('phone',       form.phone);
@@ -156,14 +151,13 @@ const handleSave = async () => {
 
     // Warn if photo didn't actually change despite uploading
     if (photoFile && saved.profilePhoto === profilePhoto) {
-      setError('⚠ La photo n\'a pas pu être mise à jour. Réessayez.');
+      showErrorToast('⚠ La photo n\'a pas pu être mise à jour. Réessayez.');
       return;
     }
 
-    setSuccessMsg('Profil mis à jour avec succès !');
-    setTimeout(() => setSuccessMsg(null), 3500);
+    showSuccessToast('Profil mis à jour avec succès !');
   } catch (err: any) {
-    setError(err.message);
+    showErrorToast(err.message);
   } finally {
     setSaving(false);
   }
@@ -550,14 +544,6 @@ const handleSave = async () => {
             <p className="pp-subtitle">Gérez vos informations personnelles et votre storytelling</p>
           </div>
         </div>
-
-        {/* Alerts */}
-        {error && (
-          <div className="pp-alert pp-alert-error">{error}</div>
-        )}
-        {successMsg && (
-          <div className="pp-alert pp-alert-success">✓ {successMsg}</div>
-        )}
 
         {loading ? (
           <div className="pp-loading">Chargement du profil…</div>

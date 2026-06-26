@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useApiToken } from '@/lib/useApiToken';
 import { Loader2, X, ImagePlus, Search, UserCheck } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -54,8 +54,7 @@ function validate(form: FormState, vendorId: string): FieldError {
 
 export default function AdminCreateProductPage() {
   const router   = useRouter();
-  const { data: session } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken } = useApiToken();
 
   // ── Categories (full tree) ───────────────────────────────────────────────
   const [categories, setCategories] = useState<Category[]>([]);

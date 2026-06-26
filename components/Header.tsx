@@ -8,7 +8,8 @@ import {
   Menu, User, LogOut, X, ShoppingBag,
   ChevronDown, ShieldUser, ChevronRight, ArrowUpRight,
 } from "lucide-react";
-import { signOut, useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
+import { useApiToken } from "@/lib/useApiToken";
 import logo from "../images/logo2 (2).png";
 
 const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/categories?mainCategory=artisanat`;
@@ -84,10 +85,10 @@ const NavItem = ({ link, isActive }: { link: NavLink; isActive: boolean }) => {
 const Header = () => {
   const pathname = usePathname();
   const router   = useRouter();
-  const { data: session, status } = useSession();
+  const { apiToken, session } = useApiToken();
   const apiUser     = (session as any)?.apiUser as { name?: string; role?: string } | undefined;
   const sessionUser = session?.user;
-  const isLoggedIn  = status === "authenticated";
+  const isLoggedIn  = !!session;
   const displayName = apiUser?.name || sessionUser?.name || sessionUser?.email || "Compte";
 
   const [showHeader,   setShowHeader]   = useState(true);

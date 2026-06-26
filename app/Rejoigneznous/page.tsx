@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { CheckCircle2, LogIn } from "lucide-react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { useApiToken } from "@/lib/useApiToken";
+import { showSuccessToast, showErrorToast } from "@/lib/toast";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -37,8 +38,7 @@ function useInView(threshold = 0.1) {
 }
 
 export default function RejoindrePage() {
-  const { data: session, status } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken, session, status } = useApiToken();
 
   // Email comes from session — never entered manually
   const sessionEmail = session?.user?.email ?? "";
@@ -46,7 +46,6 @@ export default function RejoindrePage() {
 
   const [submitted, setSubmitted]   = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [apiError, setApiError]     = useState<string | null>(null);
   const [focused, setFocused]       = useState<string | null>(null);
 
   const [values, setValues] = useState({
@@ -65,7 +64,6 @@ export default function RejoindrePage() {
 
   const handleSubmit = async (e: React.MouseEvent) => {
     e.preventDefault();
-    setApiError(null);
     setSubmitting(true);
 
     try {
@@ -89,8 +87,9 @@ export default function RejoindrePage() {
       if (!res.ok) throw new Error(data.message || "Erreur lors de l'envoi");
 
       setSubmitted(true);
+      showSuccessToast("Candidature envoyée avec succès !");
     } catch (err: any) {
-      setApiError(err.message);
+      showErrorToast(err.message || "Erreur lors de l'envoi");
     } finally {
       setSubmitting(false);
     }
@@ -207,15 +206,6 @@ export default function RejoindrePage() {
                   </div> */}
                 </div>
 
-                {apiError && (
-                  <div style={{
-                    background: "#FFF5F5", border: "1px solid #FEB2B2",
-                    color: "#C53030", borderRadius: "8px",
-                    padding: "12px 16px", marginBottom: "16px", fontSize: "0.875rem",
-                  }}>
-                    {apiError}
-                  </div>
-                )}
 
                 <div className="rj-fields">
                   {/* Row 1 — Nom (full row, email removed) */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useApiToken } from "@/lib/useApiToken";
 import { showErrorToast, showSuccessToast } from "@/lib/toast";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { Ban, Eye, CircleAlert, Trophy } from "lucide-react";
@@ -356,8 +356,7 @@ function EditArtisanModal({
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 export default function AdminArtisansPage() {
-  const { data: session, status: sessionStatus } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken, isLoading: tokenLoading } = useApiToken();
 
   const [artisans, setArtisans] = useState<Artisan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -511,8 +510,7 @@ const fetchArtisans = async () => {
     suspendu:  artisans.filter((a) => statusLabel(a) === "Suspendu").length,
   };
 
-  const isSessionLoading =
-    sessionStatus === "loading" || (!apiToken && sessionStatus === "authenticated");
+  const isSessionLoading = tokenLoading || (!apiToken);
 
   return (
     <div>

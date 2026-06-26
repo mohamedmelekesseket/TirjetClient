@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
+import { useApiToken } from '@/lib/useApiToken';
 import {
   Loader2, Users, Package, ShoppingCart, TrendingUp,
   Clock, CheckCircle, XCircle, AlertTriangle, BarChart2,
@@ -66,8 +66,7 @@ const orderStatusLabel: Record<string, string> = {
 };
 
 export default function AdminDashboard() {
-  const { data: session } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken } = useApiToken();
 
   const [stats, setStats] = useState<Stats>({
     totalArtisans: 0,

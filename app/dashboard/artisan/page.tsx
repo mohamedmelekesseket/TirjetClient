@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
+import { useApiToken } from '@/lib/useApiToken';
 import {
   Loader2, Package, ShoppingCart, TrendingUp,
   Eye, Plus, AlertTriangle, BarChart2,
@@ -55,9 +55,8 @@ interface Stats {
 }
 
 export default function ArtisanDashboard() {
-  const { data: session } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
-  const userName = (session as any)?.user?.name ?? 'Artisan';
+  const { apiToken, session } = useApiToken();
+  const userName = session?.user?.name ?? 'Artisan';
 
   const [stats, setStats] = useState<Stats>({
     totalProducts: 0,

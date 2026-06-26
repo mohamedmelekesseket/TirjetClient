@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { useSession } from "next-auth/react";
+import { useApiToken } from "@/lib/useApiToken";
 import { Eye, X, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { showErrorToast, showSuccessToast } from "@/lib/toast";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -511,17 +512,14 @@ function OrderDetailModal({
 // Main page
 // ─────────────────────────────────────────────────────────────────────────────
 export default function OrdersPage() {
-  const { data: session, status: sessionStatus } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken, isLoading: tokenLoading } = useApiToken();
 
   const [orders, setOrders]           = useState<Order[]>([]);
   const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState<string | null>(null);
   const [activeTab, setActiveTab]     = useState<Tab>("Toutes");
   const [search, setSearch]           = useState("");
   const [updatingId, setUpdatingId]   = useState<string | null>(null);
 
-  const [errorMsg,      setErrorMsg]      = useState<string | null>(null);
   const [cancelTarget,  setCancelTarget]  = useState<Order | null>(null);
   const [statusTarget,  setStatusTarget]  = useState<Order | null>(null);
   const [detailTarget,  setDetailTarget]  = useState<Order | null>(null);
@@ -534,14 +532,13 @@ export default function OrdersPage() {
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null);
       const res = await fetch(`${API}/api/orders/artisan`, { headers: getHeaders() });
       if (res.status === 401) throw new Error("Non autorisé — session expirée ?");
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
       const data = await res.json();
       setOrders(Array.isArray(data) ? data : data.orders ?? data.data ?? []);
     } catch (err: any) {
-      setError(err.message);
+      showErrorToast(err.message);
     } finally {
       setLoading(false);
     }
@@ -563,8 +560,9 @@ export default function OrdersPage() {
       const updated: Order = await res.json();
       setOrders((prev) => prev.map((o) => (o._id === target._id ? updated : o)));
       setStatusTarget(null);
+      showSuccessToast("Statut mis à jour");
     } catch (err: any) {
-      setErrorMsg(err.message);
+      showErrorToast(err.message);
     } finally {
       setUpdatingId(null);
     }
@@ -583,8 +581,9 @@ export default function OrdersPage() {
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
       const updated: Order = await res.json();
       setOrders((prev) => prev.map((o) => (o._id === target._id ? updated : o)));
+      showSuccessToast("Commande annulée");
     } catch (err: any) {
-      setErrorMsg(err.message);
+      showErrorToast(err.message);
     } finally {
       setUpdatingId(null);
     }
@@ -592,13 +591,12 @@ export default function OrdersPage() {
 
   // Lock body scroll when any modal is open
   useEffect(() => {
-    const anyOpen = !!(errorMsg || cancelTarget || statusTarget || detailTarget);
+    const anyOpen = !!(cancelTarget || statusTarget || detailTarget);
     document.body.style.overflow = anyOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [errorMsg, cancelTarget, statusTarget, detailTarget]);
+  }, [cancelTarget, statusTarget, detailTarget]);
 
-  const isSessionLoading =
-    sessionStatus === "loading" || (!apiToken && sessionStatus === "authenticated");
+  const isSessionLoading = tokenLoading || (!apiToken);
 
   const counts = {
     Toutes:       orders.length,
@@ -634,8 +632,6 @@ export default function OrdersPage() {
       `}</style>
 
       {/* Modals */}
-      {errorMsg && <ErrorModal message={errorMsg} onClose={() => setErrorMsg(null)} />}
-
       {cancelTarget && (
         <CancelModal
           order={cancelTarget}
@@ -723,18 +719,8 @@ export default function OrdersPage() {
         </div>
       )}
 
-      {/* Error */}
-      {!isSessionLoading && !loading && error && (
-        <div className="card" style={{ padding: "2rem", textAlign: "center", color: "#e53e3e" }}>
-          <p>{error}</p>
-          <button className="btn btn-primary" style={{ marginTop: "1rem" }} onClick={fetchOrders}>
-            Réessayer
-          </button>
-        </div>
-      )}
-
       {/* Empty */}
-      {!isSessionLoading && !loading && !error && visibleOrders.length === 0 && (
+      {!isSessionLoading && !loading && visibleOrders.length === 0 && (
         <div className="card" style={{ padding: "4rem", textAlign: "center" }}>
           <p style={{ color: "#8B9AB5" }}>
             {search ? `Aucun résultat pour "${search}"` : "Aucune commande trouvée."}
@@ -743,7 +729,7 @@ export default function OrdersPage() {
       )}
 
       {/* Table */}
-      {!isSessionLoading && !loading && !error && visibleOrders.length > 0 && (
+      {!isSessionLoading && !loading && visibleOrders.length > 0 && (
         <div className="card anim-fade-up anim-d2">
           <div className="card-header">
             <h2 className="card-title">Liste des commandes</h2>

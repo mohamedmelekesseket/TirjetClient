@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useApiToken } from '@/lib/useApiToken';
 import Link from 'next/link';
 import {
   Plus, Eye, Check, X, Star, Search, Loader2,
@@ -69,8 +69,7 @@ const getHostName = (host: Culture['host']): string => {
 
 // ── Component ──────────────────────────────────────────────────────────────
 export default function AdminCultureAmazighPage() {
-  const { data: session, status: sessionStatus } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken, isLoading: tokenLoading } = useApiToken();
 
   const [cultures, setCultures]           = useState<Culture[]>([]);
   const [loading, setLoading]             = useState(true);
@@ -185,7 +184,7 @@ export default function AdminCultureAmazighPage() {
     editorsPick: cultures.filter(c => c.isEditorsPick).length,
   };
 
-  const isSessionLoading = sessionStatus === 'loading' || (!apiToken && sessionStatus === 'authenticated');
+  const isSessionLoading = tokenLoading || (!apiToken);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (

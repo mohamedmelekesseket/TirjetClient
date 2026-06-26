@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useApiToken } from '@/lib/useApiToken';
 import { Package, Search, Plus, Pencil, X, Loader2 } from 'lucide-react';
 import { showErrorToast, showSuccessToast } from '@/lib/toast';
 
@@ -33,13 +33,11 @@ const TABS = ['Tous', 'Actif', 'En attente', 'Inactif'] as const;
 type Tab = (typeof TABS)[number];
 
 export default function ProductsPage() {
-  const { data: session, status: sessionStatus } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken, isLoading: tokenLoading } = useApiToken();
 
   const [products, setProducts]         = useState<Product[]>([]);
   const [categoryMap, setCategoryMap]   = useState<Record<string, string>>({});
   const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState<string | null>(null);
   const [search, setSearch]             = useState('');
   const [activeTab, setActiveTab]       = useState<Tab>('Tous');
   const [deletingId, setDeletingId]     = useState<string | null>(null);
@@ -65,14 +63,13 @@ export default function ProductsPage() {
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null);
       const res = await fetch(`${API}/api/products/mine`, { headers: getHeaders() });
       if (res.status === 401) throw new Error('Non autorisé — session expirée ?');
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : data.products ?? data.data ?? []);
     } catch (err: any) {
-      setError(err.message);
+      showErrorToast(err.message);
     } finally {
       setLoading(false);
     }
@@ -114,8 +111,7 @@ export default function ProductsPage() {
     Inactif:    products.filter(p => statusLabel(p) === 'Inactif').length,
   };
 
-  const isSessionLoading =
-    sessionStatus === 'loading' || (!apiToken && sessionStatus === 'authenticated');
+  const isSessionLoading = tokenLoading || (!apiToken);
 
   return (
     <div>
@@ -253,18 +249,8 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* Error */}
-      {!isSessionLoading && !loading && error && (
-        <div className="card" style={{ padding: '2rem', textAlign: 'center', color: '#e53e3e' }}>
-          <p>{error}</p>
-          <button className="btn btn-primary" style={{ marginTop: '1rem' }} onClick={fetchProducts}>
-            Réessayer
-          </button>
-        </div>
-      )}
-
       {/* Empty */}
-      {!isSessionLoading && !loading && !error && filtered.length === 0 && (
+      {!isSessionLoading && !loading && filtered.length === 0 && (
         <div className="card" style={{ padding: '4rem', textAlign: 'center' }}>
           <Package size={48} style={{ margin: '0 auto 1rem', opacity: 0.2 }} />
           <p style={{ color: '#8B9AB5', marginBottom: 16 }}>
@@ -280,7 +266,7 @@ export default function ProductsPage() {
       )}
 
       {/* Products grid */}
-      {!isSessionLoading && !loading && !error && filtered.length > 0 && (
+      {!isSessionLoading && !loading && filtered.length > 0 && (
         <div className="products-grid">
           {filtered.map((p, i) => {
             const label      = statusLabel(p);

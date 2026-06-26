@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useApiToken } from '@/lib/useApiToken';
 import Link from 'next/link';
 import {
   Plus, Eye, Check, X, Home, Star, Building2, Leaf,
@@ -82,8 +82,7 @@ const getHostName = (host: Maison['host']): string => {
 
 // ── Component ──────────────────────────────────────────────────────────────
 export default function AdminMaisonsPage() {
-  const { data: session, status: sessionStatus } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken, isLoading: tokenLoading } = useApiToken();
 
   // ── View toggle ───────────────────────────────────────────────────────────
   const [mainView, setMainView] = useState<MainView>('maisons');
@@ -259,7 +258,7 @@ export default function AdminMaisonsPage() {
     completed: reservations.filter(r => r.status === 'completed').length,
   };
 
-  const isSessionLoading = sessionStatus === 'loading' || (!apiToken && sessionStatus === 'authenticated');
+  const isSessionLoading = tokenLoading || (!apiToken);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (

@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useApiToken } from '@/lib/useApiToken';
 import { Loader2 } from 'lucide-react';
 import UploadImage from '@/app/dashboard/components/UploadImage';
 
@@ -27,8 +27,7 @@ interface FormState {
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const { data: session } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken } = useApiToken();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<FormState>({

@@ -1,12 +1,13 @@
 "use client";
 
 import { useCart } from "../context/CartContext";
-import { useSession } from "next-auth/react";
+import { useApiToken } from "@/lib/useApiToken";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, Loader2, Package, ChevronRight, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { showSuccessToast, showErrorToast } from "@/lib/toast";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -21,13 +22,12 @@ interface ShippingForm {
 
 export default function CommandePage() {
   const { cart, loading } = useCart();
-  const { data: session } = useSession();
+  const { apiToken, session } = useApiToken();
   const router = useRouter();
   const SHIPPING = 7;
   const [step, setStep] = useState<"form" | "confirm" | "success">("form");
   const [paymentMethod, setPaymentMethod] = useState<"cash_on_delivery" | "card">("cash_on_delivery");
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
 
   const [form, setForm] = useState<ShippingForm>({
@@ -39,8 +39,6 @@ export default function CommandePage() {
     notes: "",
   });
 
-  const token = () => (session as any)?.apiToken as string | undefined;
-
   // Filter out any cart items whose product was deleted / not populated
   const validItems = cart.items.filter((item) => item.product != null);
   const subtotal = validItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -51,25 +49,22 @@ export default function CommandePage() {
 
   function handleNext() {
     if (!form.fullName || !form.phone || !form.address || !form.city) {
-      setError("Veuillez remplir tous les champs obligatoires.");
+      showErrorToast("Veuillez remplir tous les champs obligatoires.");
       return;
     }
-    setError(null);
     setStep("confirm");
   }
 
 async function handleConfirm() {
   setSubmitting(true);
-  setError(null);
   try {
-    const t = token();
-    console.log("TOKEN:", t); // ← is this a string or undefined?
+    console.log("TOKEN:", apiToken); // ← is this a string or undefined?
 
-    if (!t) throw new Error("Vous devez être connecté.");
+    if (!apiToken) throw new Error("Vous devez être connecté.");
 
     const res = await fetch(`${API}/api/orders/checkout`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiToken}` },
       body: JSON.stringify({ shippingAddress: form, paymentMethod }),
     });
 
@@ -79,8 +74,9 @@ async function handleConfirm() {
     if (!res.ok) throw new Error(body.message);
     setOrderId(body._id);
     setStep("success");
+    showSuccessToast("Commande confirmée avec succès !");
   } catch (err: any) {
-    setError(err.message);
+    showErrorToast(err.message || "Erreur lors de la commande");
   } finally {
     setSubmitting(false);
   }
@@ -250,8 +246,6 @@ async function handleConfirm() {
                   ))}
                 </div>
 
-                {error && <p className="cmd-error">{error}</p>}
-
                 <motion.button className="cart-checkout-btn"
                   onClick={handleNext} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
                   Continuer → Récapitulatif
@@ -305,8 +299,6 @@ async function handleConfirm() {
                     </div>
                   ))}
                 </div>
-
-                {error && <p className="cmd-error">{error}</p>}
 
                 <div style={{ display: "flex", gap: 10, marginTop: "1.5rem" }}>
                   <motion.button className="cmd-outline-btn" style={{ flex: 1 }}

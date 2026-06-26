@@ -1,7 +1,7 @@
 "use client";
 
 import { useCart } from "../context/CartContext";
-import { useSession } from "next-auth/react";
+import { useApiToken } from "@/lib/useApiToken";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Trash2, Plus, Minus, ShoppingBag, ArrowRight, Loader2,
@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
@@ -187,17 +188,15 @@ function OrderCard({ order, idx }: { order: Order; idx: number }) {
 function OrdersTab({ token }: { token: string }) {
   const [orders, setOrders]   = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState("");
   const [filter, setFilter]   = useState("");
 
   const load = useCallback(async () => {
     if (!token) {
-      setError("Session expirée. Veuillez vous reconnecter.");
+      showErrorToast("Session expirée. Veuillez vous reconnecter.");
       setLoading(false);
       return;
     }
     setLoading(true);
-    setError("");
     try {
       const query = filter ? `?status=${filter}` : "";
       const res   = await fetch(
@@ -208,7 +207,7 @@ function OrdersTab({ token }: { token: string }) {
       const data = await res.json();
       setOrders(data.orders ?? []);
     } catch (err: any) {
-      setError("Impossible de charger vos commandes.");
+      showErrorToast("Impossible de charger vos commandes.");
       console.error("Failed to load orders:", err);
     } finally {
       setLoading(false);
@@ -245,15 +244,6 @@ function OrdersTab({ token }: { token: string }) {
           <Loader2 size={28} className="spin" />
         </div>
 
-      ) : error ? (
-        <div className="orders-error">
-          <XCircle size={36} strokeWidth={1.2} />
-          <p>{error}</p>
-          <button className="orders-retry-btn" onClick={load}>
-            <RotateCcw size={13} /> Réessayer
-          </button>
-        </div>
-
       ) : orders.length === 0 ? (
         <motion.div className="orders-empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <ClipboardList size={48} strokeWidth={1.1} />
@@ -279,16 +269,14 @@ function OrdersTab({ token }: { token: string }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PanierPage() {
   const { cart, loading, updateItem, removeItem } = useCart();
-  const { data: session }                         = useSession();
+  const { apiToken, session } = useApiToken();
   const router                                    = useRouter();
   const [removing, setRemoving]                   = useState<string | null>(null);
   const [updating, setUpdating]                   = useState<string | null>(null);
   const [tab, setTab]                             = useState<"cart" | "orders">("cart");
   const SHIPPING = 7;
 
-  // ⚠️ Requires NextAuth session callback to expose accessToken:
-  // callbacks: { session({ session, token }) { session.accessToken = token.accessToken; return session; } }
-  const token = (session as any)?.apiToken ?? "";
+  const token = apiToken ?? "";
 
   async function handleRemove(productId: string) {
     setRemoving(productId);

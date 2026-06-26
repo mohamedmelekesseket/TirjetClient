@@ -6,6 +6,7 @@ import { Badge, Leaf, Languages, Zap } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import logo from '../icon.png'
+import { showErrorToast } from "@/lib/toast";
 const PILL_TAGS = [
   { Icon: Zap, text: "Droits" },
   { Icon: Leaf, text: "Culture" },
@@ -57,24 +58,23 @@ const floatingVariants: Variants = {
 export default function LoginPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isFacebookLoading, setIsFacebookLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const err = new URLSearchParams(window.location.search).get("error");
     if (!err) return;
     if (err === "OAuthCallback") {
-      setErrorMessage(
+      showErrorToast(
         "Erreur OAuth. Vérifiez que l’URL Vercel est bien ajoutée dans Google Console (Authorized redirect URIs)."
       );
       return;
     }
     if (err === "OAuthAccountNotLinked") {
-      setErrorMessage(
+      showErrorToast(
         "Ce compte est déjà lié à un autre mode de connexion. Utilisez la méthode utilisée lors de la première connexion."
       );
       return;
     }
-    setErrorMessage(`Connexion impossible (${err}).`);
+    showErrorToast(`Connexion impossible (${err}).`);
   }, []);
 
   return (
@@ -210,22 +210,6 @@ export default function LoginPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35, duration: 0.5 }}
           >
-            {errorMessage && (
-              <div
-                style={{
-                  padding: "10px 12px",
-                  borderRadius: 12,
-                  background: "rgba(239,68,68,0.10)",
-                  border: "1px solid rgba(239,68,68,0.25)",
-                  color: "#7f1d1d",
-                  fontSize: 13,
-                  marginBottom: 10,
-                }}
-              >
-                {errorMessage}
-              </div>
-            )}
-
             <motion.button
               className="lp-oauth-btn lp-oauth-btn--google"
               onClick={async () => {

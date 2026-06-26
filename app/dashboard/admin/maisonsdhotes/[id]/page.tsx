@@ -3,7 +3,7 @@
 import { use, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useApiToken } from '@/lib/useApiToken';
 import {
   Loader2, ShieldCheck, ShieldOff, Sparkles, Star,
   MapPin, Phone, Globe, Moon, Leaf, Building2,
@@ -46,8 +46,7 @@ const PRESET_AMENITIES = [
 export default function AdminEditMaisonPage({ params }: { params: Promise<{ id: string }> }) {
   const { id }  = use(params);
   const router  = useRouter();
-  const { data: session } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken } = useApiToken();
 
   const [form, setForm] = useState<FormState>({
     name: '', description: '', type: '',

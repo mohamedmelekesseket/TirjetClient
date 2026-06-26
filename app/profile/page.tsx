@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useApiToken } from "@/lib/useApiToken";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -211,9 +211,7 @@ function FavCard({
 
 export default function UserProfile() {
   const router = useRouter();
-  const { data: session, status, update } = useSession();
-
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken, session, status, update } = useApiToken();
   const sessionUser = session?.user
     ? {
         name: session.user.name ?? undefined,
@@ -245,36 +243,7 @@ export default function UserProfile() {
     if (status === "unauthenticated") router.replace("/connexion");
   }, [status, router]);
 
-  // ── Step 1: sync-token ────────────────────────────────────────────────────
-  useEffect(() => {
-    if (status !== "authenticated") return;
-    if (apiToken) return;
-
-    let cancelled = false;
-    (async () => {
-      try {
-        setLoadingUser(true);
-        setLoadError(null);
-        const r = await fetch("/api/auth/sync-token", { method: "POST" });
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.error || "sync-token failed");
-        if (!cancelled)
-          await update({ apiToken: data.token, apiUser: data.user } as any);
-      } catch (e: any) {
-        if (!cancelled)
-          setLoadError(
-            e.message?.includes("INTERNAL_API_KEY")
-              ? "INTERNAL_API_KEY manquant — vérifiez les variables Vercel et Railway."
-              : "Impossible de lier votre session au serveur."
-          );
-        if (!cancelled) setLoadingUser(false);
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [status, apiToken]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Step 2: fetch /api/auth/me ────────────────────────────────────────────
+  // ── Step 1: fetch /api/auth/me ────────────────────────────────────────────
   useEffect(() => {
     if (!apiToken) return;
     let cancelled = false;

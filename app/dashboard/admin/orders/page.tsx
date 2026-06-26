@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { useSession } from "next-auth/react";
+import { useApiToken } from "@/lib/useApiToken";
 import { Eye, X, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -511,8 +511,7 @@ function OrderDetailModal({
 // Main page
 // ─────────────────────────────────────────────────────────────────────────────
 export default function OrdersPage() {
-  const { data: session, status: sessionStatus } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken, isLoading: tokenLoading } = useApiToken();
 
   const [orders, setOrders]           = useState<Order[]>([]);
   const [loading, setLoading]         = useState(true);
@@ -597,8 +596,7 @@ export default function OrdersPage() {
     return () => { document.body.style.overflow = ""; };
   }, [errorMsg, cancelTarget, statusTarget, detailTarget]);
 
-  const isSessionLoading =
-    sessionStatus === "loading" || (!apiToken && sessionStatus === "authenticated");
+  const isSessionLoading = tokenLoading || (!apiToken);
 
   const counts = {
     Toutes:       orders.length,

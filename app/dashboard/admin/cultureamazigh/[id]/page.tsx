@@ -3,7 +3,7 @@
 import { use, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useApiToken } from '@/lib/useApiToken';
 import {
   Loader2, ShieldCheck, ShieldOff, Sparkles, Star,
   X, BookOpen, Feather, Music, Sprout, Home, Layers, FileText,
@@ -62,8 +62,7 @@ const PRESET_TAGS = [
 export default function AdminEditCulturePage({ params }: { params: Promise<{ id: string }> }) {
   const { id }  = use(params);
   const router  = useRouter();
-  const { data: session } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken } = useApiToken();
 
   const [form, setForm] = useState<FormState>({ Auteur: '', title: '', description: '', type: '' });
   const [toggles, setToggles] = useState<AdminToggles>({

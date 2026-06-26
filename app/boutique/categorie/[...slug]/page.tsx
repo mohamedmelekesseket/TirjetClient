@@ -9,7 +9,7 @@ import {
   Heart, Package, Loader2, ArrowLeft,
   Grid3X3, LayoutList, ChevronDown, Check,
 } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { useApiToken } from "@/lib/useApiToken";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -36,8 +36,7 @@ const SORT_OPTIONS = [
 
 export default function CategoryPage() {
   const params = useParams();
-  const { data: session } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken, session } = useApiToken();
 
   // ── Extract all slug segments from the URL ────────────────────────────────
   const slugs = Array.isArray(params?.slug)

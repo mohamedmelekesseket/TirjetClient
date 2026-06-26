@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useApiToken } from '@/lib/useApiToken';
 import {
   Loader2, Search, UserCheck, X, ImagePlus, MapPin,
   Phone, Globe, Moon, Leaf, Building2,
@@ -61,8 +61,7 @@ function validate(form: FormState, mode: 'admin' | 'vendor', vendorId: string): 
 // ── Component ──────────────────────────────────────────────────────────────
 export default function AdminCreateMaisonPage() {
   const router    = useRouter();
-  const { data: session } = useSession();
-  const apiToken  = (session as any)?.apiToken as string | undefined;
+  const { apiToken } = useApiToken();
 
   // ── Form ──────────────────────────────────────────────────────────────────
   const [form, setForm] = useState<FormState>({

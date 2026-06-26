@@ -1,0 +1,468 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ArrowLeft,
+  ArrowRight,
+  FileText,
+  User,
+  Mic,
+  Target,
+  Check,
+} from "lucide-react";
+import { showSuccessToast, showErrorToast } from "@/lib/toast";
+
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+interface FormData {
+  // Step 1
+  nomPrenom: string;
+  genre: string;
+  trancheAge: string;
+  email: string;
+  telephone: string;
+  region: string;
+  niveauEtudes: string;
+  // Step 2
+  niveauOral: string;
+  niveauEcrit: string;
+  niveauTifinagh: string;
+  // Step 3
+  attentes: string[];
+}
+
+const initialData: FormData = {
+  nomPrenom: "",
+  genre: "",
+  trancheAge: "",
+  email: "",
+  telephone: "",
+  region: "",
+  niveauEtudes: "",
+  niveauOral: "",
+  niveauEcrit: "",
+  niveauTifinagh: "",
+  attentes: [],
+};
+
+const steps = [
+  { key: "info", label: "Informations", icon: User },
+  { key: "comp", label: "Compétences", icon: Mic },
+  { key: "att", label: "Attentes", icon: Target },
+];
+
+const attentesOptions = [
+  "Apprendre à parler au quotidien (Conversation)",
+  "Apprendre à lire et à écrire (Alphabet Tifinagh)",
+  "Approfondir mon vocabulaire et ma grammaire",
+  "Découvrir la culture et l'histoire Amazigh",
+  "Valoriser mon parcours professionnel",
+];
+
+// ─── Reusable atoms ─────────────────────────────────────────────────────────
+function RadioCard({
+  label,
+  checked,
+  onClick,
+}: {
+  label: string;
+  checked: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`fam-radio${checked ? " fam-radio--checked" : ""}`}
+      onClick={onClick}
+    >
+      <span className="fam-radio__dot">{checked && <span className="fam-radio__dot-fill" />}</span>
+      {label}
+    </button>
+  );
+}
+
+function CheckCard({
+  label,
+  checked,
+  onClick,
+}: {
+  label: string;
+  checked: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`fam-check${checked ? " fam-check--checked" : ""}`}
+      onClick={onClick}
+    >
+      <span className="fam-check__box">{checked && <Check size={13} strokeWidth={3} />}</span>
+      {label}
+    </button>
+  );
+}
+
+function FieldLabel({ children, required = true }: { children: React.ReactNode; required?: boolean }) {
+  return (
+    <label className="fam-label">
+      {children} {required && <span className="fam-required">*</span>}
+    </label>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────
+export default function FormulaireAmazighPage() {
+  const router = useRouter();
+  const [step, setStep] = useState(2);
+  const [data, setData] = useState<FormData>(initialData);
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const set = <K extends keyof FormData>(key: K, value: FormData[K]) =>
+    setData((d) => ({ ...d, [key]: value }));
+
+  const toggleAttente = (val: string) => {
+    setData((d) => ({
+      ...d,
+      attentes: d.attentes.includes(val)
+        ? d.attentes.filter((a) => a !== val)
+        : [...d.attentes, val],
+    }));
+  };
+
+  const isStepValid = () => {
+    if (step === 0) {
+      return (
+        data.nomPrenom.trim() &&
+        data.genre &&
+        data.trancheAge &&
+        data.email.trim() &&
+        data.telephone.trim() &&
+        data.region.trim() &&
+        data.niveauEtudes
+      );
+    }
+    if (step === 1) {
+      return data.niveauOral && data.niveauEcrit && data.niveauTifinagh;
+    }
+    if (step === 2) {
+      return data.attentes.length > 0;
+    }
+    return false;
+  };
+
+  const next = () => {
+    if (!isStepValid()) {
+      showErrorToast("Merci de remplir tous les champs obligatoires.");
+      return;
+    }
+    setStep((s) => Math.min(s + 1, steps.length - 1));
+  };
+
+  const prev = () => {
+    setStep((s) => Math.max(s - 1, 0));
+  };
+
+  const handleSubmit = async () => {
+    if (!isStepValid()) {
+      showErrorToast("Merci de remplir tous les champs obligatoires.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API}/api/formation-amazigh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Erreur lors de l'envoi");
+      setDone(true);
+      showSuccessToast("Demande enregistrée avec succès !");
+    } catch (e) {
+      showErrorToast("Une erreur est survenue. Veuillez réessayer.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const progressPct = ((step + 1) / steps.length) * 100;
+
+  if (done) {
+    return (
+      <main className="fam-main">
+        <div className="fam-wrap">
+          <motion.div
+            className="fam-success"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="fam-success__icon">
+              <Check size={32} strokeWidth={2.5} />
+            </div>
+            <h2>Merci !</h2>
+            <p>Votre demande a bien été enregistrée. Notre équipe vous contactera très prochainement.</p>
+            <button className="fam-btn fam-btn--primary" onClick={() => router.push("/")}>
+              Retour à l&apos;accueil
+            </button>
+          </motion.div>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="fam-main">
+      <div className="fam-wrap">
+        <button className="fam-back" onClick={() => router.back()}>
+          <ArrowLeft size={16} /> Retour
+        </button>
+
+        <div className="fam-head">
+          <p className="fam-tag">
+            <FileText size={13} /> FORMULAIRE
+          </p>
+          <h1>Besoins en formation de langue Amazigh</h1>
+          <p className="fam-sub">Envie de découvrir ou de perfectionner votre langue Amazigh ?</p>
+        </div>
+
+        <div className="fam-steps">
+          {steps.map((s, i) => {
+            const Icon = s.icon;
+            const active = i === step;
+            const done_ = i < step;
+            return (
+              <div key={s.key} className="fam-step">
+                <div className={`fam-step__icon${active ? " fam-step__icon--active" : ""}${done_ ? " fam-step__icon--done" : ""}`}>
+                  {done_ ? <Check size={16} strokeWidth={3} /> : <Icon size={18} />}
+                </div>
+                <span className={`fam-step__label${active ? " fam-step__label--active" : ""}`}>{s.label}</span>
+                {i < steps.length - 1 && <div className="fam-step__line" />}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="fam-progress">
+          <motion.div
+            className="fam-progress__fill"
+            animate={{ width: `${progressPct}%` }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+          />
+        </div>
+
+        <div className="fam-card">
+          <AnimatePresence mode="wait">
+            {step === 0 && (
+              <motion.div
+                key="step0"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="fam-card__title">
+                  <User size={18} />
+                  <h3>Informations personnelles</h3>
+                </div>
+                <div className="fam-card__divider" />
+
+                <FieldLabel>Nom et Prénom</FieldLabel>
+                <input
+                  className="fam-input"
+                  placeholder="Votre nom complet"
+                  value={data.nomPrenom}
+                  onChange={(e) => set("nomPrenom", e.target.value)}
+                />
+
+                <FieldLabel>Genre</FieldLabel>
+                <div className="fam-grid-2">
+                  <RadioCard label="Femme" checked={data.genre === "femme"} onClick={() => set("genre", "femme")} />
+                  <RadioCard label="Homme" checked={data.genre === "homme"} onClick={() => set("genre", "homme")} />
+                </div>
+
+                <FieldLabel>Tranche d&apos;âge</FieldLabel>
+                <div className="fam-grid-2">
+                  <RadioCard
+                    label="Moins de 25 ans"
+                    checked={data.trancheAge === "moins25"}
+                    onClick={() => set("trancheAge", "moins25")}
+                  />
+                  <RadioCard
+                    label="De 26 à 40 ans"
+                    checked={data.trancheAge === "26-40"}
+                    onClick={() => set("trancheAge", "26-40")}
+                  />
+                  <RadioCard
+                    label="De 41 à 55 ans"
+                    checked={data.trancheAge === "41-55"}
+                    onClick={() => set("trancheAge", "41-55")}
+                  />
+                  <RadioCard
+                    label="Plus de 55 ans"
+                    checked={data.trancheAge === "plus55"}
+                    onClick={() => set("trancheAge", "plus55")}
+                  />
+                </div>
+
+                <div className="fam-grid-2">
+                  <div>
+                    <FieldLabel>Adresse e-mail</FieldLabel>
+                    <input
+                      className="fam-input"
+                      type="email"
+                      placeholder="vous@email.com"
+                      value={data.email}
+                      onChange={(e) => set("email", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel>Numéro de téléphone</FieldLabel>
+                    <input
+                      className="fam-input"
+                      placeholder="+216 ..."
+                      value={data.telephone}
+                      onChange={(e) => set("telephone", e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <FieldLabel>Région</FieldLabel>
+                <input
+                  className="fam-input"
+                  placeholder="Votre région"
+                  value={data.region}
+                  onChange={(e) => set("region", e.target.value)}
+                />
+
+                <FieldLabel>Niveau d&apos;études</FieldLabel>
+                <div className="fam-grid-2">
+                  <RadioCard
+                    label="Enseignement secondaire (ou moins)"
+                    checked={data.niveauEtudes === "secondaire"}
+                    onClick={() => set("niveauEtudes", "secondaire")}
+                  />
+                  <RadioCard
+                    label="Baccalauréat"
+                    checked={data.niveauEtudes === "bac"}
+                    onClick={() => set("niveauEtudes", "bac")}
+                  />
+                  <RadioCard
+                    label="Études supérieures (Université)"
+                    checked={data.niveauEtudes === "superieur"}
+                    onClick={() => set("niveauEtudes", "superieur")}
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {step === 1 && (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="fam-card__title">
+                  <Mic size={18} />
+                  <h3>Compétences actuelles</h3>
+                </div>
+                <div className="fam-card__divider" />
+
+                <FieldLabel>Niveau de langue parlée (Oral)</FieldLabel>
+                <div className="fam-grid-3">
+                  <RadioCard label="Bien" checked={data.niveauOral === "bien"} onClick={() => set("niveauOral", "bien")} />
+                  <RadioCard label="Moyen" checked={data.niveauOral === "moyen"} onClick={() => set("niveauOral", "moyen")} />
+                  <RadioCard
+                    label="Non (Je ne parle pas)"
+                    checked={data.niveauOral === "non"}
+                    onClick={() => set("niveauOral", "non")}
+                  />
+                </div>
+
+                <FieldLabel>Niveau de langue écrite</FieldLabel>
+                <div className="fam-grid-3">
+                  <RadioCard label="Bien" checked={data.niveauEcrit === "bien"} onClick={() => set("niveauEcrit", "bien")} />
+                  <RadioCard label="Moyen" checked={data.niveauEcrit === "moyen"} onClick={() => set("niveauEcrit", "moyen")} />
+                  <RadioCard
+                    label="Non (Je n'écris pas)"
+                    checked={data.niveauEcrit === "non"}
+                    onClick={() => set("niveauEcrit", "non")}
+                  />
+                </div>
+
+                <FieldLabel>Connaissance de l&apos;alphabet Tifinagh</FieldLabel>
+                <div className="fam-grid-3">
+                  <RadioCard
+                    label="Oui (Je le connais bien)"
+                    checked={data.niveauTifinagh === "oui"}
+                    onClick={() => set("niveauTifinagh", "oui")}
+                  />
+                  <RadioCard
+                    label="Moyen (Je connais quelques lettres)"
+                    checked={data.niveauTifinagh === "moyen"}
+                    onClick={() => set("niveauTifinagh", "moyen")}
+                  />
+                  <RadioCard
+                    label="Non (Je ne le connais pas du tout)"
+                    checked={data.niveauTifinagh === "non"}
+                    onClick={() => set("niveauTifinagh", "non")}
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {step === 2 && (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="fam-card__title">
+                  <Target size={18} />
+                  <h3>Vos attentes</h3>
+                </div>
+                <div className="fam-card__divider" />
+
+                <FieldLabel>Quelles sont vos attentes principales pour cette formation ?</FieldLabel>
+                <p className="fam-hint">Plusieurs choix possibles</p>
+                <div className="fam-grid-1">
+                  {attentesOptions.map((opt) => (
+                    <CheckCard
+                      key={opt}
+                      label={opt}
+                      checked={data.attentes.includes(opt)}
+                      onClick={() => toggleAttente(opt)}
+                    />
+                  ))}
+                </div>
+                <FieldLabel>Pourquoi souhaitez-vous rejoindre notre formation ?</FieldLabel>
+                <textarea/>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="fam-card__footer">
+            <button className="fam-btn fam-btn--ghost" onClick={prev} disabled={step === 0}>
+              <ArrowLeft size={16} /> Précédent
+            </button>
+            {step < steps.length - 1 ? (
+              <button className="fam-btn fam-btn--primary" onClick={next}>
+                Suivant <ArrowRight size={16} />
+              </button>
+            ) : (
+              <button className="fam-btn fam-btn--primary" onClick={handleSubmit} disabled={submitting}>
+                {submitting ? "Envoi..." : "Envoyer"} <ArrowRight size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}

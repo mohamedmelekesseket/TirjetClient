@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useSession } from "next-auth/react";
+import { useApiToken } from "@/lib/useApiToken";
 
 /* ─────────────────────────────────────────────
    CONFIG
@@ -651,8 +651,7 @@ function HouseCard({
    PAGE
 ───────────────────────────────────────────── */
 export default function Page() {
-  const { data: session } = useSession();
-  const apiToken = (session as any)?.apiToken as string | undefined;
+  const { apiToken } = useApiToken();
 
   const [active, setActive]   = useState("All");
   const [search, setSearch]   = useState("");
