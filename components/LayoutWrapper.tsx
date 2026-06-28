@@ -13,6 +13,7 @@ export default function LayoutWrapper({
 
   const hideHeader =
     pathname === "/connexion" ||
+    pathname === "/formation-Formulaire" ||
     pathname === "/Rejoigneznous" ||
     pathname === "/privacy" ||
     pathname.startsWith("/dashboard");

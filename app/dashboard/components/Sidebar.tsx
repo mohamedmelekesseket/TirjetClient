@@ -55,7 +55,7 @@ export default function Sidebar({ role }: { role: 'artisan' | 'admin' }) {
             <Link
               key={item.href}
               href={item.href}
-              className={`sidebar-nav-item${isActive ? ' active' : ''} anim-d${Math.min(i + 1, 8)}`}
+              className={`sidebar-nav-item${isActive ? ' active' : ''}`}
             >
               <span className="sidebar-nav-icon">{item.icon}</span>
               <span className="sidebar-nav-label">{item.label}</span>
