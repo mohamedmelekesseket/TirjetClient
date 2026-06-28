@@ -336,7 +336,7 @@ export default function AdminCultureAmazighPage() {
                             {c.images?.[0] ? (
                               <img className="mh-property-img" src={c.images[0]} alt={c.title} />
                             ) : c.videos?.[0] ? (
-                              <div className="mh-property-img-placeholder" style={{ background: '#1A1A1A', color: '#fff' }}>
+                              <div className="mh-property-img-placeholder" style={{ backgroundColor:"white", color: 'red' }}>
                                 <Music size={18} />
                               </div>
                             ) : (
@@ -345,7 +345,7 @@ export default function AdminCultureAmazighPage() {
                               </div>
                             )}
                             {c.videos && c.videos.length > 0 && (
-                              <div style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', borderRadius: 4, padding: '2px 6px', fontSize: '0.65rem', display: 'flex', alignItems: 'center', gap: 3 }}>
+                              <div style={{ position: 'absolute', top: 4, right: 4, background: 'rgb(248, 248, 248)', color: 'red', borderRadius: 4, padding: '2px 6px', fontSize: '0.65rem', display: 'flex', alignItems: 'center', gap: 3 }}>
                                 <Music size={10} /> {c.videos.length}
                               </div>
                             )}
