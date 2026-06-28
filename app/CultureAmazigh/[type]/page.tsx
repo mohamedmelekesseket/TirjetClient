@@ -404,7 +404,7 @@ function PublicationCard({ pub }: { pub: Publication }) {
         {!pub._placeholder && (
           <div className="langue-pub-more">
             <div className="langue-pub-more-bar" />
-            <span className="langue-pub-more-text">En savoir plus</span>
+            {/* <span className="langue-pub-more-text">En savoir plus</span> */}
           </div>
         )}
         {pub._placeholder && (
