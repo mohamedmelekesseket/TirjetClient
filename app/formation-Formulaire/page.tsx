@@ -120,7 +120,7 @@ export default function FormulaireAmazighPage() {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<FormData>(initialData);
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(true);
+  const [done, setDone] = useState(false);
 
   const set = <K extends keyof FormData>(key: K, value: FormData[K]) =>
     setData((d) => ({ ...d, [key]: value }));
