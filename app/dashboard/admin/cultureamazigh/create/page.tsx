@@ -223,12 +223,12 @@ export default function AdminCreateCulturePage() {
   const handleVideoFiles = (files: FileList | null) => {
     if (!files) return;
     const allowed = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo'];
-    const maxSize = 80 * 1024 * 1024; // 80MB per video
+    const maxSize = 100 * 1024 * 1024; // 100MB per video (Cloudinary plan limit)
     const newFiles = Array.from(files)
       .filter(f => allowed.includes(f.type) && f.size <= maxSize);
     
     if (newFiles.length < files.length) {
-      showErrorToast('Certains fichiers vidéo ont été ignorés (format non supporté ou taille > 80MB).');
+      showErrorToast('Certains fichiers vidéo ont été ignorés (format non supporté ou taille > 100MB).');
     }
     
     setVideoFiles(prev    => [...prev, ...newFiles]);
@@ -288,7 +288,7 @@ export default function AdminCreateCulturePage() {
       console.log('Session:', session);
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minute timeout
+      const timeoutId = setTimeout(() => controller.abort(), 600000); // 5 minute timeout
 
       setUploadProgress(`Envoi de ${images.length} image(s) et ${videoFiles.length} vidéo(s)...`);
 
@@ -518,7 +518,7 @@ export default function AdminCreateCulturePage() {
                           Glissez une vidéo ici ou <strong>cliquez pour choisir</strong>
                         </p>
                         <p style={{ fontSize: '0.75rem', color: '#B0BAC9', marginTop: 4 }}>
-                          MP4, WebM, MOV, AVI
+                          MP4, WebM, MOV, AVI — max 100MB
                         </p>
                         <input ref={videoFileRef} type="file" accept="video/*" multiple
                           style={{ display: 'none' }} onChange={e => handleVideoFiles(e.target.files)} />

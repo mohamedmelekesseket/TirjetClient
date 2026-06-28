@@ -16,6 +16,7 @@ interface Publication {
   body: string;
   symbol: string;
   images?: string[];
+  videos?: string[];
   _skeleton?: boolean;
   _placeholder?: boolean;
 }
@@ -187,27 +188,29 @@ function DynamicIllustration({ color, symbol, category }: { color: PubColor; sym
 
 // ── Image carousel ─────────────────────────────────────────────────────────
 
-function ImageCarousel({ images, color, symbol, category, tag }: {
+function ImageCarousel({ images, videos, color, symbol, category, tag }: {
   images: string[];
+  videos?: string[];
   color: PubColor;
   symbol: string;
   category: string;
   tag: string;
 }) {
   const [current, setCurrent] = useState(0);
-  const hasMultiple = images.length > 1;
+  const mediaItems = [...images, ...(videos || [])];
+  const hasMultiple = mediaItems.length > 1;
 
   const prev = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setCurrent(i => (i - 1 + images.length) % images.length);
+    setCurrent(i => (i - 1 + mediaItems.length) % mediaItems.length);
   };
   const next = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setCurrent(i => (i + 1) % images.length);
+    setCurrent(i => (i + 1) % mediaItems.length);
   };
 
-  // No real images — show SVG fallback
-  if (images.length === 0) {
+  // No real media — show SVG fallback
+  if (mediaItems.length === 0) {
     return (
       <>
         <span className="langue-pub-visual-tag">{tag}</span>
@@ -217,23 +220,37 @@ function ImageCarousel({ images, color, symbol, category, tag }: {
     );
   }
 
+  const currentMedia = mediaItems[current];
+  const isVideo = currentMedia.match(/\.(mp4|webm|ogg|mov)$/i) || (videos && videos.includes(currentMedia));
+
   return (
     <>
-      {/* <span className="langue-pub-visual-tag" style={{zIndex:"2",color:"white",backgroundColor:"black"}}>{tag}</span> */}
-
-      {/* Image strip */}
+      {/* Media strip */}
       <div style={{ position: "absolute", width: "100%", height: "100%", overflow: "hidden", borderRadius: "inherit" }}>
-        <img
-          src={images[current]}
-          alt={`${category} ${current + 1}`}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            display: "block",
-            transition: "opacity 0.25s ease",
-          }}
-        />
+        {isVideo ? (
+          <video
+            src={currentMedia}
+            controls
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+            }}
+          />
+        ) : (
+          <img
+            src={currentMedia}
+            alt={`${category} ${current + 1}`}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+              transition: "opacity 0.25s ease",
+            }}
+          />
+        )}
 
         {/* Dark gradient at bottom for text legibility */}
         <div style={{
@@ -242,12 +259,12 @@ function ImageCarousel({ images, color, symbol, category, tag }: {
           pointerEvents: "none",
         }} />
 
-        {/* Arrows — only when multiple images */}
+        {/* Arrows — only when multiple media */}
         {hasMultiple && (
           <>
             <button
               onClick={prev}
-              aria-label="Image précédente"
+              aria-label="Média précédent"
               style={{
                 position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)",
                 background: "rgba(255,255,255,0.82)", border: "none", borderRadius: "50%",
@@ -260,7 +277,7 @@ function ImageCarousel({ images, color, symbol, category, tag }: {
             >‹</button>
             <button
               onClick={next}
-              aria-label="Image suivante"
+              aria-label="Média suivant"
               style={{
                 position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
                 background: "rgba(255,255,255,0.82)", border: "none", borderRadius: "50%",
@@ -277,11 +294,11 @@ function ImageCarousel({ images, color, symbol, category, tag }: {
               position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)",
               display: "flex", gap: 5, zIndex: 2,
             }}>
-              {images.map((_, i) => (
+              {mediaItems.map((_, i) => (
                 <button
                   key={i}
                   onClick={(e) => { e.stopPropagation(); setCurrent(i); }}
-                  aria-label={`Image ${i + 1}`}
+                  aria-label={`Média ${i + 1}`}
                   style={{
                     width: i === current ? 16 : 6,
                     height: 6,
@@ -303,7 +320,7 @@ function ImageCarousel({ images, color, symbol, category, tag }: {
               fontSize: 11, padding: "2px 7px", borderRadius: 10,
               fontFamily: "monospace", zIndex: 2,
             }}>
-              {current + 1}/{images.length}
+              {current + 1}/{mediaItems.length}
             </span>
           </>
         )}
@@ -372,6 +389,7 @@ function PublicationCard({ pub }: { pub: Publication }) {
       <div className="langue-pub-visual">
         <ImageCarousel
           images={pub.images ?? []}
+          videos={pub.videos}
           color={pub.color}
           symbol={pub.symbol}
           category={pub.category}
@@ -558,6 +576,7 @@ export default function CultureAmazighPage() {
           symbol:   c.symbol      ?? "ⴰⵎⴰⵣⵉⵖ",
           body:     c.description ?? "",
           images:   Array.isArray(c.images) ? c.images.filter(Boolean) : [],
+          videos:   Array.isArray(c.videos) ? c.videos.filter(Boolean) : [],
         })
       );
 

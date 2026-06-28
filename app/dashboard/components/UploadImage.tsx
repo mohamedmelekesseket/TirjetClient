@@ -18,7 +18,7 @@ async function uploadToCloudinary(file: File): Promise<string> {
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    console.error('Cloudinary error response:', errorData); // 👈 see the real error
+    console.error('Cloudinary error response:', errorData);
     throw new Error(errorData?.error?.message ?? 'Cloudinary upload failed');
   }
 

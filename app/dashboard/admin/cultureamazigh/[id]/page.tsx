@@ -82,6 +82,32 @@ export default function AdminEditCulturePage({ params }: { params: Promise<{ id:
     });
   }, []);
 
+  // Videos (file upload to server)
+  const [videoFiles, setVideoFiles] = useState<File[]>([]);
+  const [videoPreviews, setVideoPreviews] = useState<string[]>([]);
+  const videoFileRef = useRef<HTMLInputElement>(null);
+
+  const handleVideoFiles = (files: FileList | null) => {
+    if (!files) return;
+    const allowed = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo'];
+    const maxSize = 100 * 1024 * 1024; // 100MB per video (Cloudinary plan limit)
+    const newFiles = Array.from(files)
+      .filter(f => allowed.includes(f.type) && f.size <= maxSize);
+    
+    if (newFiles.length < files.length) {
+      alert('Certains fichiers vidéo ont été ignorés (format non supporté ou taille > 100MB).');
+    }
+    
+    setVideoFiles(prev => [...prev, ...newFiles]);
+    setVideoPreviews(prev => [...prev, ...newFiles.map(f => URL.createObjectURL(f))]);
+  };
+
+  const removeVideoFile = (i: number) => {
+    URL.revokeObjectURL(videoPreviews[i]);
+    setVideoFiles(prev => prev.filter((_, j) => j !== i));
+    setVideoPreviews(prev => prev.filter((_, j) => j !== i));
+  };
+
   const [uploading, setUploading]     = useState(false);
   const [host, setHost]               = useState<{ name: string; email: string } | null>(null);
   const [loading, setLoading]         = useState(true);
@@ -118,6 +144,8 @@ export default function AdminEditCulturePage({ params }: { params: Promise<{ id:
         });
         setTags(c.amenities ?? []);
         setImages(c.images  ?? []);
+        setVideoFiles([]);
+        setVideoPreviews(c.videos ?? []);
         if (c.host) setHost({ name: c.host.name, email: c.host.email });
       } catch (err: any) {
         setFetchError(err.message);
@@ -170,23 +198,28 @@ export default function AdminEditCulturePage({ params }: { params: Promise<{ id:
 
       const cleanImages = imagesRef.current.filter(u => !u.startsWith('blob:'));
 
+      // Use FormData for file uploads
+      const body = new FormData();
+      Object.entries(form).forEach(([k, v]) => { if (v) body.append(k, v); });
+      tags.forEach(t => body.append('amenities', t));
+      cleanImages.forEach(img => body.append('images', img));
+      videoFiles.forEach(v => body.append('videos', v));
+      
+      // Add toggle states
+      body.append('isApproved', String(toggles.isApproved));
+      body.append('isSuspended', String(toggles.isSuspended));
+      body.append('isEditorsPick', String(toggles.isEditorsPick));
+      body.append('isFeatured', String(toggles.isFeatured));
+
       const res = await fetch(`${API}/api/culture-amazigh/${id}`, {
         method: 'PUT',
-        headers: { ...headers(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          amenities: tags,
-          images: cleanImages,
-          isApproved:    toggles.isApproved,
-          isSuspended:   toggles.isSuspended,
-          isEditorsPick: toggles.isEditorsPick,
-          isFeatured:    toggles.isFeatured,
-        }),
+        headers: headers(),
+        body,
       });
 
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
       setSaveSuccess(true);
-      setTimeout(() => router.push('/dashboard/admin/culture-amazigh'), 1200);
+      setTimeout(() => router.push('/dashboard/admin/cultureamazigh'), 1200);
     } catch (err: any) {
       setSaveError(err.message);
     } finally {
@@ -205,7 +238,7 @@ export default function AdminEditCulturePage({ params }: { params: Promise<{ id:
   if (fetchError) return (
     <div className="mh-error-state">
       <p>{fetchError}</p>
-      <Link href="/dashboard/admin/culture-amazigh" className="mh-btn mh-btn-secondary mh-btn-sm">
+      <Link href="/dashboard/admin/cultureamazigh" className="mh-btn mh-btn-secondary mh-btn-sm">
         ← Retour
       </Link>
     </div>
@@ -217,7 +250,7 @@ export default function AdminEditCulturePage({ params }: { params: Promise<{ id:
       {/* Header */}
       <div className="mh-page-header mh-anim-fade-up">
         <div>
-          <Link href="/dashboard/admin/culture-amazigh" className="mh-page-back">
+          <Link href="/dashboard/admin/cultureamazigh" className="mh-page-back">
             ← Retour aux publications
           </Link>
           <h1 className="mh-page-title">
@@ -347,6 +380,41 @@ export default function AdminEditCulturePage({ params }: { params: Promise<{ id:
                 onUploadStart={() => setUploading(true)}
                 onUpload={handleUpload}
               />
+              
+              {/* Video upload section */}
+              <div style={{ marginTop: 20, borderTop: '1px solid #E2E8F0', paddingTop: 16 }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#4A5568', marginBottom: 8 }}>
+                  Vidéos (max 150MB)
+                </div>
+                {videoPreviews.length > 0 && (
+                  <div className="mh-image-grid" style={{ marginBottom: 14 }}>
+                    {videoPreviews.map((src, i) => (
+                      <div key={i} className="mh-image-thumb">
+                        <video src={src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <button className="mh-image-thumb-remove" onClick={() => removeVideoFile(i)}>
+                          <X size={11} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div
+                  className="upload-zone"
+                  onClick={() => videoFileRef.current?.click()}
+                  style={{ cursor: 'pointer', padding: '20px', border: '2px dashed #E2E8F0', borderRadius: 8, textAlign: 'center', background: '#F8FAFC' }}
+                >
+                  <div style={{ fontSize: '0.9rem', color: '#64748B' }}>Cliquez pour ajouter des vidéos</div>
+                  <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: 4 }}>MP4, WebM, MOV — max 100MB</div>
+                  <input
+                    ref={videoFileRef}
+                    type="file"
+                    accept="video/*"
+                    multiple
+                    style={{ display: 'none' }}
+                    onChange={e => handleVideoFiles(e.target.files)}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
