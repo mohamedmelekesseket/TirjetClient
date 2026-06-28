@@ -24,6 +24,7 @@ interface Formation {
   niveauTifinagh: string;
   attentes: string[];
   status: Status;
+  motivation: string;
   createdAt: string;
 }
 
@@ -310,6 +311,23 @@ function DetailModal({ item, onClose }: { item: Formation; onClose: () => void }
           </div>
 
           {/* Section 3 — Attentes */}
+          <div style={{ background: "#F8FAFC", borderRadius: 12, padding: 16 }}>
+            <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#8B9AB5", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>
+               motivation
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {item.attentes.map((a, i) => (
+                <div key={i} style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "8px 12px", background: "#fff", borderRadius: 8,
+                  border: "1px solid #E2E8F0", fontSize: "0.85rem", color: "#0A0F2C",
+                }}>
+                  {item.motivation}
+
+                </div>
+              ))}
+            </div>
+          </div>
           <div style={{ background: "#F8FAFC", borderRadius: 12, padding: 16 }}>
             <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#8B9AB5", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>
               🎯 Attentes
