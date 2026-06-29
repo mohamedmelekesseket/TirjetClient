@@ -511,7 +511,7 @@ export default function CategoryPage() {
                       <button
                         className="cat__card-wish"
                         onClick={(e) => { e.stopPropagation(); toggleWish(p._id); }}>
-                        <Heart size={16} fill={wished ? "#red" : "black"} />
+                        <Heart size={16} fill={wished ? "red" : "none"} stroke={wished ? "red" : "currentColor"} />
                       </button>
                     </div>
 

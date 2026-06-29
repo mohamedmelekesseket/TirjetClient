@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, X, Loader2, Package, Eye } from "lucide-react";
 import Link from "next/link";
@@ -192,6 +192,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   // ── UI state ───────────────────────────────────────────────────────────────
   const [qty, setQty] = useState(1);
   const [wish, setWish] = useState(false);
+  const [wishPending, setWishPending] = useState<Set<string>>(new Set());
   const [added, setAdded] = useState(false);
   const [cartLoading, setCartLoading] = useState(false);
   const [cartError, setCartError] = useState<string | null>(null);
@@ -291,6 +292,41 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     };
     fetchComments();
   }, [activeTab, currentId]);
+
+  // ── Wishlist ───────────────────────────────────────────────────────────────
+  const [wishlist, setWishlist] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!apiToken) return;
+    fetch(`${API}/api/favourites/ids`, { headers: { Authorization: `Bearer ${apiToken}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d?.ids && setWishlist(d.ids))
+      .catch(() => {});
+  }, [apiToken]);
+
+  useEffect(() => {
+    if (currentId) {
+      setWish(wishlist.includes(currentId));
+    }
+  }, [currentId, wishlist]);
+
+  const toggleWish = useCallback(async (id: string) => {
+    if (!apiToken || wishPending.has(id)) return;
+    let wasIn = false;
+    setWishlist((prev) => { wasIn = prev.includes(id); return wasIn ? prev.filter((i) => i !== id) : [...prev, id]; });
+    setWishPending((prev) => new Set(prev).add(id));
+    try {
+      const res = await fetch(`${API}/api/favourites/${id}`, {
+        method: wasIn ? "DELETE" : "POST",
+        headers: { Authorization: `Bearer ${apiToken}` },
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setWishlist((prev) => wasIn ? [...prev, id] : prev.filter((i) => i !== id));
+    } finally {
+      setWishPending((prev) => { const s = new Set(prev); s.delete(id); return s; });
+    }
+  }, [apiToken, wishPending]);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   const currentUserId = (session as any)?.apiUser?._id as string | undefined;
@@ -551,7 +587,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
             <motion.button
               className={`pd-wish-btn${wish ? " pd-wish-btn--on" : ""}`}
-              onClick={() => setWish(!wish)}
+              onClick={() => toggleWish(currentId)}
+              disabled={wishPending.has(currentId)}
               whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.88 }}>
               <HeartIcon filled={wish} />
             </motion.button>

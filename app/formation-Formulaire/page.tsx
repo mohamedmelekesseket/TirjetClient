@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -13,8 +14,22 @@ import {
   Check,
 } from "lucide-react";
 import { showSuccessToast, showErrorToast } from "@/lib/toast";
+import { useApiToken } from "@/lib/useApiToken";
+import { signIn } from "next-auth/react";
+import logo from '../icon.png';
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+function GoogleIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+      <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+      <path d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+    </svg>
+  );
+}
 
 interface FormData {
   // Step 1
@@ -117,10 +132,22 @@ function FieldLabel({ children, required = true }: { children: React.ReactNode; 
 // ─── Page ─────────────────────────────────────────────────────────────────
 export default function FormulaireAmazighPage() {
   const router = useRouter();
+  const { session, status } = useApiToken();
   const [step, setStep] = useState(0);
   const [data, setData] = useState<FormData>(initialData);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  // ── Check authentication (matching Header logic) ───────────────────────────
+  const isAuthenticated = !!session;
+
+  // Debug logging
+  useEffect(() => {
+    console.log("Auth status:", status);
+    console.log("Session:", session);
+    console.log("Is authenticated:", isAuthenticated);
+  }, [status, session, isAuthenticated]);
 
   const set = <K extends keyof FormData>(key: K, value: FormData[K]) =>
     setData((d) => ({ ...d, [key]: value }));
@@ -168,6 +195,10 @@ export default function FormulaireAmazighPage() {
   };
 
   const handleSubmit = async () => {
+    if (!isAuthenticated) {
+      showErrorToast("Vous devez être connecté pour envoyer le formulaire.");
+      return;
+    }
     if (!isStepValid()) {
       showErrorToast("Merci de remplir tous les champs obligatoires.");
       return;
@@ -217,7 +248,203 @@ export default function FormulaireAmazighPage() {
 
   return (
     <main className="fam-main">
-      <div className="fam-wrap">
+      <style>{`
+        .fam-login-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+        }
+        .lp-card {
+          background: white;
+          border-radius: 24px;
+          padding: 2.5rem;
+          width: 100%;
+          max-width: 420px;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .lp-card__logo {
+          display: flex;
+          justify-content: center;
+          margin-bottom: 1.5rem;
+        }
+        .lp-card__logo img {
+          width: 64px;
+          height: 64px;
+          border-radius: 16px;
+        }
+        .lp-card__heading {
+          text-align: center;
+          margin-bottom: 2rem;
+        }
+        .lp-card__heading h1 {
+          font-size: 1.75rem;
+          font-weight: 700;
+          color: #1a1a1a;
+          margin-bottom: 0.5rem;
+        }
+        .lp-card__heading p {
+          color: #666;
+          font-size: 0.95rem;
+        }
+        .lp-card__actions {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          margin-bottom: 1.5rem;
+        }
+        .lp-oauth-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.75rem;
+          padding: 0.875rem 1.5rem;
+          border-radius: 12px;
+          border: 1px solid #e5e7eb;
+          background: white;
+          font-weight: 500;
+          font-size: 0.95rem;
+          color: #1a1a1a;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .lp-oauth-btn:hover {
+          background: #f9fafb;
+        }
+        .lp-oauth-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        .lp-card__divider {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 1.5rem 0;
+          position: relative;
+        }
+        .lp-card__divider::before,
+        .lp-card__divider::after {
+          content: '';
+          flex: 1;
+          height: 1px;
+          background: #e5e7eb;
+        }
+        .lp-card__divider span {
+          padding: 0 1rem;
+          font-size: 0.75rem;
+          color: #9ca3af;
+          font-weight: 500;
+          letter-spacing: 0.05em;
+        }
+        .lp-card__legal {
+          text-align: center;
+          font-size: 0.8rem;
+          color: #6b7280;
+          line-height: 1.5;
+        }
+        .lp-card__legal a {
+          color: #2d6a4f;
+          text-decoration: underline;
+        }
+      `}</style>
+      {/* Login Overlay for unauthenticated users */}
+      <AnimatePresence>
+        {!isAuthenticated && (
+          <motion.div
+            className="fam-login-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <motion.div
+              className="lp-card"
+              initial={{ opacity: 0, y: 28, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
+            >
+              {/* Logo */}
+              <motion.div
+                className="lp-card__logo"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15, duration: 0.5 }}
+              >
+                <img src={logo.src} alt="" />
+              </motion.div>
+
+              {/* Heading */}
+              <motion.div
+                className="lp-card__heading"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25, duration: 0.5 }}
+              >
+                <h1>Bienvenue sur Tirjet</h1>
+                <p>you need to make connexion to send form</p>
+              </motion.div>
+
+              {/* OAuth buttons */}
+              <motion.div
+                className="lp-card__actions"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35, duration: 0.5 }}
+              >
+                <motion.button
+                  className="lp-oauth-btn lp-oauth-btn--google"
+                  onClick={async () => {
+                    try {
+                      setIsGoogleLoading(true);
+                      await signIn("google", { callbackUrl: "/formation-Formulaire" });
+                    } finally {
+                      setIsGoogleLoading(false);
+                    }
+                  }}
+                  whileHover={{ scale: 1.015, y: -1 }}
+                  whileTap={{ scale: 0.985 }}
+                  disabled={isGoogleLoading}
+                >
+                  <GoogleIcon />
+                  <span>{isGoogleLoading ? "Connexion..." : "Continuer avec Google"}</span>
+                </motion.button>
+              </motion.div>
+
+              {/* Divider */}
+              <motion.div
+                className="lp-card__divider"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.45, duration: 0.5 }}
+              >
+                <span>CONNEXION SÉCURISÉE</span>
+              </motion.div>
+
+              {/* Legal */}
+              <motion.p
+                className="lp-card__legal"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.52, duration: 0.5 }}
+              >
+                En vous connectant, vous acceptez nos{" "}
+                <Link href="/privacy">conditions d&apos;utilisation</Link> et notre{" "}
+                <Link href="/privacy">politique de confidentialité</Link>.
+              </motion.p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="fam-wrap" style={{
+        filter: !isAuthenticated ? "blur(8px)" : "none",
+        pointerEvents: !isAuthenticated ? "none" : "auto",
+        opacity: !isAuthenticated ? 0.5 : 1
+      }}>
         <button className="fam-back" onClick={() => router.back()}>
           <ArrowLeft size={16} /> Retour
         </button>
@@ -463,7 +690,7 @@ export default function FormulaireAmazighPage() {
                 Suivant <ArrowRight size={16} />
               </button>
             ) : (
-              <button className="fam-btn fam-btn--primary" onClick={handleSubmit} disabled={submitting}>
+              <button className="fam-btn fam-btn--primary" onClick={handleSubmit} disabled={submitting || !isAuthenticated}>
                 {submitting ? "Envoi..." : "Envoyer"} <ArrowRight size={16} />
               </button>
             )}

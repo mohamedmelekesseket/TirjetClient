@@ -1,11 +1,12 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Plus, Loader2, Package } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { showSuccessToast } from "@/lib/toast";
+import { useApiToken } from "@/lib/useApiToken";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -228,7 +229,7 @@ function WorksGallery({ images }: { images: string[] }) {
 // ─── ProductCard ───────────────────────────────────────────────────────────────
 
 function ProductCard({
-  p, index, wishlist, cartAdded, categoryMap, onWishToggle, onCart,
+  p, index, wishlist, cartAdded, categoryMap, onWishToggle, onCart, wishPending,
 }: {
   p: Product;
   index: number;
@@ -237,6 +238,7 @@ function ProductCard({
   categoryMap: Record<string, string>;
   onWishToggle: (id: string) => void;
   onCart: (id: string) => void;
+  wishPending: Set<string>;
 }) {
   const router = useRouter();
   const isWished = wishlist.includes(p._id);
@@ -277,6 +279,7 @@ function ProductCard({
         <motion.button
           className={`artp-prod-card__wish${isWished ? " artp-prod-card__wish--on" : ""}`}
           onClick={(e) => { e.stopPropagation(); onWishToggle(p._id); }}
+          disabled={wishPending.has(p._id)}
           whileTap={{ scale: 0.82 }}
         >
           <HeartIcon filled={isWished} />
@@ -472,6 +475,7 @@ export default function ArtisanProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const { apiToken } = useApiToken();
 
   const [artisan, setArtisan] = useState<ArtisanProfile | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -480,6 +484,7 @@ export default function ArtisanProfilePage({
   const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
 
   const [wishlist, setWishlist] = useState<string[]>([]);
+  const [wishPending, setWishPending] = useState<Set<string>>(new Set());
   const [cartAdded, setCartAdded] = useState<string[]>([]);
   const [filter, setFilter] = useState("all");
   const [tab, setTab] = useState<"creations" | "about">("creations");
@@ -522,11 +527,32 @@ export default function ArtisanProfilePage({
     fetchArtisan();
   }, [id]);
 
-  function toggleWish(productId: string) {
-    setWishlist((w) =>
-      w.includes(productId) ? w.filter((x) => x !== productId) : [...w, productId]
-    );
-  }
+  // ── Wishlist ───────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!apiToken) return;
+    fetch(`${API}/api/favourites/ids`, { headers: { Authorization: `Bearer ${apiToken}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d?.ids && setWishlist(d.ids))
+      .catch(() => {});
+  }, [apiToken]);
+
+  const toggleWish = useCallback(async (id: string) => {
+    if (!apiToken || wishPending.has(id)) return;
+    let wasIn = false;
+    setWishlist((prev) => { wasIn = prev.includes(id); return wasIn ? prev.filter((i) => i !== id) : [...prev, id]; });
+    setWishPending((prev) => new Set(prev).add(id));
+    try {
+      const res = await fetch(`${API}/api/favourites/${id}`, {
+        method: wasIn ? "DELETE" : "POST",
+        headers: { Authorization: `Bearer ${apiToken}` },
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setWishlist((prev) => wasIn ? [...prev, id] : prev.filter((i) => i !== id));
+    } finally {
+      setWishPending((prev) => { const s = new Set(prev); s.delete(id); return s; });
+    }
+  }, [apiToken, wishPending]);
 
   function handleCart(productId: string) {
     if (cartAdded.includes(productId)) return;
@@ -738,6 +764,7 @@ export default function ArtisanProfilePage({
                           categoryMap={categoryMap}
                           onWishToggle={toggleWish}
                           onCart={handleCart}
+                          wishPending={wishPending}
                         />
                       ))}
                     </AnimatePresence>
