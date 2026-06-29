@@ -385,7 +385,7 @@ export default function FormulaireAmazighPage() {
                 transition={{ delay: 0.25, duration: 0.5 }}
               >
                 <h1>Bienvenue sur Tirjet</h1>
-                <p>you need to make connexion to send form</p>
+                <p>Vous devez établir une connexion pour envoyer le formulaire.</p>
               </motion.div>
 
               {/* OAuth buttons */}
