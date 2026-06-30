@@ -275,13 +275,13 @@ export default function ArtisanDashboard() {
       {/* Stat cards */}
       <div className="stats-grid">
         {statCards.map((s, i) => (
-          <div key={i} className="card anim-fade-up" style={{ animationDelay: `${i * 0.06}s`, padding: '20px 22px' }}>
+          <div key={i} className="card anim-fade-up" style={{ animationDelay: `${i * 0.06}s`, padding: '20px 22px' ,background:"#18203A"}}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: `${s.color}18`, color: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
               {s.icon}
             </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0A0F2C', letterSpacing: '-0.5px' }}>{s.value}</div>
-            <div style={{ fontSize: '0.78rem', color: '#8B9AB5', marginTop: 2 }}>{s.label}</div>
-            <div style={{ fontSize: '0.72rem', color: '#a0aec0', marginTop: 4 }}>{s.sub}</div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.5px' }}>{s.value}</div>
+            <div style={{ fontSize: '0.78rem', color: '#adc0e2', marginTop: 2 }}>{s.label}</div>
+            <div style={{ fontSize: '0.72rem', color: '#b8c9e0', marginTop: 4 }}>{s.sub}</div>
             {s.href && (
               <Link href={s.href} style={{ fontSize: '0.75rem', color: s.color, marginTop: 8, display: 'inline-block', fontWeight: 600 }}>
                 Gérer →
@@ -292,9 +292,9 @@ export default function ArtisanDashboard() {
       </div>
 
       {/* ── Revenue chart — horizontal progress-bar style (from stats page) ── */}
-      <div className="card anim-fade-up" style={{ padding: '20px 22px', marginBottom: '1.5rem' }}>
+      <div className="card anim-fade-up" style={{ padding: '20px 22px', marginBottom: '1.5rem' ,background:"#18203A"}}>
         <div className="card-header" style={{ marginBottom: 16 }}>
-          <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 ,color:"white"}}>
             <BarChart2 size={16} style={{ color: '#F5A623' }} /> Revenus mensuels (TND)
           </h2>
           {stats.currentMonthRevenue > 0 && (
@@ -320,7 +320,7 @@ export default function ArtisanDashboard() {
                   <span style={{
                     fontSize: '0.78rem',
                     fontWeight: isCurrent ? 700 : 600,
-                    color: isCurrent ? '#F5A623' : '#4A5568',
+                    color: isCurrent ? '#F5A623' : '#e4e4e4',
                   }}>
                     {MONTH_NAMES[r.month - 1]}
                     {isCurrent && (
@@ -333,12 +333,12 @@ export default function ArtisanDashboard() {
                     fontFamily: "'Space Mono', monospace",
                     fontSize: '0.75rem',
                     fontWeight: 700,
-                    color: isCurrent ? '#F5A623' : '#0234AB',
+                    color: isCurrent ? '#F5A623' : '#366ceb',
                   }}>
                     {r.amount > 0 ? r.amount.toLocaleString('fr-FR') : '—'} TND
                   </span>
                 </div>
-                <div className="rev-progress-bar">
+                <div className="rev-progress-bar" style={{background:"#1540a5"}}>
                   <div
                     className="rev-progress-fill"
                     style={{
@@ -360,10 +360,10 @@ export default function ArtisanDashboard() {
       <div className="artisan-home-grid">
 
         {/* Products table */}
-        <div className="card anim-fade-up anim-d3">
+        <div className="card anim-fade-up anim-d3" style={{background:"#18203A"}}>
           <div className="card-header">
-            <h2 className="card-title">Mes produits récents</h2>
-            <Link href="/dashboard/artisan/products" className="see-all">Voir tout →</Link>
+            <h2 className="card-title" style={{color:"white"}}>Mes produits récents</h2>
+            <Link href="/dashboard/artisan/products" style={{color:"white"}} className="see-all">Voir tout →</Link>
           </div>
           {recentProducts.length === 0 ? (
             <div style={{ padding: '2.5rem', textAlign: 'center' }}>

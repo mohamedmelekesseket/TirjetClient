@@ -145,7 +145,7 @@ export default function ProductsPage() {
                 onClick={() => setDeleteConfirm(null)}
                 style={{
                   padding: '9px 20px', borderRadius: 8, border: '1px solid #e2e8f0',
-                  background: '#f8fafc', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem',
+                  background: '#f8fafc',color:"black", cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem',
                 }}
               >
                 Annuler

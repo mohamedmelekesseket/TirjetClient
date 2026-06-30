@@ -721,8 +721,8 @@ export default function OrdersPage() {
 
       {/* Empty */}
       {!isSessionLoading && !loading && visibleOrders.length === 0 && (
-        <div className="card" style={{ padding: "4rem", textAlign: "center" }}>
-          <p style={{ color: "#8B9AB5" }}>
+        <div className="card" style={{ padding: "4rem",background:"#232C47", textAlign: "center" }}>
+          <p style={{ color: "#ffffff" }}>
             {search ? `Aucun résultat pour "${search}"` : "Aucune commande trouvée."}
           </p>
         </div>

@@ -167,19 +167,19 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       <div className="create-product-grid">
         <div className="create-product-main">
 
-          <div className="card anim-fade-up anim-d1">
-            <div className="card-header"><h2 className="card-title">Informations générales</h2></div>
+          <div className="card anim-fade-up anim-d1" style={{background:"#18203A"}}>
+            <div className="card-header"><h2 className="card-title" style={{color:"white"}}>Informations générales</h2></div>
             <div className="card-body">
               <div className="form-group">
                 <label className="form-label">Nom du produit *</label>
                 <input name="title" value={form.title} onChange={handle}
-                  className="form-input" placeholder="Ex: Tajine en céramique berbère" />
+                  className="form-input" style={{color:"white"}} placeholder="Ex: Tajine en céramique berbère" />
               </div>
 
               {/* L1 */}
               <div className="form-group">
                 <label className="form-label">Catégorie *</label>
-                <select name="categoryId" value={form.categoryId} onChange={handle} className="form-select">
+                <select name="categoryId" value={form.categoryId} onChange={handle} className="form-select" style={{color:"white"}}>
                   <option value="">Sélectionner...</option>
                   {categories.map(c => (
                     <option key={c._id} value={c._id}>{c.name}</option>
@@ -191,7 +191,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               {l2List.length > 0 && (
                 <div className="form-group">
                   <label className="form-label">Sous-catégorie</label>
-                  <select name="subcategoryL2Slug" value={form.subcategoryL2Slug} onChange={handle} className="form-select">
+                  <select name="subcategoryL2Slug" value={form.subcategoryL2Slug} onChange={handle} className="form-select" style={{color:"white"}}>
                     <option value="">Toutes</option>
                     {l2List.map(s => <option key={s._id} value={s.slug}>{s.name}</option>)}
                   </select>
@@ -202,7 +202,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               {l3List.length > 0 && (
                 <div className="form-group">
                   <label className="form-label">Sous-catégorie (niveau 3)</label>
-                  <select name="subcategoryL3Slug" value={form.subcategoryL3Slug} onChange={handle} className="form-select">
+                  <select name="subcategoryL3Slug" value={form.subcategoryL3Slug} onChange={handle} className="form-select" style={{color:"white"}}>
                     <option value="">Toutes</option>
                     {l3List.map(s => <option key={s._id} value={s.slug}>{s.name}</option>)}
                   </select>
@@ -213,7 +213,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               {l4List.length > 0 && (
                 <div className="form-group">
                   <label className="form-label">Sous-catégorie (niveau 4)</label>
-                  <select name="subcategoryL4Slug" value={form.subcategoryL4Slug} onChange={handle} className="form-select">
+                  <select name="subcategoryL4Slug" value={form.subcategoryL4Slug} onChange={handle} className="form-select" style={{color:"white"}}>
                     <option value="">Toutes</option>
                     {l4List.map(s => <option key={s._id} value={s.slug}>{s.name}</option>)}
                   </select>
@@ -222,14 +222,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
               <div className="form-group">
                 <label className="form-label">Description</label>
-                <textarea name="description" value={form.description} onChange={handle}
+                <textarea name="description" style={{color:"white"}} value={form.description} onChange={handle}
                   className="form-textarea" rows={5} placeholder="Décrivez votre produit..." />
               </div>
             </div>
           </div>
 
-          <div className="card anim-fade-up anim-d2">
-            <div className="card-header"><h2 className="card-title">Photos du produit</h2></div>
+          <div className="card anim-fade-up anim-d2" style={{background:"#18203A"}}>
+            <div className="card-header"><h2 className="card-title" style={{color:"white"}}>Photos du produit</h2></div>
             <div className="card-body">
               {images.length > 0 && (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
@@ -251,19 +251,19 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         </div>
 
         <div className="create-product-side">
-          <div className="card anim-fade-up anim-d2">
-            <div className="card-header"><h2 className="card-title">Prix & Stock</h2></div>
+          <div className="card anim-fade-up anim-d2" style={{background:"#18203A"}}>
+            <div className="card-header"><h2 className="card-title" style={{color:"white"}}>Prix & Stock</h2></div>
             <div className="card-body">
               <div className="form-group">
                 <label className="form-label">Prix (TND) *</label>
                 <div className="input-prefix-wrap">
                   <span className="input-prefix">TND</span>
-                  <input name="price" type="number" min={0} value={form.price} onChange={handle} className="form-input" />
+                  <input name="price" type="number" min={0} value={form.price} onChange={handle} className="form-input" style={{color:"white"}} />
                 </div>
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Stock</label>
-                <input name="stock" type="number" min={0} value={form.stock} onChange={handle} className="form-input" />
+                <input name="stock" type="number" min={0} value={form.stock} onChange={handle} className="form-input" style={{color:"white"}} />
               </div>
             </div>
           </div>

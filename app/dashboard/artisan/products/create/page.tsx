@@ -176,8 +176,8 @@ export default function CreateProductPage() {
           <div className="create-product-main">
 
             {/* General info */}
-            <div className="card anim-fade-up anim-d1">
-              <div className="card-header"><h2 className="card-title">Informations générales</h2></div>
+            <div className="card anim-fade-up anim-d1" style={{background:"#18203A"}}>
+              <div className="card-header"><h2 className="card-title" style={{color:"white"}}>Informations générales</h2></div>
               <div className="card-body">
 
                 <div className="form-group">
@@ -194,7 +194,7 @@ export default function CreateProductPage() {
                 <div className="form-group">
                   <label className="form-label">Catégorie *</label>
                   <select
-                    name="categoryId" value={form.categoryId} onChange={handle}
+                    name="categoryId" style={{color:"white"}} value={form.categoryId} onChange={handle}
                     className={`form-select${errors.categoryId ? ' input-error' : ''}`}
                   >
                     <option value="">Sélectionner...</option>
@@ -210,7 +210,7 @@ export default function CreateProductPage() {
                   <div className="form-group">
                     <label className="form-label">Sous-catégorie</label>
                     <select
-                      name="subcategoryL2Slug" value={form.subcategoryL2Slug} onChange={handle}
+                      name="subcategoryL2Slug" style={{color:"white"}} value={form.subcategoryL2Slug} onChange={handle}
                       className="form-select"
                     >
                       <option value="">Toutes</option>
@@ -226,7 +226,7 @@ export default function CreateProductPage() {
                   <div className="form-group">
                     <label className="form-label">Sous-catégorie (niveau 3)</label>
                     <select
-                      name="subcategoryL3Slug" value={form.subcategoryL3Slug} onChange={handle}
+                      name="subcategoryL3Slug" style={{color:"white"}}  value={form.subcategoryL3Slug} onChange={handle}
                       className="form-select"
                     >
                       <option value="">Toutes</option>
@@ -242,7 +242,7 @@ export default function CreateProductPage() {
                   <div className="form-group">
                     <label className="form-label">Sous-catégorie (niveau 4)</label>
                     <select
-                      name="subcategoryL4Slug" value={form.subcategoryL4Slug} onChange={handle}
+                      name="subcategoryL4Slug" style={{color:"white"}} value={form.subcategoryL4Slug} onChange={handle}
                       className="form-select"
                     >
                       <option value="">Toutes</option>
@@ -256,7 +256,7 @@ export default function CreateProductPage() {
                 <div className="form-group">
                   <label className="form-label">Description *</label>
                   <textarea
-                    name="description" value={form.description} onChange={handle}
+                    name="description" style={{color:"white"}} value={form.description} onChange={handle}
                     className={`form-textarea${errors.description ? ' input-error' : ''}`}
                     rows={5}
                     placeholder="Décrivez votre produit, son histoire, ses matériaux..."
@@ -267,9 +267,9 @@ export default function CreateProductPage() {
             </div>
 
             {/* Images */}
-            <div className="card anim-fade-up anim-d2">
+            <div className="card anim-fade-up anim-d2" style={{background:"#18203A"}}>
               <div className="card-header">
-                <h2 className="card-title">Photos du produit</h2>
+                <h2 className="card-title" style={{color:"white"}}>Photos du produit</h2>
                 <span className="card-hint">{images.length}/8 — au moins 3 conseillées</span>
               </div>
               <div className="card-body">
@@ -285,8 +285,8 @@ export default function CreateProductPage() {
                       marginBottom: previews.length ? '1rem' : 0,
                     }}
                   >
-                    <ImagePlus size={28} style={{ margin: '0 auto .5rem', opacity: 0.4 }} />
-                    <p style={{ opacity: 0.6, fontSize: '.9rem' }}>
+                    <ImagePlus size={28} style={{ margin: '0 auto .5rem', opacity: 0.4 ,color:"white"}} />
+                    <p style={{ opacity: 0.6, fontSize: '.9rem',color:"white" }}>
                       Glissez des photos ici ou <strong>cliquez pour choisir</strong>
                     </p>
                     <input ref={fileRef} type="file" accept="image/*" multiple
@@ -315,22 +315,22 @@ export default function CreateProductPage() {
           </div>
 
           {/* Side */}
-          <div className="create-product-side">
-            <div className="card anim-fade-up anim-d2">
-              <div className="card-header"><h2 className="card-title">Prix & Stock</h2></div>
+          <div className="create-product-side" >
+            <div className="card anim-fade-up anim-d2" style={{background:"#18203A"}}>
+              <div className="card-header"><h2 className="card-title"  style={{color:"white"}}>Prix & Stock</h2></div>
               <div className="card-body">
                 <div className="form-group">
                   <label className="form-label">Prix (TND) *</label>
                   <div className="input-prefix-wrap">
                     <span className="input-prefix">TND</span>
-                    <input name="price" type="number" min={0} value={form.price} onChange={handle}
+                    <input name="price" type="number" min={0} style={{color:"white"}} value={form.price} onChange={handle}
                       className={`form-input${errors.price ? ' input-error' : ''}`} placeholder="0.00" />
                   </div>
                   {errors.price && <span className="form-error">{errors.price}</span>}
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Stock disponible</label>
-                  <input name="stock" type="number" min={0} value={form.stock} onChange={handle}
+                  <input name="stock" type="number" style={{color:"white"}} min={0} value={form.stock} onChange={handle}
                     className="form-input" placeholder="Quantité" />
                 </div>
               </div>

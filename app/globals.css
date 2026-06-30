@@ -8642,8 +8642,8 @@ tbody td {
   border: 1.5px solid rgba(2,52,171,0.12);
   border-radius: 10px;
   font-size: 0.9rem;
-  color: #0A0F2C;
-  background: white;
+  color: white;
+  background: #232C47;
   transition: all 0.25s ease;
   outline: none;
 }
@@ -8812,10 +8812,12 @@ tbody td {
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  background: rgba(238,242,255,0.5);
+  background: rgba(2,52,171,0.04);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
   text-align: center;
+  border-color: #0234AB;
+
 }
 
 .upload-zone:hover,
