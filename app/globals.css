@@ -8852,7 +8852,7 @@ tbody td {
 .upload-text-main {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #0A0F2C;
+  color: white;
 }
 
 .upload-text-sub {
@@ -9024,8 +9024,6 @@ tbody td {
 .quick-action-btn:last-child { border-bottom: none; }
 
 .quick-action-btn:hover {
-  background: #F8FAFF;
-  color: #0234AB;
   padding-left: 28px;
 }
 

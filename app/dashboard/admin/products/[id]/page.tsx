@@ -242,8 +242,8 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
         <div className="create-product-main">
 
           {/* General info */}
-          <div className="card anim-fade-up anim-d1">
-            <div className="card-header"><h2 className="card-title">Informations générales</h2></div>
+          <div className="card anim-fade-up anim-d1" style={{background:"#18203A"}}>
+            <div className="card-header"><h2 className="card-title" style={{color:"white"}}>Informations générales</h2></div>
             <div className="card-body">
               <div className="form-group">
                 <label className="form-label">Nom du produit *</label>
@@ -302,9 +302,9 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
           </div>
 
           {/* Images */}
-          <div className="card anim-fade-up anim-d2">
+          <div className="card anim-fade-up anim-d2"  style={{background:"#18203A"}}>
             <div className="card-header">
-              <h2 className="card-title">
+              <h2 className="card-title" style={{color:"white"}}>
                 Photos du produit
                 {uploading && (
                   <span style={{ fontSize: '0.75rem', color: '#8B9AB5', fontWeight: 400, marginLeft: 8 }}>
@@ -338,9 +338,9 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
           </div>
 
           {/* Admin toggles */}
-          <div className="card anim-fade-up anim-d3" style={{ border: '1.5px solid #e9d8fd' }}>
-            <div className="card-header" style={{ background: 'linear-gradient(90deg,#faf5ff,#fff)' }}>
-              <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className="card anim-fade-up anim-d3" style={{ border: '1.5px solid #e9d8fd' ,background:"#18203A"}}>
+            <div className="card-header" style={{ background:"#18203A" }}>
+              <h2 className="card-title" style={{ display: 'flex', color: '#805ad5',alignItems: 'center', gap: 8 }}>
                 <ShieldCheck size={18} style={{ color: '#805ad5' }} /> Contrôles Admin
               </h2>
             </div>
@@ -364,8 +364,8 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
         {/* Sidebar */}
         <div className="create-product-side">
 
-          <div className="card anim-fade-up anim-d2">
-            <div className="card-header"><h2 className="card-title">Prix & Stock</h2></div>
+          <div className="card anim-fade-up anim-d2"  style={{background:"#18203A"}}>
+            <div className="card-header"><h2 className="card-title" style={{color:"white"}}>Prix & Stock</h2></div>
             <div className="card-body">
               <div className="form-group">
                 <label className="form-label">Prix (TND) *</label>
@@ -399,8 +399,8 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
             </div>
           </div>
 
-          <div className="card anim-fade-up anim-d3" style={{ border: '1px solid #e2e8f0' }}>
-            <div className="card-header"><h2 className="card-title">Statut actuel</h2></div>
+          <div className="card anim-fade-up anim-d3" style={{ border: '1px solid #e2e8f0',background:"#18203A" }}>
+            <div className="card-header"><h2 className="card-title" style={{color:"white"}}>Statut actuel</h2></div>
             <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <StatusLine label="Approbation" value={toggles.isApproved  ? 'Approuvé'    : 'Non approuvé'} color={toggles.isApproved  ? '#0B9E5E' : '#F59E0B'} />
               <StatusLine label="Suspension"  value={toggles.isSuspended ? 'Suspendu'    : 'Actif'}        color={toggles.isSuspended ? '#e53e3e' : '#0B9E5E'} />
@@ -442,13 +442,13 @@ function ToggleRow({ icon, label, description, active, activeColor, onClick }: {
       display: 'flex', alignItems: 'center', gap: 12,
       padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
       border: `1.5px solid ${active ? activeColor + '40' : '#e2e8f0'}`,
-      background: active ? activeColor + '08' : '#fafafa',
-      textAlign: 'left', transition: 'all 0.18s', width: '100%',
+      background: active ? activeColor + '08' : 'transparent',
+      textAlign: 'left', transition: 'all 0.18s', width: '100%',marginTop:"2%"
     }}>
       <span style={{ color: active ? activeColor : '#A0AEC0', flexShrink: 0 }}>{icon}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 600, fontSize: '0.82rem', color: active ? activeColor : '#2D3748' }}>{label}</div>
-        <div style={{ fontSize: '0.72rem', color: '#8B9AB5', marginTop: 1 }}>{description}</div>
+        <div style={{ fontWeight: 600, fontSize: '0.82rem', color: active ? activeColor : '#ffffff' }}>{label}</div>
+        <div style={{ fontSize: '0.72rem', color: '#b3c2de', marginTop: 1 }}>{description}</div>
       </div>
       {active
         ? <ToggleRight size={20} style={{ color: activeColor, flexShrink: 0 }} />

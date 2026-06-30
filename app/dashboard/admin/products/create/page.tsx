@@ -274,7 +274,7 @@ export default function AdminCreateProductPage() {
           <div className="create-product-main">
 
             {/* General info */}
-        <div className="card anim-fade-up anim-d2" style={{backgroundColor:"#232C47"}}>
+        <div className="card anim-fade-up anim-d2" style={{backgroundColor:"#18203A"}}>
           <div className="card-header" >
           <h2 className="card-title" style={{color: "#ffffff" }}>Informations générales</h2>
               </div>
@@ -385,12 +385,12 @@ export default function AdminCreateProductPage() {
             </div>
 
             {/* Images */}
-           <div className="card anim-fade-up anim-d2" style={{backgroundColor:"#232C47"}}>
+           <div className="card anim-fade-up anim-d2" style={{backgroundColor:"#18203A"}}>
              <div className="card-header" >
                 <h2 className="card-title" style={{color: "#ffffff" }}>Photos du produit</h2>
                 <span className="card-hint">{images.length}/8 — au moins 3 conseillées</span>
               </div>
-              <div className="card-body" style={{background:"white"}}>
+              <div className="card-body" style={{background:"#232C47"}}>
                 {images.length < 8 && (
                   <div
                     onDragOver={e => e.preventDefault()} onDrop={handleDrop}
@@ -398,15 +398,15 @@ export default function AdminCreateProductPage() {
                     role="button" tabIndex={0}
                     onKeyDown={e => e.key === 'Enter' && fileRef.current?.click()}
                     style={{
-                      border: '2px dashed rgba(2,52,171,0.2)',
+                      border: '2px dashed #fefefe',
                       borderRadius: 12, padding: '2rem',
                       textAlign: 'center', cursor: 'pointer',
                       marginBottom: previews.length ? '1rem' : 0,
-                      background: 'rgba(238,242,255,0.5)',
+                      background: '#232C47',
                     }}
                   >
-                    <ImagePlus size={28} style={{ margin: '0 auto .5rem', opacity: 0.4 }} />
-                    <p style={{ opacity: 0.6, fontSize: '.9rem' }}>
+                    <ImagePlus size={28} style={{ margin: '0 auto .5rem', opacity: 0.4,color:"white" }} />
+                    <p style={{ opacity: 0.6, fontSize: '.9rem',color:"white" }}>
                       Glissez des photos ici ou <strong>cliquez pour choisir</strong>
                     </p>
                     <input ref={fileRef} type="file" accept="image/*" multiple
@@ -448,7 +448,7 @@ export default function AdminCreateProductPage() {
           <div className="create-product-side">
 
             {/* Vendor search card */}
-        <div className="card anim-fade-up anim-d2" style={{backgroundColor:"#232C47"}}>
+        <div className="card anim-fade-up anim-d2" style={{backgroundColor:"#18203A"}}>
           <div className="card-header" >
           <h2 className="card-title" style={{color: "#ffffff" }}>Artisan *</h2>
                 {selectedVendor && (
@@ -496,13 +496,11 @@ export default function AdminCreateProductPage() {
                         style={{
                           display: 'flex', alignItems: 'center', gap: 10,
                           width: '100%', padding: '9px 12px',
-                          background: 'white', border: 'none',
+                          background: '#232C47', border: 'none',
                           borderBottom: '1px solid rgba(2,52,171,0.06)',
                           cursor: 'pointer', textAlign: 'left',
                           fontFamily: 'DM Sans, sans-serif',
                         }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#F8FAFF')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'white')}
                       >
                         <div style={{
                           width: 32, height: 32, borderRadius: 9, flexShrink: 0,
@@ -516,8 +514,8 @@ export default function AdminCreateProductPage() {
                           }
                         </div>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: '0.875rem', fontWeight: 500, color: '#0A0F2C', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.name}</div>
-                          <div style={{ fontSize: '0.72rem', color: '#8B9AB5', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.email}</div>
+                          <div style={{ fontSize: '0.875rem', fontWeight: 500, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.name}</div>
+                          <div style={{ fontSize: '0.72rem', color: '#c1d3f5', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.email}</div>
                         </div>
                       </button>
                     ))}
@@ -533,8 +531,8 @@ export default function AdminCreateProductPage() {
                   }}>
                     <UserCheck size={16} style={{ color: '#0B9E5E', flexShrink: 0 }} />
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0A0F2C' }}>{selectedVendor.name}</div>
-                      <div style={{ fontSize: '0.72rem', color: '#8B9AB5' }}>{selectedVendor.email}</div>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#ffffff' }}>{selectedVendor.name}</div>
+                      <div style={{ fontSize: '0.72rem', color: '#bdceec' }}>{selectedVendor.email}</div>
                     </div>
                   </div>
                 )}
@@ -542,7 +540,7 @@ export default function AdminCreateProductPage() {
             </div>
 
             {/* Price & Stock */}
-        <div className="card anim-fade-up anim-d2" style={{backgroundColor:"#232C47"}}>
+        <div className="card anim-fade-up anim-d2" style={{backgroundColor:"#18203A"}}>
           <div className="card-header" ><h2 className="card-title" style={{color:"white"}}>Prix & Stock</h2></div>
               <div className="card-body">
                 <div className="form-group">

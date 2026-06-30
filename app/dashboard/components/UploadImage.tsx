@@ -87,7 +87,7 @@ export default function UploadImage({
         style={{ opacity: uploading ? 0.6 : 1, cursor: uploading ? 'not-allowed' : 'pointer' }}
       >
         <div className="upload-icon">{uploading ? '⏳' : '⬆'}</div>
-        <div className="upload-text-main">
+        <div className="upload-text-main" >
           {uploading ? 'Upload en cours…' : 'Glisser-déposer des images'}
         </div>
         <div className="upload-text-sub">

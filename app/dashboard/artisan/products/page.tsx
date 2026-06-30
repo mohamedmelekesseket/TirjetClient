@@ -251,8 +251,8 @@ export default function ProductsPage() {
 
       {/* Empty */}
       {!isSessionLoading && !loading && filtered.length === 0 && (
-        <div className="card" style={{ padding: '4rem', textAlign: 'center' }}>
-          <Package size={48} style={{ margin: '0 auto 1rem', opacity: 0.2 }} />
+        <div className="card" style={{ padding: '4rem', textAlign: 'center',background:"#18203A" }}>
+          <Package size={48} style={{ margin: '0 auto 1rem', opacity: 0.2 ,color:"white"}} />
           <p style={{ color: '#8B9AB5', marginBottom: 16 }}>
             {search ? `Aucun résultat pour "${search}"` : 'Aucun produit trouvé.'}
           </p>

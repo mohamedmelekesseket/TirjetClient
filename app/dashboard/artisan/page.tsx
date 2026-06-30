@@ -398,18 +398,18 @@ export default function ArtisanDashboard() {
                           )}
                           <div>
                             <Link href={`/dashboard/artisan/products/${p._id}/edit`}
-                              style={{ fontWeight: 600, fontSize: '0.83rem', color: '#0A0F2C', textDecoration: 'none' }}>
+                              style={{ fontWeight: 600, fontSize: '0.83rem', color: '#ffffff', textDecoration: 'none' }}>
                               {p.title}
                             </Link>
                             <div className="product-cell-cat">{getCategoryName(p.category)}</div>
                           </div>
                         </div>
                       </td>
-                      <td style={{ fontWeight: 700, fontSize: '0.8rem' }}>{p.price} TND</td>
-                      <td style={{ fontSize: '0.8rem', color: p.stock === 0 ? '#e53e3e' : '#0A0F2C', fontWeight: p.stock === 0 ? 700 : 400 }}>
+                      <td style={{ fontWeight: 700, fontSize: '0.8rem' , color: '#ffffff'}}>{p.price} TND</td>
+                      <td style={{ fontSize: '0.8rem', color: p.stock === 0 ? '#e53e3e' : '#ffffff', fontWeight: p.stock === 0 ? 700 : 400 }}>
                         {p.stock === 0 ? 'Épuisé' : p.stock}
                       </td>
-                      <td style={{ fontSize: '0.8rem', color: '#8B9AB5' }}>
+                      <td style={{ fontSize: '0.8rem', color: '#cdddfa' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <Eye size={12} />{p.views ?? 0}
                         </span>
@@ -431,9 +431,9 @@ export default function ArtisanDashboard() {
         <div className="artisan-home-right">
 
           {/* Recent orders */}
-          <div className="card anim-fade-up anim-d4">
+          <div className="card anim-fade-up anim-d4" style={{background:"#18203A"}}>
             <div className="card-header">
-              <h2 className="card-title">Commandes récentes</h2>
+              <h2 className="card-title" style={{color:"white"}}>Commandes récentes</h2>
               <Link href="/dashboard/artisan/orders" className="see-all">Voir tout →</Link>
             </div>
             {recentOrders.length === 0 ? (
@@ -456,17 +456,17 @@ export default function ArtisanDashboard() {
           </div>
 
           {/* Quick actions */}
-          <div className="card anim-fade-up anim-d5">
+          <div className="card anim-fade-up anim-d5" style={{background:"#18203A"}}>
             <div className="card-header">
-              <h2 className="card-title">Actions rapides</h2>
+              <h2 className="card-title" style={{color:"white"}}>Actions rapides</h2>
             </div>
             {[
               { href: '/dashboard/artisan/products/create', icon: '◈', label: 'Ajouter un produit',  bg: '#0234AB22' },
               { href: '/dashboard/artisan/orders',          icon: '◉', label: 'Gérer les commandes', bg: '#0B9E5E22' },
               { href: '/dashboard/artisan/profile',         icon: '◎', label: 'Modifier le profil',  bg: '#8B5CF622' },
             ].map(a => (
-              <Link key={a.href} href={a.href} className="quick-action-btn">
-                <span className="quick-action-icon" style={{ background: a.bg }}>{a.icon}</span>
+              <Link key={a.href} href={a.href} className="quick-action-btn" style={{color:"white"}}>
+                <span className="quick-action-icon" style={{ background: a.bg ,color:"white"}}>{a.icon}</span>
                 {a.label}
               </Link>
             ))}
