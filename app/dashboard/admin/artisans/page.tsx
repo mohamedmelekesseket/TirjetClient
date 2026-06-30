@@ -586,10 +586,10 @@ const fetchArtisans = async () => {
       </div>
 
       {/* Table */}
-      <div className="card anim-fade-up anim-d3">
-        <div className="card-header">
-          <h2 className="card-title">Liste des artisans</h2>
-          <span style={{ fontSize: "0.8rem", color: "black" }}>{filtered.length} résultat(s)</span>
+      <div className="card anim-fade-up anim-d3" style={{backgroundColor:"#18203A"}}>
+        <div className="card-header" >
+          <h2 className="card-title" style={{color: "white" }}>Liste des artisans</h2>
+          <span style={{ fontSize: "0.8rem", color: "white" }}>{filtered.length} résultat(s)</span>
         </div>
 
         {isSessionLoading && (
@@ -642,10 +642,10 @@ const fetchArtisans = async () => {
                             </div>
                           </div>
                         </td>
-                        <td style={{ color: "#4A5568", fontSize: "0.875rem" }}>
+                        <td style={{ color: "white", fontSize: "0.875rem" }}>
                           {a.region || <CircleAlert color="red" />}
                         </td>
-                        <td style={{ color: "#4A5568", fontSize: "0.875rem" }}>
+                        <td style={{ color: "white", fontSize: "0.875rem" }}>
                           {a.phone || <CircleAlert color="red" />}
                         </td>
 
@@ -674,7 +674,7 @@ const fetchArtisans = async () => {
                             </span>
                           )}
                         </td>
-                        <td style={{ color: "black", fontSize: "0.82rem" }}>
+                        <td style={{ color: "white", fontSize: "0.82rem" }}>
                           {new Date(a.createdAt).toLocaleDateString("fr-FR")}
                         </td>
                         <td>

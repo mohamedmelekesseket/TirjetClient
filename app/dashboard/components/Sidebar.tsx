@@ -39,7 +39,7 @@ export default function Sidebar({ role }: { role: 'artisan' | 'admin' }) {
       <div className="sidebar-brand">
         <div className="sidebar-brand-logo">✦</div>
         <div>
-          <div className="sidebar-brand-name">Artisana</div>
+          <div className="sidebar-brand-name">Tirjet</div>
           <div className="sidebar-brand-role">{role === 'artisan' ? 'Artisan' : 'Admin'}</div>
         </div>
       </div>
@@ -70,8 +70,8 @@ export default function Sidebar({ role }: { role: 'artisan' | 'admin' }) {
         <div className="sidebar-footer-card">
           <div className="sidebar-footer-icon">✦</div>
           <div>
-            <div className="sidebar-footer-title">Artisana v2.0</div>
-            <div className="sidebar-footer-sub">Plateforme artisanale</div>
+            <div className="sidebar-footer-title">Tirjet v1.0</div>
+            <div className="sidebar-footer-sub">Plateforme Tirjetle</div>
           </div>
         </div>
         <button className="sidebar-logout">

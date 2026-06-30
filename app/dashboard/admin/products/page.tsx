@@ -317,9 +317,9 @@ export default function AdminProductsPage() {
       </div>
 
       {/* ── Table ── */}
-      <div className="card anim-fade-up anim-d3">
-        <div className="card-header">
-          <h2 className="card-title">Catalogue complet</h2>
+        <div className="card anim-fade-up anim-d2" style={{backgroundColor:"#232C47"}}>
+          <div className="card-header" >
+          <h2 className="card-title" style={{color: "#ffffff" }}>Catalogue complet</h2>
           <span style={{ fontSize: "0.8rem", color: "#8B9AB5" }}>{filtered.length} résultat(s)</span>
         </div>
 
@@ -377,20 +377,20 @@ export default function AdminProductsPage() {
                             }}>
                               <Icon size={18} />
                             </div>
-                            <span style={{ fontWeight: 500, fontSize: "0.875rem" }}>{p.title}</span>
+                            <span style={{ fontWeight: 500,color: "#ffffff",fontSize: "0.875rem" }}>{p.title}</span>
                           </div>
                         </td>
-                        <td style={{ color: "#4A5568", fontSize: "0.875rem" }}>{artisanName}</td>
+                        <td style={{ color: "#ffffff", fontSize: "0.875rem" }}>{artisanName}</td>
                         <td>
                           <span className="badge badge-primary">{catDisplay}</span>
                         </td>
                         <td>
-                          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.8rem", fontWeight: 700 }}>
+                          <span style={{ fontFamily: "'Space Mono',monospace",color: "#ffffff", fontSize: "0.8rem", fontWeight: 700 }}>
                             {price.toLocaleString("fr-FR")} TND
                           </span>
                         </td>
-                        <td className="td-mono">{p.stock}</td>
-                        <td>
+                        <td className="td-mono" style={{color:"white"}}>{p.stock}</td>
+                        <td style={{color:"white"}}>
                           {p.views}
                         </td>
 

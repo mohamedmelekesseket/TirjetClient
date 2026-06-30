@@ -733,7 +733,7 @@ export default function OrdersPage() {
 
       {/* Empty */}
       {!isSessionLoading && !loading && !error && visibleOrders.length === 0 && (
-        <div className="card" style={{ padding: "4rem", textAlign: "center" }}>
+        <div className="card" style={{ padding: "4rem", background:"#232C47",textAlign: "center" }}>
           <p style={{ color: "#8B9AB5" }}>
             {search ? `Aucun résultat pour "${search}"` : "Aucune commande trouvée."}
           </p>
@@ -742,9 +742,9 @@ export default function OrdersPage() {
 
       {/* Table */}
       {!isSessionLoading && !loading && !error && visibleOrders.length > 0 && (
-        <div className="card anim-fade-up anim-d2">
-          <div className="card-header">
-            <h2 className="card-title">Liste des commandes</h2>
+        <div className="card anim-fade-up anim-d2"style={{border:"none"}}>
+          <div className="card-header" style={{background:"#232C47"}}>
+            <h2 className="card-title" style={{color:"white"}}>Liste des commandes</h2>
             <span style={{ fontSize: "0.8rem", color: "#8B9AB5" }}>{visibleOrders.length} commandes</span>
           </div>
           <div className="table-wrap">
@@ -775,21 +775,21 @@ export default function OrdersPage() {
                       <td>
                         <span style={{
                           fontFamily: "'Space Mono', monospace",
-                          fontSize: "0.78rem", fontWeight: 700, color: "#0234AB",
+                          fontSize: "0.78rem", fontWeight: 700, color: "#ffffff",
                         }}>
                           {displayId}
                         </span>
                       </td>
-                      <td style={{ fontWeight: 500 }}>{orderProductLabel(o)}</td>
+                      <td style={{ fontWeight: 500 ,color: "#ffffff"}}>{orderProductLabel(o)}</td>
                       <td>
-                        <div style={{ fontWeight: 500, fontSize: "0.875rem" }}>{o.user?.name ?? "—"}</div>
-                        <div style={{ fontSize: "0.72rem", color: "#8B9AB5", marginTop: 2 }}>{o.user?.email ?? ""}</div>
+                        <div style={{ fontWeight: 500, fontSize: "0.875rem",color: "#ffffff" }}>{o.user?.name ?? "—"}</div>
+                        <div style={{ fontSize: "0.72rem", color: "#ffffff", marginTop: 2 }}>{o.user?.email ?? ""}</div>
                       </td>
-                      <td style={{ color: "#8B9AB5", fontSize: "0.82rem" }}>{fmtDate(o.createdAt)}</td>
+                      <td style={{ color: "#ffffff", fontSize: "0.82rem" }}>{fmtDate(o.createdAt)}</td>
                       <td>
                         <span style={{
                           fontFamily: "'Space Mono', monospace",
-                          fontSize: "0.82rem", fontWeight: 700,
+                          fontSize: "0.82rem", fontWeight: 700,color: "#ffffff"
                         }}>
                           {(o.total ?? 0).toLocaleString("fr-FR")} TND
                         </span>

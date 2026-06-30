@@ -275,21 +275,21 @@ export default function AdminDashboard() {
       {(stats.pendingArtisans > 0 || stats.reportedProducts > 0 || stats.suspendedProducts > 0) && (
         <div style={{ display: 'flex', gap: 12, marginBottom: '1.5rem', flexWrap: 'wrap' }}>
           {stats.pendingArtisans > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 10, fontSize: '0.83rem', color: '#92400e' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: '#18203A', border: '1px solid #fcd34d', borderRadius: 10, fontSize: '0.83rem', color: '#92400e' }}>
               <Clock size={15} />
               <strong>{stats.pendingArtisans}</strong> artisan(s) en attente d'approbation
               <Link href="/dashboard/admin/artisans" style={{ color: '#0234AB', fontWeight: 600, marginLeft: 4 }}>Voir →</Link>
             </div>
           )}
           {stats.reportedProducts > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 10, fontSize: '0.83rem', color: '#c53030' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: '#18203A', border: '1px solid #fed7d7', borderRadius: 10, fontSize: '0.83rem', color: '#c53030' }}>
               <AlertTriangle size={15} />
               <strong>{stats.reportedProducts}</strong> produit(s) signalé(s)
               <Link href="/dashboard/admin/products" style={{ color: '#0234AB', fontWeight: 600, marginLeft: 4 }}>Voir →</Link>
             </div>
           )}
           {stats.suspendedProducts > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 10, fontSize: '0.83rem', color: '#c53030' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: '#18203A', border: '1px solid #fed7d7', borderRadius: 10, fontSize: '0.83rem', color: '#c53030' }}>
               <AlertTriangle size={15} />
               <strong>{stats.suspendedProducts}</strong> produit(s) suspendu(s)
               <Link href="/dashboard/admin/products" style={{ color: '#0234AB', fontWeight: 600, marginLeft: 4 }}>Voir →</Link>
@@ -301,13 +301,13 @@ export default function AdminDashboard() {
       {/* Stats grid — same card shape as ArtisanDashboard ──────────────── */}
       <div className="admin-stats-grid">
         {statCards.map((s, i) => (
-          <div key={i} className="card anim-fade-up" style={{ animationDelay: `${i * 0.06}s`, padding: '20px 22px' }}>
+          <div key={i} className="card anim-fade-up" style={{ animationDelay: `${i * 0.06}s`, background: '#18203A', padding: '10px 12px' }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: `${s.color}18`, color: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
               {s.icon}
             </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0A0F2C', letterSpacing: '-0.5px' }}>{s.value}</div>
-            <div style={{ fontSize: '0.78rem', color: '#8B9AB5', marginTop: 2 }}>{s.label}</div>
-            <div style={{ fontSize: '0.72rem', color: '#a0aec0', marginTop: 4 }}>{s.sub}</div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'white', letterSpacing: '-0.5px' }}>{s.value}</div>
+            <div style={{ fontSize: '0.78rem', color: 'white', marginTop: 2 }}>{s.label}</div>
+            <div style={{ fontSize: '0.72rem', color: 'white', marginTop: 4 }}>{s.sub}</div>
             {s.href && (
               <Link href={s.href} style={{ fontSize: '0.75rem', color: s.color, marginTop: 8, display: 'inline-block', fontWeight: 600 }}>
                 Gérer →
@@ -318,9 +318,9 @@ export default function AdminDashboard() {
       </div>
 
       {/* Revenue chart — mirrors ArtisanDashboard mini bar chart ────────── */}
-      <div className="card anim-fade-up" style={{ padding: '20px 22px', marginBottom: '1.5rem' }}>
+      <div className="card anim-fade-up" style={{ padding: '20px 22px', background: '#18203A', marginBottom: '1.5rem' }}>
         <div className="card-header" style={{ marginBottom: 16 }}>
-          <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h2 className="card-title" style={{ display: 'flex', color: 'white',alignItems: 'center', gap: 8 }}>
             <BarChart2 size={16} style={{ color: '#EF4444' }} /> Revenus — 6 derniers mois
           </h2>
         </div>
@@ -338,12 +338,12 @@ export default function AdminDashboard() {
                   <div style={{
                     width: '100%',
                     height: `${Math.max(heightPct, 4)}%`,
-                    background: isCurrent ? '#EF4444' : '#0234AB22',
+                    background: isCurrent ? '#EF4444' : 'white',
                     borderRadius: 6,
                     transition: 'height 0.4s ease',
                   }} />
                 </div>
-                <div style={{ fontSize: '0.65rem', color: isCurrent ? '#EF4444' : '#8B9AB5', fontWeight: isCurrent ? 700 : 400 }}>
+                <div style={{ fontSize: '0.65rem', color: isCurrent ? '#EF4444' : 'white', fontWeight: isCurrent ? 700 : 400 }}>
                   {MONTH_NAMES[r.month - 1]}
                 </div>
               </div>
@@ -356,10 +356,10 @@ export default function AdminDashboard() {
       <div className="admin-grid">
 
         {/* Pending artisans */}
-        <div className="card anim-fade-up anim-d3">
+        <div className="card anim-fade-up anim-d3" style={{ background: '#18203A'}}>
           <div className="card-header">
             <div>
-              <h2 className="card-title">Artisans en attente</h2>
+              <h2 className="card-title" style={{color:"white"}}>Artisans en attente</h2>
               <div className="card-subtitle">
                 {pendingArtisans.length === 0
                   ? 'Aucune demande en attente'
@@ -421,9 +421,9 @@ export default function AdminDashboard() {
         </div>
 
         {/* Recent orders */}
-        <div className="card anim-fade-up anim-d4">
+        <div className="card anim-fade-up anim-d4" style={{ background: '#18203A'}}>
           <div className="card-header">
-            <h2 className="card-title">Commandes récentes</h2>
+            <h2 className="card-title" style={{color:"white"}}>Commandes récentes</h2>
             <Link href="/dashboard/admin/orders" className="see-all">Voir tout →</Link>
           </div>
           <div style={{ padding: '8px 0' }}>
@@ -457,9 +457,9 @@ export default function AdminDashboard() {
       </div>
 
       {/* Recent products table */}
-      <div className="card anim-fade-up anim-d4" style={{ marginTop: 0,marginBottom:"5%" }}>
+      <div className="card anim-fade-up anim-d4" style={{ marginTop: 0, background: '#18203A',marginBottom:"5%" }}>
         <div className="card-header">
-          <h2 className="card-title">Produits récents</h2>
+          <h2 className="card-title" style={{color:"white"}}>Produits récents</h2>
           <Link href="/dashboard/admin/products" className="see-all">Voir tout →</Link>
         </div>
         <div className="table-wrap">
@@ -477,18 +477,18 @@ export default function AdminDashboard() {
               {recentProducts.map((p) => (
                 <tr key={p._id}>
                   <td>
-                    <Link href={`/dashboard/admin/products/${p._id}`} style={{ fontWeight: 600, fontSize: '0.85rem', color: '#0234AB', textDecoration: 'none' }}>
+                    <Link href={`/dashboard/admin/products/${p._id}`} style={{ fontWeight: 600, fontSize: '0.85rem', color: '#ffffff', textDecoration: 'none' }}>
                       {p.title}
                     </Link>
                   </td>
                   <td style={{ fontSize: '0.8rem', color: '#8B9AB5' }}>{p.artisan?.name ?? '—'}</td>
-                  <td style={{ fontWeight: 700, fontSize: '0.8rem' }}>{p.price} TND</td>
+                  <td style={{ fontWeight: 700,color:"white", fontSize: '0.8rem' }}>{p.price} TND</td>
                   <td>
-                    <span style={{ fontSize: '0.72rem', fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: p.isSuspended ? '#fff5f5' : p.isApproved ? '#f0fff4' : '#fffbeb', color: p.isSuspended ? '#e53e3e' : p.isApproved ? '#0B9E5E' : '#F59E0B' }}>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: p.isSuspended ? '#18203A' : p.isApproved ? '#f0fff4' : '#fffbeb', color: p.isSuspended ? '#e53e3e' : p.isApproved ? '#0B9E5E' : '#F59E0B' }}>
                       {p.isSuspended ? 'Suspendu' : p.isApproved ? 'Approuvé' : 'En attente'}
                     </span>
                   </td>
-                  <td>
+                  <td style={{color:"white"}}>
                     {p.views}
                   </td>
                 </tr>
@@ -507,13 +507,13 @@ export default function AdminDashboard() {
           { href: '/dashboard/admin/orders',   icon: '◇', label: 'Commandes',          sub: `${stats.totalOrders} commandes`,     color: '#F5A623' },
         ].map((item, i) => (
           <Link key={item.href} href={item.href} className="card"
-            style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12, animationDelay: `${0.3 + i * 0.07}s`, textDecoration: 'none' }}>
+            style={{ padding: 20, display: 'flex', flexDirection: 'column', background: '#18203A', gap: 12, animationDelay: `${0.3 + i * 0.07}s`, textDecoration: 'none' }}>
             <div style={{ width: 48, height: 48, borderRadius: 14, background: `${item.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', color: item.color }}>
               {item.icon}
             </div>
             <div>
-              <div style={{ fontWeight: 600, color: '#0A0F2C', fontSize: '0.9rem' }}>{item.label}</div>
-              <div style={{ fontSize: '0.78rem', color: '#8B9AB5', marginTop: 3 }}>{item.sub}</div>
+              <div style={{ fontWeight: 600, color: 'white', fontSize: '0.9rem' }}>{item.label}</div>
+              <div style={{ fontSize: '0.78rem', color: 'white', marginTop: 3 }}>{item.sub}</div>
             </div>
           </Link>
         ))}

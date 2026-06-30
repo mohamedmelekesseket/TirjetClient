@@ -241,15 +241,15 @@ export default function AdminCreateMaisonPage() {
                         onClick={() => { setForm(f => ({ ...f, type: t })); setErrors(p => ({ ...p, type: undefined })); }}
                         style={{
                           flex: 1, padding: '10px 14px', borderRadius: 10, cursor: 'pointer',
-                          border: `2px solid ${form.type === t ? (t === 'traditionnelle' ? '#B45309' : '#4338CA') : '#E2E8F0'}`,
+                          border: `2px solid ${form.type === t ? (t === 'traditionnelle' ? '#B45309' : '#4338CA') : 'transparent'}`,
                           background: form.type === t
-                            ? (t === 'traditionnelle' ? '#FFF8ED' : '#EEF2FF')
-                            : '#fff',
+                            ? (t === 'traditionnelle' ? '#FFF8ED' : '#0D1531')
+                            : '#0D1531',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                           fontWeight: 650, fontSize: '0.875rem',
                           color: form.type === t
-                            ? (t === 'traditionnelle' ? '#B45309' : '#4338CA')
-                            : '#4A5568',
+                            ? (t === 'traditionnelle' ? '#B45309' : '#ffffff')
+                            : '#b4b4b4',
                           transition: 'all 0.18s',
                         }}
                       >

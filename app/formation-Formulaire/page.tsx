@@ -195,6 +195,11 @@ export default function FormulaireAmazighPage() {
   };
 
   const handleSubmit = async () => {
+    console.log("[Client] Form submission started");
+    console.log("[Client] isAuthenticated:", isAuthenticated);
+    console.log("[Client] API URL:", API);
+    console.log("[Client] Form data:", data);
+    
     if (!isAuthenticated) {
       showErrorToast("Vous devez être connecté pour envoyer le formulaire.");
       return;
@@ -205,15 +210,20 @@ export default function FormulaireAmazighPage() {
     }
     setSubmitting(true);
     try {
+      console.log("[Client] Sending request to:", `${API}/api/formation-amazigh`);
       const res = await fetch(`${API}/api/formation-amazigh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      console.log("[Client] Response status:", res.status);
+      console.log("[Client] Response ok:", res.ok);
+      
       if (!res.ok) throw new Error("Erreur lors de l'envoi");
       setDone(true);
       showSuccessToast("Demande enregistrée avec succès !");
     } catch (e) {
+      console.error("[Client] Error:", e);
       showErrorToast("Une erreur est survenue. Veuillez réessayer.");
     } finally {
       setSubmitting(false);
@@ -690,7 +700,16 @@ export default function FormulaireAmazighPage() {
                 Suivant <ArrowRight size={16} />
               </button>
             ) : (
-              <button className="fam-btn fam-btn--primary" onClick={handleSubmit} disabled={submitting || !isAuthenticated}>
+              <button 
+                className="fam-btn fam-btn--primary" 
+                onClick={() => {
+                  console.log("[Button] Submit button clicked");
+                  console.log("[Button] isAuthenticated:", isAuthenticated);
+                  console.log("[Button] submitting:", submitting);
+                  handleSubmit();
+                }} 
+                disabled={submitting || !isAuthenticated}
+              >
                 {submitting ? "Envoi..." : "Envoyer"} <ArrowRight size={16} />
               </button>
             )}

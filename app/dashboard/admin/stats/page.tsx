@@ -312,7 +312,7 @@ export default function AdminStatsPage() {
         ].map((k, i) => (
           <div key={k.label} className="stat-card anim-fade-up" style={{ animationDelay: `${i * 0.07}s` }}>
             <div className="stat-card-top">
-              <div className="stat-card-label" style={{ alignSelf: 'flex-start', marginBottom: 0 }}>
+              <div className="stat-card-label" style={{ alignSelf: 'flex-start',color:"white", marginBottom: 0 }}>
                 {k.label}
               </div>
               {k.delta !== '—' && (
@@ -332,9 +332,9 @@ export default function AdminStatsPage() {
       <div className="dash-two-col" style={{ marginBottom: '24px' }}>
 
         {/* Bar chart — Commandes par mois */}
-        <div className="card anim-fade-up anim-d2">
+        <div className="card anim-fade-up anim-d2" style={{background:"#232C47"}}>
           <div className="card-header">
-            <h2 className="card-title">Commandes par mois</h2>
+            <h2 className="card-title" style={{color:"white"}}>Commandes par mois</h2>
             <span className="badge badge-primary">
               {monthly[0]?.month} {monthly[0]?.year} — {monthly.at(-1)?.month} {monthly.at(-1)?.year}
             </span>
@@ -379,9 +379,9 @@ export default function AdminStatsPage() {
         </div>
 
         {/* Revenue horizontal bars */}
-        <div className="card anim-fade-up anim-d3">
+        <div className="card anim-fade-up anim-d3" style={{background:"#232C47"}}>
           <div className="card-header">
-            <h2 className="card-title">Revenus mensuels (TND)</h2>
+            <h2 className="card-title" style={{color:"white"}}>Revenus mensuels (TND)</h2>
             {(kpi?.revenueGrowth ?? 0) !== 0 && (
               <span className={`badge ${(kpi?.revenueGrowth ?? 0) >= 0 ? 'badge-success' : 'badge-danger'}`}>
                 {fmtGrowth(kpi?.revenueGrowth ?? 0)} ce mois
@@ -396,8 +396,8 @@ export default function AdminStatsPage() {
                 return (
                   <div key={`rev-${d.month}-${d.year}`} style={{ marginBottom: '10px', animation: `fadeInLeft 0.5s ease both ${0.1 + i * 0.07}s` }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                      <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#4A5568' }}>{d.month}</span>
-                      <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.75rem', fontWeight: 700, color: '#0234AB' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#ffffff' }}>{d.month}</span>
+                      <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.75rem', fontWeight: 700, color: '  #0c4ee7' }}>
                         {d.revenue > 0 ? d.revenue.toLocaleString('fr-FR') : '—'} TND
                       </span>
                     </div>

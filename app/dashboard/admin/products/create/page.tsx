@@ -274,9 +274,9 @@ export default function AdminCreateProductPage() {
           <div className="create-product-main">
 
             {/* General info */}
-            <div className="card anim-fade-up anim-d1">
-              <div className="card-header">
-                <h2 className="card-title">Informations générales</h2>
+        <div className="card anim-fade-up anim-d2" style={{backgroundColor:"#232C47"}}>
+          <div className="card-header" >
+          <h2 className="card-title" style={{color: "#ffffff" }}>Informations générales</h2>
               </div>
               <div className="card-body">
 
@@ -385,12 +385,12 @@ export default function AdminCreateProductPage() {
             </div>
 
             {/* Images */}
-            <div className="card anim-fade-up anim-d2">
-              <div className="card-header">
-                <h2 className="card-title">Photos du produit</h2>
+           <div className="card anim-fade-up anim-d2" style={{backgroundColor:"#232C47"}}>
+             <div className="card-header" >
+                <h2 className="card-title" style={{color: "#ffffff" }}>Photos du produit</h2>
                 <span className="card-hint">{images.length}/8 — au moins 3 conseillées</span>
               </div>
-              <div className="card-body">
+              <div className="card-body" style={{background:"white"}}>
                 {images.length < 8 && (
                   <div
                     onDragOver={e => e.preventDefault()} onDrop={handleDrop}
@@ -448,9 +448,9 @@ export default function AdminCreateProductPage() {
           <div className="create-product-side">
 
             {/* Vendor search card */}
-            <div className="card anim-fade-up anim-d1">
-              <div className="card-header">
-                <h2 className="card-title">Artisan *</h2>
+        <div className="card anim-fade-up anim-d2" style={{backgroundColor:"#232C47"}}>
+          <div className="card-header" >
+          <h2 className="card-title" style={{color: "#ffffff" }}>Artisan *</h2>
                 {selectedVendor && (
                   <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>
                     Sélectionné
@@ -542,8 +542,8 @@ export default function AdminCreateProductPage() {
             </div>
 
             {/* Price & Stock */}
-            <div className="card anim-fade-up anim-d2">
-              <div className="card-header"><h2 className="card-title">Prix & Stock</h2></div>
+        <div className="card anim-fade-up anim-d2" style={{backgroundColor:"#232C47"}}>
+          <div className="card-header" ><h2 className="card-title" style={{color:"white"}}>Prix & Stock</h2></div>
               <div className="card-body">
                 <div className="form-group">
                   <label className="form-label">Prix (TND) *</label>

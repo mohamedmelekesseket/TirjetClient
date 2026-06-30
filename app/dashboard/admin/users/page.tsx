@@ -458,9 +458,9 @@ export default function AdminUsersPage() {
       </div>
 
       {/* ── Table ── */}
-      <div className="card anim-fade-up anim-d3">
-        <div className="card-header">
-          <h2 className="card-title">Tous les utilisateurs</h2>
+        <div className="card anim-fade-up anim-d3" style={{background:"#232C47"}}>
+          <div className="card-header">
+            <h2 className="card-title" style={{color:"white"}}>Tous les utilisateurs</h2>
           <span style={{ fontSize: "0.8rem", color: "#8B9AB5" }}>{filtered.length} affiché(s)</span>
         </div>
 

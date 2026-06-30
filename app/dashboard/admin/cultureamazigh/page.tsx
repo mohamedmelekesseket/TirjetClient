@@ -276,9 +276,9 @@ export default function AdminCultureAmazighPage() {
       </div>
 
       {/* Table card */}
-      <div className="mh-card mh-anim-fade-up mh-anim-d3">
-        <div className="mh-card-header">
-          <h2 className="mh-card-title">
+      <div className="mh-card mh-anim-fade-up mh-anim-d3" style={{backgroundColor:"#18203A"}}>
+        <div className="mh-card-header" style={{backgroundColor:"#18203A"}}>
+          <h2 className="mh-card-title" style={{color:"white"}}>
             <BookOpen size={16} /> Catalogue complet
           </h2>
           <span className="mh-card-hint">{filtered.length} résultat(s)</span>
@@ -329,7 +329,7 @@ export default function AdminCultureAmazighPage() {
                     const meta           = TYPE_META[c.type];
 
                     return (
-                      <tr key={c._id} style={{ opacity: isDeleting ? 0.5 : 1, animationDelay: `${i * 0.04}s` }}>
+                      <tr key={c._id} style={{ opacity: isDeleting ? 0.5 : 1, animationDelay: `${i * 0.04}s` ,borderBottom:"1px solid #30364b"}}>
                         {/* Publication */}
                         <td>
                           <div className="mh-property-thumb">
@@ -350,9 +350,9 @@ export default function AdminCultureAmazighPage() {
                               </div>
                             )}
                             <div>
-                              <div className="mh-property-name">{c.title}</div>
+                              <div className="mh-property-name" style={{ color: '#ffffff' }}>{c.title}</div>
                               {c.name && (
-                                <div style={{ fontSize: '0.75rem', color: '#8B9AB5' }}>{c.name}</div>
+                                <div style={{ fontSize: '0.75rem', color: '#ffffff' }}>{c.name}</div>
                               )}
                               {c.isEditorsPick && (
                                 <span className="mh-badge mh-badge-purple" style={{ fontSize: '0.65rem', padding: '2px 7px' }}>
@@ -364,7 +364,7 @@ export default function AdminCultureAmazighPage() {
                         </td>
 
                         {/* Author */}
-                        <td style={{ color: '#4A5568', fontSize: '0.875rem' }}>{getHostName(c.host)}</td>
+                        <td style={{ color: '#fbfbfb', fontSize: '0.875rem' }}>{getHostName(c.host)}</td>
 
                         {/* Type */}
                         <td>

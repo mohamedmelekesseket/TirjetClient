@@ -322,7 +322,7 @@ export default function AdminMaisonsPage() {
         </div>
         <div className="mh-header-right">
           {/* ── View toggle ── */}
-          <div style={{ display: 'flex', background: '#F1F5F9', borderRadius: 10, padding: 4, gap: 2 }}>
+          <div style={{ display: 'flex', background: '#18203A', borderRadius: 10, padding: 4, gap: 2 }}>
             <button
               onClick={() => setMainView('maisons')}
               style={{

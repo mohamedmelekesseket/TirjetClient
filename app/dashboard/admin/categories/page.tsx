@@ -682,7 +682,7 @@ const handleSave = async (form: NodeForm) => {
       {/* Header */}
       <div className="cat-header">
         <div>
-          <h1 className="cat-title">Gestion des Catégories</h1>
+          <h1 className="cat-title" style={{color:"white"}}>Gestion des Catégories</h1>
           <p className="cat-subtitle">Arbre hiérarchique complet — L1 → L2 → L3 → L4</p>
         </div>
         <div className="cat-header-actions">

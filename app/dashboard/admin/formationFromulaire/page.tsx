@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useApiToken } from "@/lib/useApiToken";
-import { Eye, X, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Eye, X, Loader2, AlertCircle, CheckCircle2, RefreshCw  } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -91,7 +91,7 @@ function ErrorModal({ message, onClose }: { message: string; onClose: () => void
         <h3 style={{ margin: "0 0 10px", fontSize: "1.05rem", fontWeight: 700, color: "#0A0F2C" }}>
           Une erreur est survenue
         </h3>
-        <p style={{ fontSize: "0.875rem", color: "#4a5568", marginBottom: 24, lineHeight: 1.6 }}>{message}</p>
+        <p style={{ fontSize: "0.875rem", color: "#8B9AB5", marginBottom: 24, lineHeight: 1.6 }}>{message}</p>
         <button onClick={onClose} style={{
           padding: "10px 28px", borderRadius: 8, border: "none",
           background: "#0234AB", color: "#fff", cursor: "pointer", fontWeight: 600, fontSize: "0.875rem",
@@ -117,13 +117,13 @@ function DeleteModal({ item, onClose, onConfirm, loading }: {
         <h3 style={{ margin: "0 0 10px", fontSize: "1.05rem", fontWeight: 700, color: "#0A0F2C" }}>
           Supprimer la demande ?
         </h3>
-        <p style={{ fontSize: "0.875rem", color: "#4a5568", marginBottom: 24, lineHeight: 1.6 }}>
+        <p style={{ fontSize: "0.875rem", color: "#8B9AB5", marginBottom: 24, lineHeight: 1.6 }}>
           La demande de <strong>{item.nomPrenom}</strong> sera définitivement supprimée.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
           <button onClick={onClose} disabled={loading} style={{
             padding: "9px 20px", borderRadius: 8, border: "1px solid #e2e8f0",
-            background: "#f8fafc", cursor: "pointer", fontWeight: 600, fontSize: "0.875rem", color: "#4a5568",
+            background: "#f8fafc", cursor: "pointer", fontWeight: 600, fontSize: "0.875rem", color: "#8B9AB5",
           }}>Retour</button>
           <button onClick={onConfirm} disabled={loading} style={{
             padding: "9px 20px", borderRadius: 8, border: "none",
@@ -211,7 +211,7 @@ function StatusModal({ item, onClose, onConfirm, loading }: {
           <button onClick={onClose} disabled={loading} style={{
             flex: 1, padding: 12, borderRadius: 10,
             border: "1.5px solid #E2E8F0", background: "#fff",
-            color: "#4A5568", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer",
+            color: "#8B9AB5", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer",
           }}>Annuler</button>
           <button
             onClick={() => onConfirm(selected)}
@@ -558,9 +558,9 @@ export default function FormationsAdminPage() {
       )}
 
       {!isSessionLoading && !loading && !error && visible.length > 0 && (
-        <div className="card anim-fade-up anim-d2">
-          <div className="card-header">
-            <h2 className="card-title">Liste des demandes</h2>
+        <div className="card anim-fade-up anim-d2" style={{backgroundColor:"#232C47"}}>
+          <div className="card-header" >
+            <h2 className="card-title" style={{color:"white"}}>Liste des demandes</h2>
             <span style={{ fontSize: "0.8rem", color: "#8B9AB5" }}>{visible.length} demandes</span>
           </div>
           <div className="table-wrap">
@@ -584,17 +584,17 @@ export default function FormationsAdminPage() {
                   return (
                     <tr key={o._id} style={{ animationDelay: `${i * 0.06}s`, opacity: isBusy ? 0.6 : 1 }}>
                       <td>
-                        <div style={{ fontWeight: 600, fontSize: "0.875rem", color: "#0A0F2C" }}>{o.nomPrenom}</div>
+                        <div style={{ fontWeight: 600, fontSize: "0.875rem", color: "white" }}>{o.nomPrenom}</div>
                         <div style={{ fontSize: "0.72rem", color: "#8B9AB5", marginTop: 2 }}>
                           {o.genre === "femme" ? "Femme" : "Homme"} · {NIVEAU_LABEL[o.trancheAge] ?? o.trancheAge}
                         </div>
                       </td>
                       <td>
-                        <div style={{ fontSize: "0.82rem" }}>{o.email}</div>
+                        <div style={{ fontSize: "0.82rem" ,color:"white"}}>{o.email}</div>
                         <div style={{ fontSize: "0.72rem", color: "#8B9AB5", marginTop: 2 }}>{o.telephone}</div>
                       </td>
-                      <td style={{ fontSize: "0.85rem", color: "#4A5568" }}>{o.region}</td>
-                      <td style={{ fontSize: "0.82rem", color: "#4A5568" }}>
+                      <td style={{ fontSize: "0.85rem", color: "#8B9AB5" }}>{o.region}</td>
+                      <td style={{ fontSize: "0.82rem", color: "#8B9AB5" }}>
                         {NIVEAU_LABEL[o.niveauEtudes] ?? o.niveauEtudes}
                       </td>
                       <td style={{ color: "#8B9AB5", fontSize: "0.82rem" }}>{fmtDate(o.createdAt)}</td>
@@ -611,14 +611,14 @@ export default function FormationsAdminPage() {
                           style={{
                             display: "flex", alignItems: "center", gap: 6,
                             padding: "6px 12px", borderRadius: 8,
-                            border: "1px solid #E2E8F0", background: "#fff",
+                            border: "1px solid #373737", background: "#0D1530",
                             cursor: "pointer", fontSize: "0.8rem",
-                            fontWeight: 600, color: "#4A5568", transition: "all 0.2s",
+                            fontWeight: 600, color: "#ffffff", transition: "all 0.2s",
                           }}
                           onMouseOver={(e) => (e.currentTarget.style.borderColor = "#0234AB")}
                           onMouseOut={(e)  => (e.currentTarget.style.borderColor = "#E2E8F0")}
                         >
-                          {isBusy ? <Loader2 size={14} className="animate-spin" /> : "⇄"}
+                          {isBusy ? <Loader2 size={14} className="animate-spin" /> :<RefreshCw size={16}/>}
                           Statut
                         </button>
                       </td>
