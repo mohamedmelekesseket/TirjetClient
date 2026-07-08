@@ -1,4 +1,4 @@
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useEffect, useState, useCallback } from 'react';
 
 interface ApiTokenResult {
@@ -43,6 +43,8 @@ export function useApiToken(): ApiTokenResult {
   useEffect(() => {
     if (status === 'authenticated' && !apiToken) {
       setError('Session expirée. Veuillez vous reconnecter avec Google.');
+      // Auto sign out when session expires
+      signOut({ callbackUrl: '/connexion' });
     }
   }, [status, apiToken]);
 
