@@ -41,12 +41,35 @@ export function useApiToken(): ApiTokenResult {
   }, [status, update]);
 
   useEffect(() => {
+    // Auto sign out when session expires or becomes invalid
     if (status === 'authenticated' && !apiToken) {
       setError('Session expirée. Veuillez vous reconnecter avec Google.');
-      // Auto sign out when session expires
       signOut({ callbackUrl: '/connexion' });
     }
   }, [status, apiToken]);
+
+  // Also check for 401 errors from API calls and sign out
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      if (status === 'authenticated') {
+        signOut({ callbackUrl: '/connexion' });
+      }
+    };
+
+    // Listen for 401 errors globally
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      const response = await originalFetch(...args);
+      if (response.status === 401 && status === 'authenticated') {
+        handleUnauthorized();
+      }
+      return response;
+    };
+
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, [status]);
 
   return {
     apiToken,
