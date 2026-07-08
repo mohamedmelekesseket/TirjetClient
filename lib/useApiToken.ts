@@ -44,7 +44,7 @@ export function useApiToken(): ApiTokenResult {
     // Auto sign out when session expires or becomes invalid
     if (status === 'authenticated' && !apiToken) {
       setError('Session expirée. Veuillez vous reconnecter avec Google.');
-      signOut({ callbackUrl: '/connexion' });
+      signOut({ callbackUrl: '/' });
     }
   }, [status, apiToken]);
 
@@ -52,7 +52,7 @@ export function useApiToken(): ApiTokenResult {
   useEffect(() => {
     const handleUnauthorized = () => {
       if (status === 'authenticated') {
-        signOut({ callbackUrl: '/connexion' });
+        signOut({ callbackUrl: '/' });
       }
     };
 
