@@ -498,7 +498,7 @@ const fetchArtisans = async () => {
       (activeTab === "En attente" && label === "En attente") ||
       (activeTab === "Suspendu" && label === "Suspendu");
     const matchSearch =
-      a.user.name.toLowerCase().includes(search.toLowerCase()) ||
+      (a.user?.name || "").toLowerCase().includes(search.toLowerCase()) ||
       (a.region || "").toLowerCase().includes(search.toLowerCase());
     return matchTab && matchSearch;
   });
@@ -635,10 +635,10 @@ const fetchArtisans = async () => {
                       <tr key={a._id} style={{ animationDelay: `${i * 0.055}s` }}>
                         <td>
                           <div className="user-cell">
-                            <div className="user-row-avatar">{initials(a.user.name)}</div>
+                            <div className="user-row-avatar">{initials(a.user?.name || "N/A")}</div>
                             <div>
-                              <div className="user-cell-name">{a.user.name}</div>
-                              <div className="user-cell-email">{a.user.email}</div>
+                              <div className="user-cell-name">{a.user?.name || "N/A"}</div>
+                              <div className="user-cell-email">{a.user?.email || "N/A"}</div>
                             </div>
                           </div>
                         </td>
@@ -716,7 +716,7 @@ const fetchArtisans = async () => {
                               {isSaving ? "..." : <Eye color="#0B3EBA" size={15} />}
                             </button>
 
-                            {label !== "En attente" && label !== "Suspendu" && (
+                            {label !== "En attente" && label !== "Suspendu" && a.user?._id && (
                               <button
                                 className="icon-btn danger"
                                 title="Suspendre"
