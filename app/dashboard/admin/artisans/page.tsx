@@ -41,7 +41,7 @@ const initials = (name: string) =>
   name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 
 const statusLabel = (a: Artisan): string => {
-  if (a.user.status === "blocked") return "Suspendu";
+  if (a.user?.status === "blocked") return "Suspendu";
   if (!a.isApproved) return "En attente";
   return "Actif";
 };
