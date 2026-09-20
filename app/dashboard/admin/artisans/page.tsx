@@ -167,7 +167,7 @@ function RankPopover({
 
 // ─── Edit Modal ────────────────────────────────────────────────────────────────
 const EDIT_FIELDS = [
-  { key: "phone",       label: "Téléphone",                   multiline: false, type: "text"   },
+  { key: "phone",       label: "Téléphone",                   multiline: false, type: "number"   },
   { key: "region",      label: "Région",                      multiline: false, type: "text"   },
   { key: "city",        label: "Ville",                       multiline: false, type: "text"   },
   { key: "specialite",  label: "Spécialité",                  multiline: false, type: "text"   },
@@ -238,13 +238,13 @@ function EditArtisanModal({
         position: "fixed", inset: 0,
         background: "rgba(0,0,0,.5)",
         display: "flex", alignItems: "center", justifyContent: "center",
-        zIndex: 1000,
+        zIndex: 20000,
       }}
       onClick={onClose}
     >
       <div
         style={{
-          background: "white", borderRadius: "14px",
+          background: "#0D1530", borderRadius: "14px",
           padding: "28px 32px",
           width: "min(600px, 95vw)", maxHeight: "88vh",
           overflowY: "auto",
@@ -255,12 +255,15 @@ function EditArtisanModal({
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "22px" }}>
           <div>
-            <h2 style={{ fontSize: "1.1rem", fontWeight: 600, margin: 0 }}>Modifier l'artisan</h2>
-            <p style={{ fontSize: "0.82rem", color: "black", margin: "2px 0 0" }}>
-              {artisan.user.name} · {artisan.user.email}
+            <h2 style={{ fontSize: "1.1rem", color: "white", fontWeight: 600, margin: 0 }}>Modifier l'artisan</h2>
+            <p style={{ fontSize: "0.82rem", color: "#5b82ed", margin: "10px 0 0" }}>
+              {artisan.user?.name || "N/A"} 
+            </p>
+            <p style={{ fontSize: "0.82rem", color: "#F5A623", margin: "10px 0 0" }}>
+               {artisan.user?.email || "N/A"}
             </p>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: "1.3rem", cursor: "pointer", color: "black" }}>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: "1.3rem", cursor: "pointer", color: "white" }}>
             ✕
           </button>
         </div>
@@ -269,7 +272,7 @@ function EditArtisanModal({
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
           {/* Rank field */}
           <div>
-            <label style={{ display: "block", fontSize: ".78rem", color: "black", marginBottom: "5px", fontWeight: 500 }}>
+            <label style={{ display: "block", fontSize: ".78rem", color: "white", marginBottom: "5px", fontWeight: 500 }}>
               Classement (1 = Top 1, vide = aucun)
             </label>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -292,20 +295,20 @@ function EditArtisanModal({
           {EDIT_FIELDS.map((f) =>
             f.multiline ? (
               <div key={f.key} style={{ gridColumn: "1 / -1" }}>
-                <label style={{ display: "block", fontSize: ".78rem", color: "black", marginBottom: "5px", fontWeight: 500 }}>
+                <label style={{ display: "block", fontSize: ".78rem", color: "white", marginBottom: "5px", fontWeight: 500 }}>
                   {f.label}
                 </label>
                 <textarea
                   rows={3}
                   className="search-bar-input"
-                  style={{ width: "100%", resize: "vertical", boxSizing: "border-box" }}
+                  style={{ width: "100%",minHeight:"100px" ,resize: "vertical", boxSizing: "border-box" }}
                   value={form[f.key]}
                   onChange={(e) => set(f.key, e.target.value)}
                 />
               </div>
             ) : (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: ".78rem", color: "black", marginBottom: "5px", fontWeight: 500 }}>
+                <label style={{ display: "block", fontSize: ".78rem", color: "white", marginBottom: "5px", fontWeight: 500 }}>
                   {f.label}
                 </label>
                 <input
@@ -593,10 +596,10 @@ const fetchArtisans = async () => {
         </div>
 
         {isSessionLoading && (
-          <div style={{ padding: "40px", textAlign: "center", color: "black" }}>Chargement de la session...</div>
+          <div style={{ padding: "40px", textAlign: "center", color: "white" }}>Chargement de la session...</div>
         )}
         {!isSessionLoading && loading && (
-          <div style={{ padding: "40px", textAlign: "center", color: "black" }}>Chargement...</div>
+          <div style={{ padding: "40px", textAlign: "center", color: "white" }}>Chargement...</div>
         )}
         {!isSessionLoading && error && (
           <div style={{ padding: "24px", textAlign: "center", color: "#E53E3E" }}>
@@ -622,7 +625,7 @@ const fetchArtisans = async () => {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={7} style={{ textAlign: "center", padding: "32px", color: "black" }}>
+                    <td colSpan={7} style={{ textAlign: "center", padding: "32px", color: "white" }}>
                       Aucun artisan trouvé
                     </td>
                   </tr>

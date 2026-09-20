@@ -163,7 +163,7 @@ export default function RejoindrePage() {
                 </Link>
                 <p className="rj-gate__sub">
                   Pas encore de compte ?{" "}
-                  <Link href="/inscription">Créer un compte</Link>
+                  <Link href="/connexion">Créer un compte</Link>
                 </p>
               </div>
             ) :

@@ -161,7 +161,7 @@ export default function AdminDashboard() {
 
       setMonthlyRevenue(last6);
       setPendingArtisans(pending.slice(0, 3));
-      setRecentProducts(allProducts.slice(0, 5));
+      setRecentProducts(allProducts.slice(0, 5).sort((a, b) => b.views - a.views));
       setRecentOrders(allOrders.slice(0, 5));
     } catch (err) {
       console.error('Dashboard fetch error:', err);

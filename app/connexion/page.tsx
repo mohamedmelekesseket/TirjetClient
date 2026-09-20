@@ -215,7 +215,7 @@ export default function LoginPage() {
               onClick={async () => {
                 try {
                   setIsGoogleLoading(true);
-                  await signIn("google", { callbackUrl: "/profile" });
+                  await signIn("google", { callbackUrl: "/" });
                 } finally {
                   setIsGoogleLoading(false);
                 }

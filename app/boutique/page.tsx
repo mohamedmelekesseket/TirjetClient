@@ -11,6 +11,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 const REGIONS = ["Kairouan", "Nabeul", "Djerba", "Sfax", "Tunis", "Sejnane"];
 const MATS    = ["Laine", "Argent", "Céramique", "Cuir", "Alfa", "Cuivre"];
+const COLORS  = ["Rouge", "Bleu", "Vert", "Jaune", "Noir", "Blanc", "Beige", "Marron", "Gris", "Or", "Argent"];
 
 const values = [
   { n: "01", t: "Paiement simple et rassurant, sécurisé à chaque étape." },
@@ -30,15 +31,22 @@ interface Product {
   title: string;
   description: string;
   price: number;
+  solde?: number;
   images: string[];
   category: { _id: string; name: string } | string;
   stock: number;
   location?: string;
   material?: string;
+  dimensions?: string;
+  colors?: string[];
+  tags?: string[];
   isApproved: boolean;
+  isHome?: boolean;
+  views?: number;
+  createdAt: string;
 }
 
-type FilterGroup = "cat" | "region" | "mat";
+type FilterGroup = "cat" | "region" | "mat" | "color" | "tag";
 
 export default function Boutique() {
   const { apiToken, session } = useApiToken();
@@ -55,12 +63,18 @@ export default function Boutique() {
   const [addedIds, setAddedIds]   = useState<string[]>([]);
   const [panelOpen, setPanelOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"newest" | "popular" | "price-asc" | "price-desc">("newest");
   const [filters, setFilters] = useState({
     cat:      [] as string[],
     region:   [] as string[],
     mat:      [] as string[],
+    color:    [] as string[],
+    tag:      [] as string[],
     minPrice: 0,
     maxPrice: 5000,
+    inStock:  false,
+    onSale:   false,
+    featured: false,
   });
 
   // ── Resolve category name from either a populated object or a raw ID ────────
@@ -94,7 +108,7 @@ export default function Boutique() {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`${API}/api/products`);
+        const res = await fetch(`${API}/api/products?limit=100`);
         if (!res.ok) throw new Error(`Erreur ${res.status}`);
         const data = await res.json();
         const list: Product[] = Array.isArray(data)
@@ -163,25 +177,36 @@ export default function Boutique() {
   const toggleChip = (group: FilterGroup, val: string) =>
     setFilters(p => ({
       ...p,
-      [group]: p[group].includes(val)
-        ? p[group].filter(v => v !== val)
-        : [...p[group], val],
+      [group]: (p[group as keyof typeof p] as string[]).includes(val)
+        ? (p[group as keyof typeof p] as string[]).filter((v: string) => v !== val)
+        : [...(p[group as keyof typeof p] as string[]), val],
     }));
 
   const clearAll = () => {
-    setFilters({ cat: [], region: [], mat: [], minPrice: 0, maxPrice: 5000 });
+    setFilters({
+      cat: [], region: [], mat: [], color: [], tag: [],
+      minPrice: 0, maxPrice: 5000, inStock: false, onSale: false, featured: false
+    });
     setSearchQuery("");
+    setSortBy("newest");
   };
 
   const activeCount =
     filters.cat.length + filters.region.length + filters.mat.length +
-    (filters.minPrice > 0 || filters.maxPrice < 5000 ? 1 : 0);
+    filters.color.length + filters.tag.length +
+    (filters.minPrice > 0 || filters.maxPrice < 5000 ? 1 : 0) +
+    (filters.inStock ? 1 : 0) + (filters.onSale ? 1 : 0) + (filters.featured ? 1 : 0);
 
   const filteredProducts = products.filter(p => {
     if (filters.cat.length && !filters.cat.includes(getCategoryId(p.category))) return false;
     if (filters.region.length && !filters.region.includes(p.location ?? ""))   return false;
     if (filters.mat.length    && !filters.mat.includes(p.material ?? ""))      return false;
+    if (filters.color.length && !filters.color.some((c: string) => p.colors?.includes(c))) return false;
+    if (filters.tag.length   && !filters.tag.some((t: string) => p.tags?.includes(t))) return false;
     if (p.price < filters.minPrice || p.price > filters.maxPrice)              return false;
+    if (filters.inStock && p.stock <= 0) return false;
+    if (filters.onSale && !p.solde) return false;
+    if (filters.featured && !p.isHome) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       if (
@@ -190,6 +215,19 @@ export default function Boutique() {
       ) return false;
     }
     return true;
+  }).sort((a, b) => {
+    switch (sortBy) {
+      case "newest":
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case "popular":
+        return (b.views || 0) - (a.views || 0);
+      case "price-asc":
+        return a.price - b.price;
+      case "price-desc":
+        return b.price - a.price;
+      default:
+        return 0;
+    }
   });
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -284,6 +322,72 @@ export default function Boutique() {
             </div>
 
             <div className="boutique__filter-group">
+              <div className="boutique__filter-label">Couleur</div>
+              <div className="boutique__chips">
+                {COLORS.map(v => (
+                  <button key={v}
+                    className={`boutique__chip${filters.color.includes(v) ? " boutique__chip--active" : ""}`}
+                    onClick={() => toggleChip("color", v)}>{v}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="boutique__filter-group">
+              <div className="boutique__filter-label">Tags</div>
+              <div className="boutique__chips">
+                {Array.from(new Set(products.flatMap(p => p.tags || []))).slice(0, 10).map(v => (
+                  <button key={v}
+                    className={`boutique__chip${filters.tag.includes(v) ? " boutique__chip--active" : ""}`}
+                    onClick={() => toggleChip("tag", v)}>{v}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="boutique__filter-group">
+              <div className="boutique__filter-label">Disponibilité</div>
+              <div className="boutique__chips">
+                <button
+                  className={`boutique__chip${filters.inStock ? " boutique__chip--active" : ""}`}
+                  onClick={() => setFilters(p => ({ ...p, inStock: !p.inStock }))}>
+                  En stock
+                </button>
+                <button
+                  className={`boutique__chip${filters.onSale ? " boutique__chip--active" : ""}`}
+                  onClick={() => setFilters(p => ({ ...p, onSale: !p.onSale }))}>
+                  En promotion
+                </button>
+                <button
+                  className={`boutique__chip${filters.featured ? " boutique__chip--active" : ""}`}
+                  onClick={() => setFilters(p => ({ ...p, featured: !p.featured }))}>
+                  Vedette
+                </button>
+              </div>
+            </div>
+
+            <div className="boutique__filter-group">
+              <div className="boutique__filter-label">Trier par</div>
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as any)}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  border: "1px solid #e2e8f0",
+                  background: "white",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                }}
+              >
+                <option value="newest">Nouveautés</option>
+                <option value="popular">Populaires</option>
+                <option value="price-asc">Prix croissant</option>
+                <option value="price-desc">Prix décroissant</option>
+              </select>
+            </div>
+
+            <div className="boutique__filter-group">
               <div className="boutique__filter-label">Prix (TND)</div>
               <div className="boutique__price-range">
                 <div className="boutique__price-display">
@@ -333,13 +437,28 @@ export default function Boutique() {
                   </button>
                 );
               })}
-              {(["region", "mat"] as FilterGroup[]).flatMap(group =>
-                filters[group].map(val => (
+              {(["region", "mat", "color", "tag"] as FilterGroup[]).flatMap(group =>
+                (filters[group as keyof typeof filters] as string[]).map((val: string) => (
                   <button key={`${group}-${val}`} className="boutique__tag"
                     onClick={() => toggleChip(group, val)}>
                     {val} <span aria-hidden="true"><X size={14} /></span>
                   </button>
                 ))
+              )}
+              {filters.inStock && (
+                <button className="boutique__tag" onClick={() => setFilters(p => ({ ...p, inStock: false }))}>
+                  En stock <span aria-hidden="true"><X size={14} /></span>
+                </button>
+              )}
+              {filters.onSale && (
+                <button className="boutique__tag" onClick={() => setFilters(p => ({ ...p, onSale: false }))}>
+                  En promotion <span aria-hidden="true"><X size={14} /></span>
+                </button>
+              )}
+              {filters.featured && (
+                <button className="boutique__tag" onClick={() => setFilters(p => ({ ...p, featured: false }))}>
+                  Vedette <span aria-hidden="true"><X size={14} /></span>
+                </button>
               )}
               {(filters.minPrice > 0 || filters.maxPrice < 5000) && (
                 <button className="boutique__tag"
@@ -463,7 +582,7 @@ export default function Boutique() {
                       <h3 className="boutique__card-title">{p.title}</h3>
                       <span className="boutique__card-price">{p.price.toLocaleString("fr-TN")} TND</span>
                     </div>
-                    <p className="boutique__card-desc">{p.description.slice(0, 120)}</p>
+                    <p className="boutique__card-desc">{p.description.slice(0, 120)} ...</p>
                   </div>
 
                   <div className="boutique__card-footer">

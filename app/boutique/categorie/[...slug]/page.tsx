@@ -21,18 +21,23 @@ interface Category {
   mainCategory: string; subcategories: Level2[]; isActive: boolean; slug: string;
 }
 interface Product {
-  _id: string; title: string; description: string; price: number;
+  _id: string; title: string; description: string; price: number; solde?: number;
   images: string[]; stock: number; isApproved: boolean; createdAt: string;
   subcategoryL2?: { slug: string; name: string };
   subcategoryL3?: { slug: string; name: string };
   subcategoryL4?: { slug: string; name: string };
+  location?: string; material?: string; colors?: string[]; tags?: string[];
+  isHome?: boolean; views?: number;
 }
 
 const SORT_OPTIONS = [
   { value: "newest",     label: "Plus récents" },
+  { value: "popular",    label: "Populaires" },
   { value: "price_asc",  label: "Prix croissant" },
   { value: "price_desc", label: "Prix décroissant" },
 ];
+
+const COLORS = ["Rouge", "Bleu", "Vert", "Jaune", "Noir", "Blanc", "Beige", "Marron", "Gris", "Or", "Argent"];
 
 export default function CategoryPage() {
   const params = useParams();
@@ -66,10 +71,17 @@ export default function CategoryPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy]           = useState("newest");
-  const [priceRange, setPriceRange]   = useState<[number, number]>([0, 1000]);
+  const [priceRange, setPriceRange]   = useState<[number, number]>([0, 5000]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [viewMode, setViewMode]       = useState<"grid" | "list">("grid");
   const [sortOpen, setSortOpen]       = useState(false);
+  const [filters, setFilters] = useState({
+    color:    [] as string[],
+    tag:      [] as string[],
+    inStock:  false,
+    onSale:   false,
+    featured: false,
+  });
 
   // ── 1. Fetch category tree + initialize active levels from URL ─────────────
   useEffect(() => {
@@ -185,6 +197,11 @@ export default function CategoryPage() {
   const filtered = products
     .filter((p) => {
       if (p.price < priceRange[0] || p.price > priceRange[1]) return false;
+      if (filters.color.length && !filters.color.some((c: string) => p.colors?.includes(c))) return false;
+      if (filters.tag.length && !filters.tag.some((t: string) => p.tags?.includes(t))) return false;
+      if (filters.inStock && p.stock <= 0) return false;
+      if (filters.onSale && !p.solde) return false;
+      if (filters.featured && !p.isHome) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         return p.title.toLowerCase().includes(q) || !!p.description?.toLowerCase().includes(q);
@@ -194,6 +211,7 @@ export default function CategoryPage() {
     .sort((a, b) => {
       if (sortBy === "price_asc")  return a.price - b.price;
       if (sortBy === "price_desc") return b.price - a.price;
+      if (sortBy === "popular") return (b.views || 0) - (a.views || 0);
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
@@ -376,7 +394,7 @@ export default function CategoryPage() {
 
           {categoryTree && (
             <div className="cat__sidebar-section">
-              <div className="cat__sidebar-label">Navigation</div>
+              <div className="cat__sidebar-label">Filter</div>
 
               {/* L1 */}
               <a role="button" onClick={() => selectL2(null)} style={{ cursor: "pointer" }}
@@ -428,22 +446,143 @@ export default function CategoryPage() {
             <div className="cat__range-wrap">
               <div className="cat__range-track" />
               <div className="cat__range-fill" style={{
-                left:  `${(priceRange[0] / 1000) * 100}%`,
-                right: `${100 - (priceRange[1] / 1000) * 100}%`,
+                left:  `${(priceRange[0] / 5000) * 100}%`,
+                right: `${100 - (priceRange[1] / 5000) * 100}%`,
               }} />
-              <input type="range" min={0} max={1000} step={50} value={priceRange[0]}
+              <input type="range" min={0} max={5000} step={50} value={priceRange[0]}
                 onChange={(e) => setPriceRange(([, max]) => [Math.min(+e.target.value, max - 50), max])}
                 className="cat__range-input" />
-              <input type="range" min={0} max={1000} step={50} value={priceRange[1]}
+              <input type="range" min={0} max={5000} step={50} value={priceRange[1]}
                 onChange={(e) => setPriceRange(([min]) => [min, Math.max(+e.target.value, min + 50)])}
                 className="cat__range-input" />
             </div>
-            <div className="cat__range-labels"><span>0</span><span>1 000 TND</span></div>
+            <div className="cat__range-labels"><span>0</span><span>5 000 TND</span></div>
           </div>
 
-          {(searchQuery || priceRange[0] > 0 || priceRange[1] < 1000) && (
+          {/* Color filter */}
+          <div className="cat__sidebar-section">
+            <div className="cat__sidebar-label">Couleur</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              {COLORS.map((color) => (
+                <button
+                  key={color}
+                  onClick={() => setFilters(p => ({
+                    ...p,
+                    color: p.color.includes(color) ? p.color.filter(c => c !== color) : [...p.color, color]
+                  }))}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "20px",
+                    border: `1px solid ${filters.color.includes(color) ? "#0234AB" : "#e2e8f0"}`,
+                    background: filters.color.includes(color) ? "#0234AB" : "white",
+                    color: filters.color.includes(color) ? "white" : "#333",
+                    fontSize: "13px",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  {color}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tags filter */}
+          <div className="cat__sidebar-section">
+            <div className="cat__sidebar-label">Tags</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              {Array.from(new Set(products.flatMap(p => p.tags || []))).slice(0, 8).map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => setFilters(p => ({
+                    ...p,
+                    tag: p.tag.includes(tag) ? p.tag.filter(t => t !== tag) : [...p.tag, tag]
+                  }))}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "20px",
+                    border: `1px solid ${filters.tag.includes(tag) ? "#0234AB" : "#e2e8f0"}`,
+                    background: filters.tag.includes(tag) ? "#0234AB" : "white",
+                    color: filters.tag.includes(tag) ? "white" : "#333",
+                    fontSize: "13px",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Availability filter */}
+          <div className="cat__sidebar-section">
+            <div className="cat__sidebar-label">Disponibilité</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <button
+                onClick={() => setFilters(p => ({ ...p, inStock: !p.inStock }))}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  border: `1px solid ${filters.inStock ? "#0234AB" : "#e2e8f0"}`,
+                  background: filters.inStock ? "#0234AB" : "white",
+                  color: filters.inStock ? "white" : "#333",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                {filters.inStock && <Check size={14} />} En stock
+              </button>
+              <button
+                onClick={() => setFilters(p => ({ ...p, onSale: !p.onSale }))}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  border: `1px solid ${filters.onSale ? "#0234AB" : "#e2e8f0"}`,
+                  background: filters.onSale ? "#0234AB" : "white",
+                  color: filters.onSale ? "white" : "#333",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                {filters.onSale && <Check size={14} />} En promotion
+              </button>
+              <button
+                onClick={() => setFilters(p => ({ ...p, featured: !p.featured }))}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  border: `1px solid ${filters.featured ? "#0234AB" : "#e2e8f0"}`,
+                  background: filters.featured ? "#0234AB" : "white",
+                  color: filters.featured ? "white" : "#333",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                {filters.featured && <Check size={14} />} Vedette
+              </button>
+            </div>
+          </div>
+
+          {(searchQuery || priceRange[0] > 0 || priceRange[1] < 5000 || filters.color.length > 0 || filters.tag.length > 0 || filters.inStock || filters.onSale || filters.featured) && (
             <button className="cat__sidebar-reset"
-              onClick={() => { setSearchQuery(""); setPriceRange([0, 1000]); }}>
+              onClick={() => {
+                setSearchQuery("");
+                setPriceRange([0, 5000]);
+                setFilters({ color: [], tag: [], inStock: false, onSale: false, featured: false });
+              }}>
               <X size={12} /> Réinitialiser
             </button>
           )}

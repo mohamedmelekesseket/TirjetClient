@@ -25,8 +25,14 @@ interface FormState {
   subcategoryL4Slug: string;
   subcategoryL4Name: string;
   price:            string;
+  solde:            string;
   stock:            string;
   description:      string;
+  location:         string;
+  material:         string;
+  dimensions:       string;
+  colors:           string;
+  tags:             string;
 }
 
 interface FieldError {
@@ -72,7 +78,8 @@ export default function AdminCreateProductPage() {
     subcategoryL2Slug: '', subcategoryL2Name: '',
     subcategoryL3Slug: '', subcategoryL3Name: '',
     subcategoryL4Slug: '', subcategoryL4Name: '',
-    price: '', stock: '', description: '',
+    price: '', solde: '', stock: '', description: '',
+    location: '', material: '', dimensions: '', colors: '', tags: '',
   });
   const [images, setImages]         = useState<File[]>([]);
   const [previews, setPreviews]     = useState<string[]>([]);
@@ -209,6 +216,14 @@ export default function AdminCreateProductPage() {
       body.append('stock',            form.stock || '1');
       body.append('description',      form.description.trim());
       body.append('artisanId',        selectedVendor!._id);
+
+      // New fields
+      if (form.solde) body.append('solde', form.solde);
+      if (form.location) body.append('location', form.location.trim());
+      if (form.material) body.append('material', form.material.trim());
+      if (form.dimensions) body.append('dimensions', form.dimensions.trim());
+      if (form.colors) body.append('colors', form.colors);
+      if (form.tags) body.append('tags', form.tags);
 
       // L2 / L3 / L4 — only append if selected
       if (form.subcategoryL2Slug) {
@@ -553,10 +568,47 @@ export default function AdminCreateProductPage() {
                   </div>
                   {errors.price && <span className="form-error">{errors.price}</span>}
                 </div>
+                <div className="form-group">
+                  <label className="form-label">Prix promotionnel (TND)</label>
+                  <input name="solde" type="number" min={0} value={form.solde} onChange={handle}
+                    className="form-input" placeholder="Laisser vide si pas de promotion" />
+                </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Stock disponible</label>
                   <input name="stock" type="number" min={0} value={form.stock} onChange={handle}
                     className="form-input" placeholder="Quantité" />
+                </div>
+              </div>
+            </div>
+
+            {/* Product Details */}
+        <div className="card anim-fade-up anim-d2" style={{backgroundColor:"#18203A"}}>
+          <div className="card-header" ><h2 className="card-title" style={{color:"white"}}>Détails du produit</h2></div>
+              <div className="card-body">
+                <div className="form-group">
+                  <label className="form-label">Région / Lieu</label>
+                  <input name="location" type="text" value={form.location} onChange={handle}
+                    className="form-input" placeholder="Ex: Tunis, Nabeul, Djerba" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Matière</label>
+                  <input name="material" type="text" value={form.material} onChange={handle}
+                    className="form-input" placeholder="Ex: Céramique, Laine, Cuir" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Dimensions</label>
+                  <input name="dimensions" type="text" value={form.dimensions} onChange={handle}
+                    className="form-input" placeholder="Ex: 30x40cm, L, XL" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Couleurs (séparées par des virgules)</label>
+                  <input name="colors" type="text" value={form.colors} onChange={handle}
+                    className="form-input" placeholder="Ex: Rouge, Bleu, Blanc" />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Tags (séparés par des virgules)</label>
+                  <input name="tags" type="text" value={form.tags} onChange={handle}
+                    className="form-input" placeholder="Ex: Traditionnel, Artisanal, Fait main" />
                 </div>
               </div>
             </div>

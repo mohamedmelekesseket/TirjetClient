@@ -768,16 +768,16 @@ export default function OrdersPage() {
                           {displayId}
                         </span>
                       </td>
-                      <td style={{ fontWeight: 500 }}>{orderProductLabel(o)}</td>
+                      <td style={{ fontWeight: 500,color:"white" }}>{orderProductLabel(o)}</td>
                       <td>
-                        <div style={{ fontWeight: 500, fontSize: "0.875rem" }}>{o.user?.name ?? "—"}</div>
-                        <div style={{ fontSize: "0.72rem", color: "#8B9AB5", marginTop: 2 }}>{o.user?.email ?? ""}</div>
+                        <div style={{ fontWeight: 500, fontSize: "0.875rem",color:"white" }}>{o.user?.name ?? "—"}</div>
+                        <div style={{ fontSize: "0.72rem", color: "#f8f9fc", marginTop: 2 }}>{o.user?.email ?? ""}</div>
                       </td>
-                      <td style={{ color: "#8B9AB5", fontSize: "0.82rem" }}>{fmtDate(o.createdAt)}</td>
+                      <td style={{ color: "#f1f2f3", fontSize: "0.82rem" }}>{fmtDate(o.createdAt)}</td>
                       <td>
                         <span style={{
                           fontFamily: "'Space Mono', monospace",
-                          fontSize: "0.82rem", fontWeight: 700,
+                          fontSize: "0.82rem",color:"white", fontWeight: 700,
                         }}>
                           {(o.total ?? 0).toLocaleString("fr-FR")} TND
                         </span>

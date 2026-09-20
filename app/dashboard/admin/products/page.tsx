@@ -190,7 +190,7 @@ export default function AdminProductsPage() {
       p.title.toLowerCase().includes(search.toLowerCase()) ||
       artisanName.toLowerCase().includes(search.toLowerCase());
     return matchTab && matchSearch;
-  });
+  }).sort((a, b) => b.views - a.views); // Sort by views descending (most viewed first)
 
   const counts = {
     total: products.length,

@@ -136,7 +136,7 @@ async function handleConfirm() {
         <Link href="/boutique" className="cart-checkout-btn" style={{ width: "auto", padding: "0.85rem 1.75rem" }}>
           Continuer les achats
         </Link>
-        <Link href="/mes-commandes" className="cart-checkout-btn">
+        <Link href="/Panier" className="cart-checkout-btn">
           Voir mes commandes →
         </Link>
       </div>
