@@ -1,12 +1,11 @@
 "use client";
 
-import { use, useEffect, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Check, X, Loader2, Package, Eye } from "lucide-react";
+import { use, useEffect, useState, useCallback, useRef } from "react";
+import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
+import { Check, X, Loader2, Package, Eye, Minus, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useApiToken } from "@/lib/useApiToken";
-import { showSuccessToast } from "@/lib/toast";
 import { useCart } from "../../context/CartContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -24,7 +23,7 @@ interface Product {
   description: string;
   price: number;
   images: string[];
-  views: number; // ← NEW
+  views: number;
   category: { _id: string; name: string } | string;
   artisan: {
     _id: string;
@@ -43,6 +42,17 @@ interface Comment {
   rating: number;
   content: string;
   createdAt: string;
+}
+
+interface DrawerItem {
+  product: {
+    _id: string;
+    title: string;
+    images?: string[];
+    price: number;
+    stock?: number; // used to cap the "+" button when the cart populates it
+  };
+  quantity: number;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -87,6 +97,256 @@ function StarRow({ count = 0, total }: { count?: number; total: number }) {
       ))}
       <span className="pd-stars__count">({total} avis)</span>
     </div>
+  );
+}
+
+// ─── Cart Drawer ──────────────────────────────────────────────────────────────
+const stepperBtnStyle: React.CSSProperties = {
+  width: 28,
+  height: 28,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "transparent",
+  border: "none",
+  color: "inherit",
+  padding: 0,
+};
+
+function CartDrawer({
+  open, onClose, items, onRemove, onUpdateQty, onCheckout,
+}: {
+  open: boolean;
+  onClose: () => void;
+  items: DrawerItem[];
+  onRemove: (productId: string) => Promise<void> | void;
+  onUpdateQty: (productId: string, quantity: number) => Promise<void> | void;
+  onCheckout: () => void;
+}) {
+  // Local copy of the cart lines: the UI reacts instantly (optimistic update)
+  // while the server is synced in the background (debounced + one request at a time per product).
+  const [localItems, setLocalItems] = useState<DrawerItem[]>(items);
+  const [syncing, setSyncing] = useState(false);
+  const [drawerError, setDrawerError] = useState<string | null>(null);
+
+  // Always-fresh refs (so delayed callbacks never use stale props)
+  const itemsRef = useRef(items);
+  const onUpdateQtyRef = useRef(onUpdateQty);
+  const onRemoveRef = useRef(onRemove);
+  itemsRef.current = items;
+  onUpdateQtyRef.current = onUpdateQty;
+  onRemoveRef.current = onRemove;
+
+  const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const targets = useRef<Record<string, number>>({});
+  const chains = useRef<Record<string, Promise<void>>>({});
+  const inflight = useRef(0);
+
+  const isIdle = () => inflight.current === 0 && Object.keys(timers.current).length === 0;
+
+  // When everything is saved, go back to the real cart from the server
+  const settle = () => {
+    if (isIdle()) {
+      setLocalItems(itemsRef.current);
+      setSyncing(false);
+    }
+  };
+
+  // Follow the real cart whenever nothing is pending
+  useEffect(() => {
+    if (isIdle()) setLocalItems(items);
+  }, [items]);
+
+  // Clear timers on unmount
+  useEffect(() => () => {
+    Object.values(timers.current).forEach(clearTimeout);
+  }, []);
+
+  // Escape to close + lock body scroll while open
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open, onClose]);
+
+  // Clear any stale error when the drawer is closed
+  useEffect(() => {
+    if (!open) setDrawerError(null);
+  }, [open]);
+
+  // Run server tasks for one product strictly one after the other
+  function enqueue(id: string, task: () => Promise<void> | void) {
+    inflight.current++;
+    setSyncing(true);
+    chains.current[id] = (chains.current[id] ?? Promise.resolve())
+      .then(() => task())
+      .catch((err: any) => setDrawerError(err?.message ?? "Une erreur est survenue. Réessayez."))
+      .finally(() => {
+        inflight.current--;
+        settle();
+      });
+  }
+
+  function handleQty(id: string, next: number) {
+    if (next < 1) return;
+    setDrawerError(null);
+
+    // 1) instant UI update
+    setLocalItems(prev => prev.map(i => (i.product._id === id ? { ...i, quantity: next } : i)));
+
+    // 2) debounced save: many quick clicks → a single request with the final quantity
+    targets.current[id] = next;
+    setSyncing(true);
+    clearTimeout(timers.current[id]);
+    timers.current[id] = setTimeout(() => {
+      delete timers.current[id];
+      const qty = targets.current[id];
+      delete targets.current[id];
+      enqueue(id, () => onUpdateQtyRef.current(id, qty));
+    }, 350);
+  }
+
+  function handleRemove(id: string) {
+    setDrawerError(null);
+    clearTimeout(timers.current[id]);
+    delete timers.current[id];
+    delete targets.current[id];
+    setLocalItems(prev => prev.filter(i => i.product._id !== id));
+    enqueue(id, () => onRemoveRef.current(id));
+  }
+
+  const total = localItems.reduce((s, i) => s + i.product.price * i.quantity, 0);
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div key="cd-overlay" className="cd-overlay"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          onClick={onClose} />
+      )}
+      {open && (
+        <motion.aside key="cd-panel" className="cd-panel"
+          role="dialog" aria-modal="true" aria-label="Votre panier"
+          initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] as any }}>
+
+          <header className="cd-head">
+            <div>
+              <span className="cd-head__label">Sélection</span>
+              <h2 className="cd-head__title">Votre panier</h2>
+            </div>
+            <button className="cd-close" onClick={onClose} aria-label="Fermer">
+              <X size={16} />
+            </button>
+          </header>
+
+          <div className="cd-body">
+            {localItems.length === 0 ? (
+              <p className="cd-empty">Votre panier est vide.</p>
+            ) : (
+              localItems.map(({ product: p, quantity }) => {
+                const maxQty = typeof p.stock === "number" && p.stock > 0 ? p.stock : 99;
+                const atMin = quantity <= 1;
+                const atMax = quantity >= maxQty;
+
+                return (
+                  <div key={p._id} className="cd-item">
+                    <div className="cd-item__img">
+                      {p.images?.[0] ? <img src={p.images[0]} alt={p.title} /> : <Package size={22} />}
+                    </div>
+                    <div className="cd-item__info">
+                      <h3 className="cd-item__name">{p.title}</h3>
+
+                      {/* Quantity stepper */}
+                      <div
+                        className="cd-item__qty"
+                        role="group"
+                        aria-label={`Quantité de ${p.title}`}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          border: "1px solid rgba(0,0,0,0.18)",
+                          borderRadius: 999,
+                          margin: "6px 0",
+                          width:"auto",
+                          overflow: "hidden",
+                        }}>
+                        <button
+                          type="button"
+                          aria-label="Diminuer la quantité"
+                          onClick={() => handleQty(p._id, quantity - 1)}
+                          disabled={atMin}
+                          style={{ ...stepperBtnStyle, opacity: atMin ? 0.35 : 1, cursor: atMin ? "not-allowed" : "pointer" }}>
+                          <Minus size={13} />
+                        </button>
+                        <span
+                          aria-live="polite"
+                          style={{ minWidth: 26, textAlign: "center", fontSize: "0.85rem", fontVariantNumeric: "tabular-nums" }}>
+                          {quantity}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label="Augmenter la quantité"
+                          onClick={() => handleQty(p._id, quantity + 1)}
+                          disabled={atMax}
+                          style={{ ...stepperBtnStyle, opacity: atMax ? 0.35 : 1, cursor: atMax ? "not-allowed" : "pointer" }}>
+                          <Plus size={13} />
+                        </button>
+                      </div>
+                      {atMax && typeof p.stock === "number" && (
+                        <span style={{ display: "block", fontSize: "0.72rem", opacity: 0.6 }}>
+                          Stock maximum atteint
+                        </span>
+                      )}
+
+                      <div className="cd-item__row">
+                        <span className="cd-item__price">{(p.price * quantity).toLocaleString("fr-TN")} TND</span>
+                        <button className="cd-item__remove" onClick={() => handleRemove(p._id)}>
+                          Supprimer
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <footer className="cd-foot">
+            {drawerError && (
+              <p role="alert" style={{
+                color: "#c0392b", fontSize: "0.8rem", marginBottom: "0.5rem",
+                background: "#fdf0ef", border: "1px solid #f5c6c2",
+                borderRadius: 8, padding: "0.4rem 0.7rem",
+              }}>
+                {drawerError}
+              </p>
+            )}
+            <div className="cd-foot__total">
+              <span>Total</span>
+              <strong>{total.toLocaleString("fr-TN")} TND</strong>
+            </div>
+            <div className="cd-foot__livraison">
+              <span>Livraison calculée à l’étape suivante</span>
+            </div>
+            <button className="cd-checkout" onClick={onCheckout} disabled={localItems.length === 0 || syncing}>
+              {syncing ? "MISE À JOUR…" : "PASSER LA COMMANDE"}
+              {!syncing && <span className="cd-checkout__arrow">→</span>}
+            </button>
+            <p className="cd-foot__note" style={{cursor:"pointer"}} onClick={onClose}>
+              Continuer mes achats
+            </p>
+          </footer>
+        </motion.aside>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -175,7 +435,10 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const { id } = use(params);
   const { apiToken, session } = useApiToken();
   const router = useRouter();
-  const { addToCart } = useCart();
+
+  // `as any` so this compiles whether or not your CartContext already exposes updateQuantity
+  const cartCtx = useCart() as any;
+  const { cart, addToCart, removeItem } = cartCtx;
 
   // ── Current product ID (can change when clicking related) ──────────────────
   const [currentId, setCurrentId] = useState(id);
@@ -197,15 +460,57 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const [cartLoading, setCartLoading] = useState(false);
   const [cartError, setCartError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"avis" | "details">("avis");
+  const [cartOpen, setCartOpen] = useState(false);
+  const closeCart = useCallback(() => setCartOpen(false), []);
+  const publishBtnRef = useRef<HTMLButtonElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  const infoRef = useRef<HTMLDivElement>(null);
+  const infoOffset = useMotionValue(0);
+  const smoothInfoOffset = useSpring(infoOffset, {
+    stiffness: 100,
+    damping: 24,
+    mass: 0.9,
+    restDelta: 0.1,
+  });
 
   // ── Comments state ─────────────────────────────────────────────────────────
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
-  const [newRating, setNewRating] = useState(5);
+  const [newRating, setNewRating] = useState(1);
   const [newContent, setNewContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Smooth spring-following motion, clamped to the pd-main section.
+  useEffect(() => {
+    let frame = 0;
+
+    const updateInfoPosition = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const main = mainRef.current;
+        const info = infoRef.current;
+        if (!main || !info) return;
+
+        const mainTop = main.getBoundingClientRect().top + window.scrollY;
+        const maxOffset = Math.max(0, main.offsetHeight - info.offsetHeight);
+        const wantedOffset = window.scrollY + 20 - mainTop;
+        infoOffset.set(Math.min(maxOffset, Math.max(0, wantedOffset)));
+      });
+    };
+
+    updateInfoPosition();
+    window.addEventListener("scroll", updateInfoPosition, { passive: true });
+    window.addEventListener("resize", updateInfoPosition);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", updateInfoPosition);
+      window.removeEventListener("resize", updateInfoPosition);
+    };
+  }, [product, comments.length, activeTab, infoOffset]);
+
 
   // ── Fetch categories ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -219,6 +524,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       })
       .catch(() => { });
   }, []);
+
+
 
   // ── Fetch product — with unique-view tracking ──────────────────────────────
   useEffect(() => {
@@ -331,6 +638,31 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   // ── Helpers ────────────────────────────────────────────────────────────────
   const currentUserId = (session as any)?.apiUser?._id as string | undefined;
 
+  // ── Cart: set an exact quantity for a line ─────────────────────────────────
+  // Best: CartContext exposes updateQuantity(productId, quantity) → ONE request.
+  // Fallback when it doesn't exist yet:
+  //   increase → addToCart(delta)          (1 request)
+  //   decrease → removeItem + addToCart    (2 requests, slower)
+  async function updateCartQty(productId: string, quantity: number) {
+    if (quantity < 1) {
+      await removeItem(productId);
+      return;
+    }
+    if (typeof cartCtx.updateQuantity === "function") {
+      await cartCtx.updateQuantity(productId, quantity);
+      return;
+    }
+    const current: number =
+      (cartCtx.cart?.items ?? []).find((i: any) => i.product?._id === productId)?.quantity ?? 0;
+    if (quantity === current) return;
+    if (quantity > current) {
+      await addToCart(productId, quantity - current);
+      return;
+    }
+    await removeItem(productId);
+    await addToCart(productId, quantity);
+  }
+
   // ── Handlers ───────────────────────────────────────────────────────────────
   function handleRelatedClick(productId: string) {
     setCurrentId(productId);
@@ -358,10 +690,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     try {
       await addToCart(product._id, qty);
       setAdded(true);
-      showSuccessToast(
-        `${product.title} ajouté au panier`,
-        `${qty} pièce${qty > 1 ? "s" : ""} sélectionnée${qty > 1 ? "s" : ""}.`
-      );
+      setCartOpen(true); // ← open the drawer
       setTimeout(() => setAdded(false), 2500);
     } catch (err: any) {
       setCartError(err.message ?? "Erreur lors de l'ajout au panier.");
@@ -449,6 +778,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     ? Math.round(comments.reduce((sum, c) => sum + c.rating, 0) / comments.length)
     : 0;
 
+  const drawerItems: DrawerItem[] = (cart?.items ?? []).filter((i: any) => i.product != null);
+
   // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) return (
     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
@@ -489,25 +820,517 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       </motion.nav>
 
       {/* Main grid */}
-      <section className="pd-main">
+      <section ref={mainRef} className="pd-main">
 
         {/* Gallery */}
         <motion.div className="pd-main__gallery"
           initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] as any }}>
           <Gallery images={product.images} />
+
+
+          {/* <div className="pd-details-grid">
+                {[
+                  ["Catégorie",  catLabel],
+                  ["Origine",    product.artisan?.city ?? "Tunisie"],
+                  ["Stock",      `${product.stock} pièce(s)`],
+                  ["Vues",       `${(product.views ?? 0).toLocaleString("fr-TN")} vue(s)`],
+                  ["Référence",  product._id.slice(-8).toUpperCase()],
+                  ["Ajouté le",  new Date(product.createdAt).toLocaleDateString("fr-FR")],
+                ].map(([k, v]) => (
+                  <div key={k} className="pd-detail-row">
+                    <span className="pd-detail-row__key">{k}</span>
+                    <span className="pd-detail-row__val">{v}</span>
+                  </div>
+                ))}
+          </div> */}
+          {/* Artisan */}
+          <div className="pd-reviews">
+
+  {/* =========================
+      REVIEWS HEADER
+  ========================= */}
+  <div className="pd-reviews__header">
+
+    <h2 className="pd-reviews__title">
+      AVIS CLIENTS
+    </h2>
+
+    <div className="pd-reviews__rating">
+      <span className="pd-reviews__rating-number">
+        {comments.length > 0
+          ? (
+              comments.reduce(
+                (sum, review) => sum + Number(review.rating || 0),
+                0
+              ) / comments.length
+            ).toFixed(1)
+          : ""}
+      </span>
+
+      <div className="pd-reviews__rating-stars">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <svg
+            key={i}
+            width="11"
+            height="11"
+            viewBox="0 0 24 24"
+            fill={
+              i <
+              Math.round(
+                comments.length > 0
+                  ? comments.reduce(
+                      (sum, review) => sum + Number(review.rating || 0),
+                      0
+                    ) / comments.length
+                  : 4.9
+              )
+                ? "#111"
+                : "none"
+            }
+            stroke="#111"
+            strokeWidth="1.8"
+          >
+            <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
+          </svg>
+        ))}
+      </div>
+    </div>
+
+  </div>
+
+
+  {/* =========================
+      REVIEW FORM
+  ========================= */}
+
+  {session ? (
+
+    <div className="pd-review-form">
+
+      <h3 className="pd-review-form__title">
+        {editingId
+          ? "MODIFIER VOTRE AVIS"
+          : "LAISSER UN AVIS"}
+      </h3>
+
+      {/* FORM FIELDS */}
+
+      <div className="pd-review-form__fields">
+
+      </div>
+
+
+      {/* RATING */}
+
+      <div className="pd-review-form__rating">
+
+        <span className="pd-review-form__rating-label">
+          VOTRE NOTE
+        </span>
+
+        <div className="pd-review-form__stars">
+
+          {Array.from({ length: 5 }).map((_, i) => (
+
+            <button
+              key={i}
+              type="button"
+              onClick={() => setNewRating(i + 1)}
+              className="pd-review-form__star"
+              aria-label={`Note ${i + 1}`}
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill={
+                  i < newRating
+                    ? "#111"
+                    : "none"
+                }
+                stroke="#111"
+                strokeWidth="1.5"
+              >
+                <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
+              </svg>
+            </button>
+
+          ))}
+
+        </div>
+
+      </div>
+
+
+      {/* EXPERIENCE */}
+
+      <div className="pd-review-form__experience">
+
+        <label>
+          VOTRE EXPÉRIENCE...
+        </label>
+
+        <textarea
+          value={newContent}
+          onChange={(e) =>
+            setNewContent(e.target.value)
+          }
+          placeholder=""
+          rows={3}
+        />
+
+      </div>
+
+
+      {/* ERROR */}
+
+      {submitError && (
+        <p className="pd-review-form__error">
+          {submitError}
+        </p>
+      )}
+
+
+      {/* BUTTONS */}
+
+      <div className="pd-review-form__actions">
+
+        <motion.button
+          ref={publishBtnRef}
+          className="pd-review-form__submit"
+          onClick={
+            editingId
+              ? handleUpdateComment
+              : handleSubmitComment
+          }
+          disabled={
+            submitting ||
+            !newContent.trim()
+          }
+          whileHover={{
+            opacity: 0.9
+          }}
+          whileTap={{
+            scale: 0.98
+          }}
+        >
+
+          {submitting ? (
+
+            <Loader2
+              size={16}
+              className="pd-review-form__loader"
+            />
+
+          ) : editingId ? (
+
+            "ENREGISTRER"
+
+          ) : (
+
+            "PUBLIER L'AVIS"
+
+          )}
+
+        </motion.button>
+
+
+        {editingId && (
+
+          <motion.button
+            className="pd-review-form__cancel"
+            onClick={handleCancelEdit}
+            whileHover={{
+              opacity: 0.7
+            }}
+            whileTap={{
+              scale: 0.98
+            }}
+          >
+            ANNULER
+          </motion.button>
+
+        )}
+
+      </div>
+
+    </div>
+
+  ) : (
+
+    /* =========================
+       NOT LOGGED IN
+    ========================= */
+
+    <div className="pd-review-form pd-review-form--login">
+
+      <h3 className="pd-review-form__title">
+        LAISSER UN AVIS
+      </h3>
+
+      <p>
+        Connectez-vous pour laisser un avis.
+      </p>
+
+      <Link
+        href="/connexion"
+        className="pd-review-form__login-link"
+      >
+        SE CONNECTER →
+      </Link>
+
+    </div>
+
+  )}
+
+
+  {/* =========================
+      REVIEWS
+  ========================= */}
+
+  {commentsLoading ? (
+
+    <div className="pd-reviews__loading">
+
+      <Loader2
+        size={28}
+        className="pd-reviews__loader"
+      />
+
+    </div>
+
+  ) : comments.length === 0 ? (
+
+    <div className="pd-reviews__empty">
+
+      Aucun avis pour le moment.
+      Soyez le premier !
+
+    </div>
+
+  ) : (
+
+    <div className="pd-review-list">
+
+      {comments.map((r, i) => {
+
+        const isMyComment =
+          currentUserId === r.user._id;
+
+        return (
+
+          <motion.article
+            key={r._id}
+            className="pd-review"
+
+            initial={{
+              opacity: 0,
+              y: 14
+            }}
+
+            animate={{
+              opacity: 1,
+              y: 0
+            }}
+
+            transition={{
+              delay: i * 0.08,
+              duration: 0.5
+            }}
+          >
+
+            {/* REVIEW TEXT */}
+
+            <p className="pd-review__text">
+              “{r.content}”
+            </p>
+
+
+            {/* REVIEW FOOTER */}
+
+            <div className="pd-review__footer">
+
+              <div className="pd-review__author">
+
+                <span className="pd-review__name">
+                  {r.user.name}
+                </span>
+
+                <span className="pd-review__separator">
+                  —
+                </span>
+
+                <span className="pd-review__city">
+                  {(r.user as any).city ||
+                    (r.user as any).location ||
+                    ""}
+                </span>
+
+              </div>
+
+
+              {/* STARS */}
+
+              <div className="pd-review__stars">
+
+                {Array.from({
+                  length: 5
+                }).map((_, si) => (
+
+                  <svg
+                    key={si}
+                    width="10"
+                    height="10"
+                    viewBox="0 0 24 24"
+                    fill={
+                      si < r.rating
+                        ? "#111"
+                        : "none"
+                    }
+                    stroke="#111"
+                    strokeWidth="1.5"
+                  >
+                    <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
+                  </svg>
+
+                ))}
+
+              </div>
+
+
+              {/* ACTIONS */}
+
+              {isMyComment && (
+
+                <div className="pd-review__actions">
+
+                  {/* EDIT */}
+
+                  <motion.button
+                    className="pd-review__action-btn"
+                    onClick={() =>
+                      handleStartEdit(r)
+                    }
+                    whileHover={{
+                      scale: 1.1
+                    }}
+                    whileTap={{
+                      scale: 0.9
+                    }}
+                    title="Modifier"
+                  >
+
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+
+                  </motion.button>
+
+
+                  {/* DELETE */}
+
+                  <motion.button
+                    className="pd-review__action-btn pd-review__action-btn--delete"
+                    onClick={() =>
+                      handleDeleteComment(r._id)
+                    }
+                    whileHover={{
+                      scale: 1.1
+                    }}
+                    whileTap={{
+                      scale: 0.9
+                    }}
+                    title="Supprimer"
+                  >
+
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <polyline points="3 6 5 6 21 6" />
+
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+
+                      <path d="M10 11v6M14 11v6" />
+
+                      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+
+                    </svg>
+
+                  </motion.button>
+
+                </div>
+
+              )}
+
+            </div>
+
+
+            {/* DATE */}
+
+            <span className="pd-review__date">
+              {new Date(
+                r.createdAt
+              ).toLocaleDateString(
+                "fr-FR",
+                {
+                  month: "short",
+                  year: "numeric"
+                }
+              )}
+            </span>
+
+          </motion.article>
+
+        );
+
+      })}
+
+    </div>
+
+  )}
+
+</div>
         </motion.div>
 
         {/* Info panel */}
-        <motion.div className="pd-main__info"
-          initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] as any }}>
+        <div style={{ alignSelf: "start", minWidth: 0 }}>
+          <motion.div
+            ref={infoRef}
+            style={{
+              position: "relative",
+              y: smoothInfoOffset,
+              willChange: "transform",
+            }}
+          >
+          <motion.div 
+            className="pd-main__info"
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ 
+              opacity: { duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] as any },
+              x: { duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] as any }
+            }}>
 
           {/* Status badges + view counter */}
           <div className="pd-info__top">
             <span className="pd-cat-pill">{catLabel}</span>
             {inStock
-              ? <span className="pd-badge pd-badge--green">En stock ({product.stock})</span>
+              ? <span className="pd-badge pd-badge--green">En stock</span>
               : <span className="pd-badge pd-badge--red">Épuisé</span>}
 
           </div>
@@ -520,106 +1343,118 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
           <p className="pd-info__short-desc">{product.description}</p>
 
-          <div className="pd-divider" />
+          {/* <div className="pd-divider" /> */}
 
-          {/* Artisan */}
-          <div className="pd-artisan-row">
-            <div className="pd-artisan-row__avatar">
-              {product.artisan?.avatar
-                ? <img src={product.artisan.avatar} alt={product.artisan.name} />
-                : <span>{product.artisan?.name?.[0] ?? "A"}</span>}
-            </div>
-            <div className="pd-artisan-row__text">
-              <span className="pd-artisan-row__label">Artisan</span>
-              <span className="pd-artisan-row__name">{product.artisan?.name}</span>
-              {product.artisan?.city && (
-                <span className="pd-artisan-row__loc"><Pin />{product.artisan.city.toUpperCase()}</span>
-              )}
-            </div>
-            <Link href={`/Artisanprofile/${product?.artisan?._id}`} className="pd-artisan-row__link">
-              Voir le profil →
-            </Link>
-          </div>
+          
 
-          <div className="pd-divider" />
+          {/* <div className="pd-divider" /> */}
 
           {/* Qty + CTA */}
           <div className="pd-actions">
-            <div className="pd-qty">
-              <motion.button className="pd-qty__btn"
-                onClick={() => setQty(q => Math.max(1, q - 1))}
-                disabled={cartLoading}
-                whileTap={{ scale: 0.88 }}>−</motion.button>
-              <span className="pd-qty__val">{qty}</span>
-              <motion.button className="pd-qty__btn"
-                onClick={() => setQty(q => Math.min(product.stock, q + 1))}
-                disabled={cartLoading}
-                whileTap={{ scale: 0.88 }}>+</motion.button>
+
+            {/* Quantity row */}
+            <div className="pd-qty-row">
+              <span className="pd-qty-label">QUANTITÉ</span>
+
+              <div className="pd-qty">
+                <motion.button
+                  className="pd-qty__btn"
+                  onClick={() => setQty(q => Math.max(1, q - 1))}
+                  disabled={cartLoading}
+                  whileTap={{ scale: 0.88 }}
+                >
+                  −
+                </motion.button>
+
+                <span className="pd-qty__val">{qty}</span>
+
+                <motion.button
+                  className="pd-qty__btn"
+                  onClick={() => setQty(q => Math.min(product.stock, q + 1))}
+                  disabled={cartLoading}
+                  whileTap={{ scale: 0.88 }}
+                >
+                  +
+                </motion.button>
+              </div>
             </div>
 
+            {/* Add to cart */}
             <motion.button
               className={`pd-cart-btn${added ? " pd-cart-btn--added" : ""}`}
               onClick={handleCart}
               disabled={!inStock || cartLoading}
-              whileHover={inStock && !cartLoading ? { scale: 1.02 } : {}}
-              whileTap={inStock && !cartLoading ? { scale: 0.97 } : {}}>
+              whileHover={inStock && !cartLoading ? { scale: 1.01 } : {}}
+              whileTap={inStock && !cartLoading ? { scale: 0.98 } : {}}
+            >
               <AnimatePresence mode="wait">
                 {cartLoading ? (
-                  <motion.span key="loading"
-                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                    <Loader2 size={16} style={{ marginRight: 8, animation: "spin 1s linear infinite" }} />
+                  <motion.span
+                    key="loading"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                  >
+                    <Loader2
+                      size={16}
+                      style={{
+                        marginRight: 8,
+                        animation: "spin 1s linear infinite",
+                      }}
+                    />
                     Ajout…
                   </motion.span>
                 ) : added ? (
-                  <motion.span key="added"
-                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                    <Check size={16} style={{ marginRight: 8 }} aria-hidden="true" />
+                  <motion.span
+                    key="added"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                  >
+                    <Check
+                      size={16}
+                      style={{ marginRight: 8 }}
+                      aria-hidden="true"
+                    />
                     Ajouté au panier
                   </motion.span>
                 ) : (
-                  <motion.span key="add"
-                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                    {inStock ? "Ajouter au panier" : "Épuisé"}
+                  <motion.span
+                    key="add"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                  >
+                    {inStock ? "AJOUTER AU PANIER" : "ÉPUISÉ"}
                   </motion.span>
                 )}
               </AnimatePresence>
             </motion.button>
 
+            {/* Wishlist */}
             <motion.button
               className={`pd-wish-btn${wish ? " pd-wish-btn--on" : ""}`}
               onClick={() => toggleWish(currentId)}
               disabled={wishPending.has(currentId)}
-              whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.88 }}>
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+            >
               <HeartIcon filled={wish} />
+              <span>AJOUTER AUX FAVORIS</span>
             </motion.button>
+
           </div>
+          </motion.div>
+          </motion.div>
+          
 
-          {cartError && (
-            <motion.p
-              initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-              style={{
-                color: "#c0392b", fontSize: "0.82rem", marginTop: "0.5rem",
-                background: "#fdf0ef", border: "1px solid #f5c6c2",
-                borderRadius: 8, padding: "0.5rem 0.75rem",
-              }}>
-              {cartError}
-            </motion.p>
-          )}
 
-          {added && !cartLoading && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-              style={{ marginTop: "0.5rem", display: "flex", gap: 10 }}>
-              <Link href="/panier" className="pd-artisan-row__link">Voir le panier →</Link>
-              <span style={{ color: "#b8a88a", fontSize: "0.82rem" }}>·</span>
-              <Link href="/commande" className="pd-artisan-row__link">Commander →</Link>
-            </motion.div>
-          )}
-        </motion.div>
+
+        </div>
       </section>
-
+      
       {/* Tabs */}
-      <section className="pd-tabs-section">
+      {/* <section className="pd-tabs-section">
         <div className="pd-tabs__nav">
           {(["details", "avis"] as const).map(t => (
             <motion.button key={t}
@@ -636,14 +1471,13 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] as any }}>
 
-            {/* Details tab */}
             {activeTab === "details" && (
               <div className="pd-details-grid">
                 {[
                   ["Catégorie",  catLabel],
                   ["Origine",    product.artisan?.city ?? "Tunisie"],
                   ["Stock",      `${product.stock} pièce(s)`],
-                  ["Vues",       `${(product.views ?? 0).toLocaleString("fr-TN")} vue(s)`], // ← shown in details tab too
+                  ["Vues",       `${(product.views ?? 0).toLocaleString("fr-TN")} vue(s)`],
                   ["Référence",  product._id.slice(-8).toUpperCase()],
                   ["Ajouté le",  new Date(product.createdAt).toLocaleDateString("fr-FR")],
                 ].map(([k, v]) => (
@@ -655,7 +1489,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               </div>
             )}
 
-            {/* Avis tab */}
             {activeTab === "avis" && (
               <div className="pd-reviews">
 
@@ -691,6 +1524,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
                     <div style={{ display: "flex", gap: 8 }}>
                       <motion.button
+                        ref={publishBtnRef}
                         className="pd-cart-btn"
                         onClick={editingId ? handleUpdateComment : handleSubmitComment}
                         disabled={submitting || !newContent.trim()}
@@ -794,7 +1628,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
           </motion.div>
         </AnimatePresence>
-      </section>
+      </section> */}
 
       {/* Related */}
       <section className="pd-related">
@@ -816,8 +1650,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               return (
                 <motion.article key={p._id} className="pd-rel-card"
                   initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.2 }}
-                  transition={{ duration: 0.6, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] as any }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as any }}
                   whileHover={{ y: -6 }}
                   onClick={() => handleRelatedClick(p._id)}
                   style={{ cursor: "pointer" }}
@@ -860,86 +1694,16 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         )}
       </section>
 
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
+      {/* Cart drawer */}
+      <CartDrawer
+        open={cartOpen}
+        onClose={closeCart}
+        items={drawerItems}
+        onRemove={removeItem}
+        onUpdateQty={updateCartQty}
+        onCheckout={() => { closeCart(); router.push("/Commande"); }}
+      />
 
-        /* ── View counter badge ──────────────────────────────────────────── */
-        .pd-views-badge {
-          display: inline-flex;
-          align-items: center;
-          font-size: 0.78rem;
-          color: #a09080;
-          background: #f5f0e8;
-          border: 1px solid #e8dfd2;
-          border-radius: 20px;
-          padding: 2px 10px;
-          margin-left: 6px;
-          font-weight: 500;
-          letter-spacing: 0.01em;
-        }
-
-        /* ── Review form ─────────────────────────────────────────────────── */
-        .pd-review-form {
-          background: var(--surface, #faf8f5);
-          border: 1px solid #e8e0d5;
-          border-radius: 12px;
-          padding: 1.25rem 1.5rem;
-          margin-bottom: 1.5rem;
-        }
-        .pd-review-form__title {
-          font-size: 1rem;
-          font-weight: 600;
-          margin-bottom: 0.75rem;
-        }
-        .pd-review-form__stars {
-          display: flex;
-          gap: 4px;
-          margin-bottom: 0.75rem;
-        }
-        .pd-review-form__stars button {
-          background: none;
-          border: none;
-          padding: 2px;
-          cursor: pointer;
-          transition: transform 0.15s;
-        }
-        .pd-review-form__stars button:hover { transform: scale(1.2); }
-        .pd-review-form__textarea {
-          width: 100%;
-          border: 1px solid #e0d8ce;
-          border-radius: 8px;
-          padding: 0.65rem 0.9rem;
-          font-size: 0.9rem;
-          resize: vertical;
-          margin-bottom: 0.75rem;
-          background: #fff;
-          font-family: inherit;
-          box-sizing: border-box;
-        }
-        .pd-review-form__textarea:focus {
-          outline: none;
-          border-color: #C9A055;
-        }
-        .pd-review__action-btn {
-          background: none;
-          border: 1px solid #e0d8ce;
-          border-radius: 6px;
-          padding: 4px 6px;
-          cursor: pointer;
-          color: #888;
-          display: flex;
-          align-items: center;
-          transition: all 0.15s;
-        }
-        .pd-review__action-btn:hover {
-          border-color: #C9A055;
-          color: #C9A055;
-        }
-        .pd-review__action-btn--delete:hover {
-          border-color: #c0392b;
-          color: #c0392b;
-        }
-      `}</style>
     </div>
   );
 }

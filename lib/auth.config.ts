@@ -73,19 +73,31 @@ async function refreshApiToken(
   return null;
 }
 
+console.log('GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID);
+console.log('GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET ? 'SET' : 'NOT SET');
+console.log('NEXTAUTH_URL:', process.env.NEXTAUTH_URL);
+console.log('NEXTAUTH_SECRET:', process.env.NEXTAUTH_SECRET ? 'SET' : 'NOT SET');
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      httpOptions: {
+        timeout: 10000, // 10 seconds timeout
+      },
     }),
     FacebookProvider({
       clientId: process.env.FACEBOOK_CLIENT_ID!,
       clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
+      httpOptions: {
+        timeout: 10000, // 10 seconds timeout
+      },
     }),
   ],
   pages: { signIn: "/connexion" },
   session: { strategy: "jwt" },
+  debug: true,
   callbacks: {
     async jwt({ token, account, trigger, session }) {
       // ── Mise à jour manuelle (session.update()) ──
