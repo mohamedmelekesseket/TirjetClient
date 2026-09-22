@@ -78,7 +78,7 @@ const ORDERS_CSS = `
 .mo-gallery__main {
   width: 100%;
   flex: 1;
-  min-height: 320px;
+  max-height: 420px;
   position: relative;
   border-radius: 14px;
   overflow: hidden;

@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
-import { Check, X, Loader2, Package, Eye, Minus, Plus } from "lucide-react";
+import { Check, X, Loader2, Package, ShoppingBag, Minus, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useApiToken } from "@/lib/useApiToken";
@@ -275,7 +275,7 @@ function CartDrawer({
                           border: "1px solid rgba(0,0,0,0.18)",
                           borderRadius: 999,
                           margin: "6px 0",
-                          width:"auto",
+                          width:"33%",
                           overflow: "hidden",
                         }}>
                         <button
@@ -828,7 +828,103 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] as any }}>
           <Gallery images={product.images} />
 
+          {/* Mobile info panel - shown only on mobile/tablet */}
+          <div className="pd-main__info-mobile">
+            {/* Vertical category */}
+            <div className="pd-info__side">
+              <span>{catLabel || "ARTISANAT TUNISIEN"}</span>
+            </div>
 
+            {/* Main content */}
+            <div className="pd-info__content">
+
+              {/* Title + Price */}
+              <div className="pd-info__heading">
+                <h1 className="pd-info__title">
+                  {product.title}
+                </h1>
+
+                <div className="pd-info__price-row">
+                  <span className="pd-info__price">
+                    {product.price.toLocaleString("fr-TN")}
+                  </span>
+
+                  <span className="pd-info__currency">
+                    TND
+                  </span>
+                </div>
+              </div>
+
+              {/* Description */}
+              <p className="pd-info__short-desc">
+                {product.description}
+              </p>
+
+              {/* Actions */}
+              <div className="pd-actions">
+
+                {/* Quantity */}
+                <div className="pd-qty">
+                  <button
+                    className="pd-qty__btn"
+                    onClick={() =>
+                      setQty((q) => Math.max(1, q - 1))
+                    }
+                    disabled={cartLoading}
+                    aria-label="Diminuer la quantité"
+                  >
+                    −
+                  </button>
+
+                  <span className="pd-qty__val">
+                    {qty}
+                  </span>
+
+                  <button
+                    className="pd-qty__btn"
+                    onClick={() =>
+                      setQty((q) =>
+                        Math.min(product.stock, q + 1)
+                      )
+                    }
+                    disabled={cartLoading}
+                    aria-label="Augmenter la quantité"
+                  >
+                    +
+                  </button>
+                </div>
+
+                {/* Add to cart */}
+                <button
+                  className={`pd-cart-btn${
+                    added ? " pd-cart-btn--added" : ""
+                  }`}
+                  onClick={handleCart}
+                  disabled={!inStock || cartLoading}
+                >
+                  <span className="pd-cart-btn__text">
+                    {cartLoading ? "Chargement..." : added ? "AJOUTÉ" : "AJOUTER AU PANIER"}
+                  </span>
+                </button>
+
+                {/* Wishlist */}
+                <button
+                  className={`pd-wish-btn${
+                    wish ? " pd-wish-btn--on" : ""
+                  }`}
+                  onClick={() => toggleWish(currentId)}
+                  disabled={wishPending.has(currentId)}
+                >
+                  <HeartIcon filled={wish} />
+
+                  <span>
+                    AJOUTER AUX FAVORIS
+                  </span>
+                </button>
+
+              </div>
+            </div>
+          </div>
           {/* <div className="pd-details-grid">
                 {[
                   ["Catégorie",  catLabel],
@@ -1317,134 +1413,132 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               willChange: "transform",
             }}
           >
-          <motion.div 
-            className="pd-main__info"
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ 
-              opacity: { duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] as any },
-              x: { duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] as any }
-            }}>
-
-          {/* Status badges + view counter */}
-          <div className="pd-info__top">
-            <span className="pd-cat-pill">{catLabel}</span>
-            {inStock
-              ? <span className="pd-badge pd-badge--green">En stock</span>
-              : <span className="pd-badge pd-badge--red">Épuisé</span>}
-
-          </div>
-
-          <h1 className="pd-info__title">{product.title}</h1>
-
-          <div className="pd-info__price-row">
-            <span className="pd-info__price">{product.price.toLocaleString("fr-TN")} TND</span>
-          </div>
-
-          <p className="pd-info__short-desc">{product.description}</p>
-
-          {/* <div className="pd-divider" /> */}
-
-          
-
-          {/* <div className="pd-divider" /> */}
-
-          {/* Qty + CTA */}
-          <div className="pd-actions">
-
-            {/* Quantity row */}
-            <div className="pd-qty-row">
-              <span className="pd-qty-label">QUANTITÉ</span>
-
-              <div className="pd-qty">
-                <motion.button
-                  className="pd-qty__btn"
-                  onClick={() => setQty(q => Math.max(1, q - 1))}
-                  disabled={cartLoading}
-                  whileTap={{ scale: 0.88 }}
-                >
-                  −
-                </motion.button>
-
-                <span className="pd-qty__val">{qty}</span>
-
-                <motion.button
-                  className="pd-qty__btn"
-                  onClick={() => setQty(q => Math.min(product.stock, q + 1))}
-                  disabled={cartLoading}
-                  whileTap={{ scale: 0.88 }}
-                >
-                  +
-                </motion.button>
+            <motion.div
+              className="pd-main__info"
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{
+                opacity: {
+                  duration: 0.8,
+                  delay: 0.1,
+                  ease: [0.22, 1, 0.36, 1] as any,
+                },
+                x: {
+                  duration: 0.8,
+                  delay: 0.1,
+                  ease: [0.22, 1, 0.36, 1] as any,
+                },
+              }}
+            >
+              {/* Vertical category */}
+              <div className="pd-info__side">
+                <span>{catLabel || "ARTISANAT TUNISIEN"}</span>
               </div>
-            </div>
 
-            {/* Add to cart */}
-            <motion.button
-              className={`pd-cart-btn${added ? " pd-cart-btn--added" : ""}`}
-              onClick={handleCart}
-              disabled={!inStock || cartLoading}
-              whileHover={inStock && !cartLoading ? { scale: 1.01 } : {}}
-              whileTap={inStock && !cartLoading ? { scale: 0.98 } : {}}
-            >
-              <AnimatePresence mode="wait">
-                {cartLoading ? (
-                  <motion.span
-                    key="loading"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                  >
-                    <Loader2
-                      size={16}
-                      style={{
-                        marginRight: 8,
-                        animation: "spin 1s linear infinite",
-                      }}
-                    />
-                    Ajout…
-                  </motion.span>
-                ) : added ? (
-                  <motion.span
-                    key="added"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                  >
-                    <Check
-                      size={16}
-                      style={{ marginRight: 8 }}
-                      aria-hidden="true"
-                    />
-                    Ajouté au panier
-                  </motion.span>
-                ) : (
-                  <motion.span
-                    key="add"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                  >
-                    {inStock ? "AJOUTER AU PANIER" : "ÉPUISÉ"}
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </motion.button>
+              {/* Main content */}
+              <div className="pd-info__content">
 
-            {/* Wishlist */}
-            <motion.button
-              className={`pd-wish-btn${wish ? " pd-wish-btn--on" : ""}`}
-              onClick={() => toggleWish(currentId)}
-              disabled={wishPending.has(currentId)}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <HeartIcon filled={wish} />
-              <span>AJOUTER AUX FAVORIS</span>
-            </motion.button>
+                {/* Title + Price */}
+                <div className="pd-info__heading">
+                  <h1 className="pd-info__title">
+                    {product.title}
+                  </h1>
 
-          </div>
-          </motion.div>
+                  <div className="pd-info__price-row">
+                    <span className="pd-info__price">
+                      {product.price.toLocaleString("fr-TN")}
+                    </span>
+
+                    <span className="pd-info__currency">
+                      TND
+                    </span>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <p className="pd-info__short-desc">
+                  {product.description}
+                </p>
+
+                {/* Actions */}
+                <div className="pd-actions">
+
+                  {/* Quantity */}
+                  <div className="pd-qty">
+                    <motion.button
+                      className="pd-qty__btn"
+                      onClick={() =>
+                        setQty((q) => Math.max(1, q - 1))
+                      }
+                      disabled={cartLoading}
+                      whileTap={{ scale: 0.88 }}
+                      aria-label="Diminuer la quantité"
+                    >
+                      −
+                    </motion.button>
+
+                    <span className="pd-qty__val">
+                      {qty}
+                    </span>
+
+                    <motion.button
+                      className="pd-qty__btn"
+                      onClick={() =>
+                        setQty((q) =>
+                          Math.min(product.stock, q + 1)
+                        )
+                      }
+                      disabled={cartLoading}
+                      whileTap={{ scale: 0.88 }}
+                      aria-label="Augmenter la quantité"
+                    >
+                      +
+                    </motion.button>
+                  </div>
+
+                  {/* Add to cart */}
+                  <motion.button
+                    className={`pd-cart-btn${
+                      added ? " pd-cart-btn--added" : ""
+                    }`}
+                    onClick={handleCart}
+                    disabled={!inStock || cartLoading}
+                    whileHover={
+                      inStock && !cartLoading
+                        ? { scale: 1.01 }
+                        : {}
+                    }
+                    whileTap={
+                      inStock && !cartLoading
+                        ? { scale: 0.98 }
+                        : {}
+                    }
+                  >
+                    <span className="pd-cart-btn__text">
+                      {cartLoading ? "Chargement..." : added ? "AJOUTÉ" : "AJOUTER AU PANIER"}
+                    </span>
+                  </motion.button>
+                </div>
+
+                {/* Wishlist */}
+                <motion.button
+                  className={`pd-wish-btn${
+                    wish ? " pd-wish-btn--on" : ""
+                  }`}
+                  onClick={() => toggleWish(currentId)}
+                  disabled={wishPending.has(currentId)}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <HeartIcon filled={wish} />
+
+                  <span>
+                    AJOUTER AUX FAVORIS
+                  </span>
+                </motion.button>
+
+              </div>
+            </motion.div>
           </motion.div>
           
 
@@ -1452,6 +1546,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
         </div>
       </section>
+
+     
       
       {/* Tabs */}
       {/* <section className="pd-tabs-section">
