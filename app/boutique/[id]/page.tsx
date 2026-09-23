@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
-import { Check, X, Loader2, Package, ShoppingBag, Minus, Plus } from "lucide-react";
+import { Check, X, Loader2, Package, ShoppingBag, Minus, Plus} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useApiToken } from "@/lib/useApiToken";
@@ -449,6 +449,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   // ── Product state ──────────────────────────────────────────────────────────
   const [product, setProduct] = useState<Product | null>(null);
   const [related, setRelated] = useState<Product[]>([]);
+  const [mostViewed, setMostViewed] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -567,14 +568,22 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             ? data.category._id
             : data.category;
 
-          setRelated(
-            all
-              .filter(p => {
-                const pCatId = typeof p.category === "object" ? p.category._id : p.category;
-                return p._id !== data._id && pCatId === thisCatId && p.isApproved && p.stock > 0;
-              })
-              .slice(0, 3)
-          );
+          const relatedProducts = all
+            .filter(p => {
+              const pCatId = typeof p.category === "object" ? p.category._id : p.category;
+              return p._id !== data._id && pCatId === thisCatId && p.isApproved && p.stock > 0;
+            })
+            .slice(0, 3);
+
+          setRelated(relatedProducts);
+
+          // ── Most viewed products (for fallback when no related) ─────────
+          const mostViewedProducts = all
+            .filter(p => p._id !== data._id && p.isApproved && p.stock > 0)
+            .sort((a, b) => (b.views || 0) - (a.views || 0))
+            .slice(0, 10);
+
+          setMostViewed(mostViewedProducts);
         }
       } catch (err: any) {
         setError(err.message);
@@ -1732,26 +1741,26 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }} transition={{ duration: 0.65 }}>
           <p className="pd-label">Vous aimerez aussi</p>
-          <h2 className="pd-related__title">Pièces similaires</h2>
+          <h2 className="pd-related__title">
+            {related.length > 0 ? "Pièces similaires" : "Tu pourrais aimer aussi"}
+          </h2>
         </motion.div>
 
         {related.length === 0 ? (
-          <p style={{ opacity: 0.4, textAlign: "center", padding: "2rem" }}>
-            Aucune pièce similaire pour le moment.
-          </p>
-        ) : (
-          <div className="pd-related__grid">
-            {related.map((p, i) => {
-              const relCatLabel = resolveCategoryName(p.category, categoriesMap);
-              return (
-                <motion.article key={p._id} className="pd-rel-card"
-                  initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as any }}
-                  whileHover={{ y: -6 }}
-                  onClick={() => handleRelatedClick(p._id)}
-                  style={{ cursor: "pointer" }}
-                >
+          mostViewed.length > 0 ? (
+            <>
+              <div className="pd-related__grid">
+                {mostViewed.map((p, i) => {
+                  const relCatLabel = resolveCategoryName(p.category, categoriesMap);
+                  return (
+                    <motion.article key={p._id} className="pd-rel-card"
+                      initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as any }}
+                      whileHover={{ y: -6 }}
+                      onClick={() => handleRelatedClick(p._id)}
+                      style={{ cursor: "pointer" }}
+                    >
                   <div className="pd-rel-card__media">
                     {p.images?.[0]
                       ? <motion.img src={p.images[0]} alt={p.title}
@@ -1765,6 +1774,53 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                       </div>
                     }
                     <div className="pd-rel-card__shade" />
+                    <span className="pd-rel-card__cat">{relCatLabel}</span>
+                  </div>
+                  <div className="pd-rel-card__body">
+                    <h4 className="pd-rel-card__name">{p.title}</h4>
+                    <div className="pd-rel-card__row">
+                      <span className="pd-rel-card__loc">
+                        <Pin />{p.artisan?.city?.toUpperCase() ?? "TUNISIE"}
+                      </span>
+                      <span className="pd-rel-card__price">{p.price.toLocaleString("fr-TN")} TND</span>
+                    </div>
+                    <span
+                      className="pd-rel-card__cta"
+                      onClick={e => { e.stopPropagation(); handleRelatedClick(p._id); }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      Voir la pièce →
+                    </span>
+                  </div>
+                </motion.article>
+              );
+            })}
+          </div>
+            </>
+          ) : (
+            <p style={{ opacity: 0.4, textAlign: "center", padding: "2rem" }}>
+              Aucune pièce similaire pour le moment.
+            </p>
+          )
+        ) : (
+          <div className="pd-related__grid">
+            {related.map((p, i) => {
+              const relCatLabel = resolveCategoryName(p.category, categoriesMap);
+              return (
+                <motion.article key={p._id} className="pd-rel-card"
+                  initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as any }}
+                  whileHover={{ y: -6 }}
+                  onClick={() => handleRelatedClick(p._id)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <div className="pd-rel-card__img">
+                    <img
+                      src={p.images?.[0] || "/placeholder.jpg"}
+                      alt={p.title}
+                      loading="lazy"
+                    />
                     <span className="pd-rel-card__cat">{relCatLabel}</span>
                   </div>
                   <div className="pd-rel-card__body">

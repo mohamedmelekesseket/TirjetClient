@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Trash2, Plus, Minus, ShoppingBag, ArrowRight, Loader2,
   Package, ClipboardList, Clock, CheckCircle2, XCircle,
-  Truck, RefreshCw, MapPin, CreditCard, Tag,
+  Truck, RefreshCw, MapPin, CreditCard, Tag, Pin,
 } from "lucide-react";
 
 import Link from "next/link";
@@ -352,6 +352,7 @@ function OrdersTab({ token }: { token: string }) {
   const [orders, setOrders]   = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter]   = useState("");
+  const [mostViewed, setMostViewed] = useState<any[]>([]);
 
   const load = useCallback(async () => {
     if (!token) {
@@ -378,6 +379,31 @@ function OrdersTab({ token }: { token: string }) {
   }, [filter, token]);
 
   useEffect(() => { load(); }, [load]);
+
+  // ── Fetch most viewed products ─────────────────────────────────────────────────
+  useEffect(() => {
+    const fetchMostViewed = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`);
+        if (res.ok) {
+          const allData = await res.json();
+          const all: any[] = Array.isArray(allData)
+            ? allData
+            : allData.products ?? allData.data ?? [];
+
+          const mostViewedProducts = all
+            .filter(p => p.isApproved && p.stock > 0)
+            .sort((a, b) => (b.views || 0) - (a.views || 0))
+            .slice(0, 10);
+
+          setMostViewed(mostViewedProducts);
+        }
+      } catch (err) {
+        console.error("Failed to fetch most viewed products:", err);
+      }
+    };
+    fetchMostViewed();
+  }, []);
 
   const filters = [
     { value: "",           label: "Toutes" },
@@ -419,6 +445,66 @@ function OrdersTab({ token }: { token: string }) {
               Explorer la boutique <ArrowRight size={14} />
             </Link>
           )}
+
+          {/* Most viewed products */}
+          {!filter && mostViewed.length > 0 && (
+            <div style={{ marginTop: "3rem", width: "100%" }}>
+              <h3 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "1.5rem", textAlign: "center" }}>
+                Tu pourrais aimer aussi
+              </h3>
+              <div className="pd-related__grid">
+                {mostViewed.map((product, i) => (
+                  <motion.article
+                    key={product._id}
+                    className="pd-rel-card"
+                    initial={{ opacity: 0, y: 28 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] as any }}
+                    whileHover={{ y: -6 }}
+                  >
+                    <div className="pd-rel-card__media">
+                      {product.images?.[0] ? (
+                        <motion.img
+                          src={product.images[0]}
+                          alt={product.title}
+                          whileHover={{ scale: 1.07 }}
+                          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] as any }}
+                        />
+                      ) : (
+                        <div style={{
+                          width: "100%", height: "100%", background: "#f0ebe3",
+                          display: "flex", alignItems: "center", justifyContent: "center"
+                        }}>
+                          <Package size={28} style={{ opacity: 0.4 }} />
+                        </div>
+                      )}
+                      <div className="pd-rel-card__shade" />
+                      <span className="pd-rel-card__cat">
+                        {typeof product.category === "object" ? product.category.name : product.category || "ARTISANAT"}
+                      </span>
+                    </div>
+                    <div className="pd-rel-card__body">
+                      <h4 className="pd-rel-card__name">{product.title}</h4>
+                      <div className="pd-rel-card__row">
+                        <span className="pd-rel-card__loc">
+                          <Pin size={11} />
+                          {product.artisan?.city?.toUpperCase() ?? "TUNISIE"}
+                        </span>
+                        <span className="pd-rel-card__price">{product.price.toLocaleString("fr-TN")} TND</span>
+                      </div>
+                      <Link
+                        href={`/boutique/${product._id}`}
+                        className="pd-rel-card__cta"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Voir la pièce →
+                      </Link>
+                    </div>
+                  </motion.article>
+                ))}
+              </div>
+            </div>
+          )}
         </motion.div>
 
       ) : (
@@ -440,9 +526,35 @@ export default function PanierPage() {
   const [removing, setRemoving]                   = useState<string | null>(null);
   const [updating, setUpdating]                   = useState<string | null>(null);
   const [tab, setTab]                             = useState<"cart" | "orders">("cart");
+  const [mostViewed, setMostViewed]               = useState<any[]>([]);
   const SHIPPING = 7;
 
   const token = apiToken ?? "";
+
+  // ── Fetch most viewed products ─────────────────────────────────────────────────
+  useEffect(() => {
+    const fetchMostViewed = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`);
+        if (res.ok) {
+          const allData = await res.json();
+          const all: any[] = Array.isArray(allData)
+            ? allData
+            : allData.products ?? allData.data ?? [];
+
+          const mostViewedProducts = all
+            .filter(p => p.isApproved && p.stock > 0)
+            .sort((a, b) => (b.views || 0) - (a.views || 0))
+            .slice(0, 10);
+
+          setMostViewed(mostViewedProducts);
+        }
+      } catch (err) {
+        console.error("Failed to fetch most viewed products:", err);
+      }
+    };
+    fetchMostViewed();
+  }, []);
 
   async function handleRemove(productId: string) {
     setRemoving(productId);
@@ -536,6 +648,69 @@ export default function PanierPage() {
                 <div className="cart-empty__icon"><ShoppingBag size={52} strokeWidth={1.1} /></div>
                 <h2 className="cart-empty__title">Votre panier est vide</h2>
                 <p className="cart-empty__sub">Découvrez nos créations artisanales uniques</p>
+                <Link href="/boutique" className="cart-checkout-btn" style={{ width: "auto", padding: "0.85rem 2rem" }}>
+                  Explorer la boutique <ArrowRight size={14} />
+                </Link>
+
+                {/* Most viewed products */}
+                {mostViewed.length > 0 && (
+                  <div style={{ marginTop: "3rem", width: "100%" }}>
+                    <h3 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "1.5rem", textAlign: "center" }}>
+                      Tu pourrais aimer aussi
+                    </h3>
+                    <div className="pd-related__grid" style={{width:"100%"}}>
+                      {mostViewed.map((product, i) => (
+                        <motion.article
+                          key={product._id}
+                          className="pd-rel-card"
+                          initial={{ opacity: 0, y: 28 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] as any }}
+                          whileHover={{ y: -6 }}
+                        >
+                          <div className="pd-rel-card__media">
+                            {product.images?.[0] ? (
+                              <motion.img
+                                src={product.images[0]}
+                                alt={product.title}
+                                whileHover={{ scale: 1.07 }}
+                                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] as any }}
+                              />
+                            ) : (
+                              <div style={{
+                                width: "100%", height: "100%", background: "#f0ebe3",
+                                display: "flex", alignItems: "center", justifyContent: "center"
+                              }}>
+                                <Package size={28} style={{ opacity: 0.4 }} />
+                              </div>
+                            )}
+                            <div className="pd-rel-card__shade" />
+                            <span className="pd-rel-card__cat">
+                              {typeof product.category === "object" ? product.category.name : product.category || "ARTISANAT"}
+                            </span>
+                          </div>
+                          <div className="pd-rel-card__body">
+                            <h4 className="pd-rel-card__name">{product.title}</h4>
+                            <div className="pd-rel-card__row">
+                              <span className="pd-rel-card__loc">
+                                <Pin size={11} />
+                                {product.artisan?.city?.toUpperCase() ?? "TUNISIE"}
+                              </span>
+                              <span className="pd-rel-card__price">{product.price.toLocaleString("fr-TN")} TND</span>
+                            </div>
+                            <Link
+                              href={`/boutique/${product._id}`}
+                              className="pd-rel-card__cta"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Voir la pièce →
+                            </Link>
+                          </div>
+                        </motion.article>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </motion.div>
 
             /* Items */
