@@ -354,6 +354,28 @@ function CartDrawer({
 function Gallery({ images }: { images: string[] }) {
   const [active, setActive] = useState(0);
   const [lightbox, setLightbox] = useState(false);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  const go = (dir: 1 | -1) =>
+    setActive(a => (a + dir + images.length) % images.length);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY };
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    // horizontal swipe only (ignore vertical scrolling)
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+      go(dx < 0 ? 1 : -1); // swipe left → next, swipe right → previous
+    }
+  };
 
   if (!images.length) return (
     <div style={{
@@ -379,15 +401,21 @@ function Gallery({ images }: { images: string[] }) {
           ))}
         </div>
 
-        <div className="pd-gallery__main" onClick={() => setLightbox(true)}>
-          <AnimatePresence mode="wait">
-            <motion.img key={active} src={images[active]} alt="Produit principal"
-              className="pd-gallery__main-img"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15, ease: "easeOut" }} />
-          </AnimatePresence>
+        <div
+            className="pd-gallery__main"
+            onClick={() => setLightbox(true)}
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
+          >
+            {images.map((img, i) => (
+              <img
+                key={i}
+                src={img}
+                alt={`Produit ${i + 1}`}
+                draggable={false}
+                className={`pd-gallery__main-img${active === i ? " pd-gallery__main-img--on" : ""}`}
+              />
+            ))}
           <div className="pd-gallery__zoom-hint">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
@@ -840,7 +868,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           {/* Mobile info panel - shown only on mobile/tablet */}
           <div className="pd-main__info-mobile">
             {/* Vertical category */}
-            <div className="pd-info__side">
+            <div className="pd-info__side" >
               <span>{catLabel || "ARTISANAT TUNISIEN"}</span>
             </div>
 
@@ -871,51 +899,51 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
               {/* Actions */}
               <div className="pd-actions">
+                <div style={{width:"100%", justifyContent:"center",alignItems:"center" ,gap:"2%",display:"flex"}}>
+                  {/* Quantity */}
+                  {/* <div className="pd-qty">
+                    <button
+                      className="pd-qty__btn"
+                      onClick={() =>
+                        setQty((q) => Math.max(1, q - 1))
+                      }
+                      disabled={cartLoading}
+                      aria-label="Diminuer la quantité"
+                    >
+                      −
+                    </button>
 
-                {/* Quantity */}
-                <div className="pd-qty">
-                  <button
-                    className="pd-qty__btn"
-                    onClick={() =>
-                      setQty((q) => Math.max(1, q - 1))
-                    }
-                    disabled={cartLoading}
-                    aria-label="Diminuer la quantité"
-                  >
-                    −
-                  </button>
-
-                  <span className="pd-qty__val">
+                    <span className="pd-qty__val">
                     {qty}
-                  </span>
+                    </span>
 
+                    <button
+                      className="pd-qty__btn"
+                      onClick={() =>
+                        setQty((q) =>
+                          Math.min(product.stock, q + 1)
+                        )
+                      }
+                      disabled={cartLoading}
+                      aria-label="Augmenter la quantité"
+                    >
+                      +
+                    </button>
+                  </div> */}
+
+                  {/* Add to cart */}
                   <button
-                    className="pd-qty__btn"
-                    onClick={() =>
-                      setQty((q) =>
-                        Math.min(product.stock, q + 1)
-                      )
-                    }
-                    disabled={cartLoading}
-                    aria-label="Augmenter la quantité"
+                    className={`pd-cart-btn${
+                      added ? " pd-cart-btn--added" : ""
+                    }`}
+                    onClick={handleCart}
+                    disabled={!inStock || cartLoading}
                   >
-                    +
+                    <span className="pd-cart-btn__text">
+                      {cartLoading ? "Chargement..." : added ? "AJOUTÉ" : "AJOUTER AU PANIER"}
+                    </span>
                   </button>
                 </div>
-
-                {/* Add to cart */}
-                <button
-                  className={`pd-cart-btn${
-                    added ? " pd-cart-btn--added" : ""
-                  }`}
-                  onClick={handleCart}
-                  disabled={!inStock || cartLoading}
-                >
-                  <span className="pd-cart-btn__text">
-                    {cartLoading ? "Chargement..." : added ? "AJOUTÉ" : "AJOUTER AU PANIER"}
-                  </span>
-                </button>
-
                 {/* Wishlist */}
                 <button
                   className={`pd-wish-btn${
@@ -952,464 +980,464 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           {/* Artisan */}
           <div className="pd-reviews">
 
-  {/* =========================
-      REVIEWS HEADER
-  ========================= */}
-  <div className="pd-reviews__header">
-
-    <h2 className="pd-reviews__title">
-      AVIS CLIENTS
-    </h2>
-
-    <div className="pd-reviews__rating">
-      <span className="pd-reviews__rating-number">
-        {comments.length > 0
-          ? (
-              comments.reduce(
-                (sum, review) => sum + Number(review.rating || 0),
-                0
-              ) / comments.length
-            ).toFixed(1)
-          : ""}
-      </span>
-
-      <div className="pd-reviews__rating-stars">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <svg
-            key={i}
-            width="11"
-            height="11"
-            viewBox="0 0 24 24"
-            fill={
-              i <
-              Math.round(
-                comments.length > 0
-                  ? comments.reduce(
-                      (sum, review) => sum + Number(review.rating || 0),
-                      0
-                    ) / comments.length
-                  : 4.9
-              )
-                ? "#111"
-                : "none"
-            }
-            stroke="#111"
-            strokeWidth="1.8"
-          >
-            <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
-          </svg>
-        ))}
-      </div>
-    </div>
-
-  </div>
-
-
-  {/* =========================
-      REVIEW FORM
-  ========================= */}
-
-  {session ? (
-
-    <div className="pd-review-form">
-
-      <h3 className="pd-review-form__title">
-        {editingId
-          ? "MODIFIER VOTRE AVIS"
-          : "LAISSER UN AVIS"}
-      </h3>
-
-      {/* FORM FIELDS */}
-
-      <div className="pd-review-form__fields">
-
-      </div>
-
-
-      {/* RATING */}
-
-      <div className="pd-review-form__rating">
-
-        <span className="pd-review-form__rating-label">
-          VOTRE NOTE
-        </span>
-
-        <div className="pd-review-form__stars">
-
-          {Array.from({ length: 5 }).map((_, i) => (
-
-            <button
-              key={i}
-              type="button"
-              onClick={() => setNewRating(i + 1)}
-              className="pd-review-form__star"
-              aria-label={`Note ${i + 1}`}
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill={
-                  i < newRating
-                    ? "#111"
-                    : "none"
-                }
-                stroke="#111"
-                strokeWidth="1.5"
-              >
-                <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
-              </svg>
-            </button>
-
-          ))}
-
-        </div>
-
-      </div>
-
-
-      {/* EXPERIENCE */}
-
-      <div className="pd-review-form__experience">
-
-        <label>
-          VOTRE EXPÉRIENCE...
-        </label>
-
-        <textarea
-          value={newContent}
-          onChange={(e) =>
-            setNewContent(e.target.value)
-          }
-          placeholder=""
-          rows={3}
-        />
-
-      </div>
-
-
-      {/* ERROR */}
-
-      {submitError && (
-        <p className="pd-review-form__error">
-          {submitError}
-        </p>
-      )}
-
-
-      {/* BUTTONS */}
-
-      <div className="pd-review-form__actions">
-
-        <motion.button
-          ref={publishBtnRef}
-          className="pd-review-form__submit"
-          onClick={
-            editingId
-              ? handleUpdateComment
-              : handleSubmitComment
-          }
-          disabled={
-            submitting ||
-            !newContent.trim()
-          }
-          whileHover={{
-            opacity: 0.9
-          }}
-          whileTap={{
-            scale: 0.98
-          }}
-        >
-
-          {submitting ? (
-
-            <Loader2
-              size={16}
-              className="pd-review-form__loader"
-            />
-
-          ) : editingId ? (
-
-            "ENREGISTRER"
-
-          ) : (
-
-            "PUBLIER L'AVIS"
-
-          )}
-
-        </motion.button>
-
-
-        {editingId && (
-
-          <motion.button
-            className="pd-review-form__cancel"
-            onClick={handleCancelEdit}
-            whileHover={{
-              opacity: 0.7
-            }}
-            whileTap={{
-              scale: 0.98
-            }}
-          >
-            ANNULER
-          </motion.button>
-
-        )}
-
-      </div>
-
-    </div>
-
-  ) : (
-
-    /* =========================
-       NOT LOGGED IN
-    ========================= */
-
-    <div className="pd-review-form pd-review-form--login">
-
-      <h3 className="pd-review-form__title">
-        LAISSER UN AVIS
-      </h3>
-
-      <p>
-        Connectez-vous pour laisser un avis.
-      </p>
-
-      <Link
-        href="/connexion"
-        className="pd-review-form__login-link"
-      >
-        SE CONNECTER →
-      </Link>
-
-    </div>
-
-  )}
-
-
-  {/* =========================
-      REVIEWS
-  ========================= */}
-
-  {commentsLoading ? (
-
-    <div className="pd-reviews__loading">
-
-      <Loader2
-        size={28}
-        className="pd-reviews__loader"
-      />
-
-    </div>
-
-  ) : comments.length === 0 ? (
-
-    <div className="pd-reviews__empty">
-
-      Aucun avis pour le moment.
-      Soyez le premier !
-
-    </div>
-
-  ) : (
-
-    <div className="pd-review-list">
-
-      {comments.map((r, i) => {
-
-        const isMyComment =
-          currentUserId === r.user._id;
-
-        return (
-
-          <motion.article
-            key={r._id}
-            className="pd-review"
-
-            initial={{
-              opacity: 0,
-              y: 14
-            }}
-
-            animate={{
-              opacity: 1,
-              y: 0
-            }}
-
-            transition={{
-              delay: i * 0.08,
-              duration: 0.5
-            }}
-          >
-
-            {/* REVIEW TEXT */}
-
-            <p className="pd-review__text">
-              “{r.content}”
-            </p>
-
-
-            {/* REVIEW FOOTER */}
-
-            <div className="pd-review__footer">
-
-              <div className="pd-review__author">
-
-                <span className="pd-review__name">
-                  {r.user.name}
+            {/* =========================
+                REVIEWS HEADER
+            ========================= */}
+            <div className="pd-reviews__header">
+
+              <h2 className="pd-reviews__title">
+                AVIS CLIENTS
+              </h2>
+
+              <div className="pd-reviews__rating">
+                <span className="pd-reviews__rating-number">
+                  {comments.length > 0
+                    ? (
+                        comments.reduce(
+                          (sum, review) => sum + Number(review.rating || 0),
+                          0
+                        ) / comments.length
+                      ).toFixed(1)
+                    : ""}
                 </span>
 
-                <span className="pd-review__separator">
-                  —
-                </span>
-
-                <span className="pd-review__city">
-                  {(r.user as any).city ||
-                    (r.user as any).location ||
-                    ""}
-                </span>
-
-              </div>
-
-
-              {/* STARS */}
-
-              <div className="pd-review__stars">
-
-                {Array.from({
-                  length: 5
-                }).map((_, si) => (
-
-                  <svg
-                    key={si}
-                    width="10"
-                    height="10"
-                    viewBox="0 0 24 24"
-                    fill={
-                      si < r.rating
-                        ? "#111"
-                        : "none"
-                    }
-                    stroke="#111"
-                    strokeWidth="1.5"
-                  >
-                    <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
-                  </svg>
-
-                ))}
-
-              </div>
-
-
-              {/* ACTIONS */}
-
-              {isMyComment && (
-
-                <div className="pd-review__actions">
-
-                  {/* EDIT */}
-
-                  <motion.button
-                    className="pd-review__action-btn"
-                    onClick={() =>
-                      handleStartEdit(r)
-                    }
-                    whileHover={{
-                      scale: 1.1
-                    }}
-                    whileTap={{
-                      scale: 0.9
-                    }}
-                    title="Modifier"
-                  >
-
+                <div className="pd-reviews__rating-stars">
+                  {Array.from({ length: 5 }).map((_, i) => (
                     <svg
-                      width="13"
-                      height="13"
+                      key={i}
+                      width="11"
+                      height="11"
                       viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
+                      fill={
+                        i <
+                        Math.round(
+                          comments.length > 0
+                            ? comments.reduce(
+                                (sum, review) => sum + Number(review.rating || 0),
+                                0
+                              ) / comments.length
+                            : 4.9
+                        )
+                          ? "#111"
+                          : "none"
+                      }
+                      stroke="#111"
+                      strokeWidth="1.8"
                     >
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
                     </svg>
-
-                  </motion.button>
-
-
-                  {/* DELETE */}
-
-                  <motion.button
-                    className="pd-review__action-btn pd-review__action-btn--delete"
-                    onClick={() =>
-                      handleDeleteComment(r._id)
-                    }
-                    whileHover={{
-                      scale: 1.1
-                    }}
-                    whileTap={{
-                      scale: 0.9
-                    }}
-                    title="Supprimer"
-                  >
-
-                    <svg
-                      width="13"
-                      height="13"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <polyline points="3 6 5 6 21 6" />
-
-                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-
-                      <path d="M10 11v6M14 11v6" />
-
-                      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-
-                    </svg>
-
-                  </motion.button>
-
+                  ))}
                 </div>
-
-              )}
+              </div>
 
             </div>
 
 
-            {/* DATE */}
+            {/* =========================
+                REVIEW FORM
+            ========================= */}
 
-            <span className="pd-review__date">
-              {new Date(
-                r.createdAt
-              ).toLocaleDateString(
-                "fr-FR",
-                {
-                  month: "short",
-                  year: "numeric"
-                }
-              )}
-            </span>
+            {session ? (
 
-          </motion.article>
+              <div className="pd-review-form">
 
-        );
+                <h3 className="pd-review-form__title">
+                  {editingId
+                    ? "MODIFIER VOTRE AVIS"
+                    : "LAISSER UN AVIS"}
+                </h3>
 
-      })}
+                {/* FORM FIELDS */}
 
-    </div>
+                <div className="pd-review-form__fields">
 
-  )}
+                </div>
 
-</div>
+
+                {/* RATING */}
+
+                <div className="pd-review-form__rating">
+
+                  <span className="pd-review-form__rating-label">
+                    VOTRE NOTE
+                  </span>
+
+                  <div className="pd-review-form__stars">
+
+                    {Array.from({ length: 5 }).map((_, i) => (
+
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setNewRating(i + 1)}
+                        className="pd-review-form__star"
+                        aria-label={`Note ${i + 1}`}
+                      >
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill={
+                            i < newRating
+                              ? "#111"
+                              : "none"
+                          }
+                          stroke="#111"
+                          strokeWidth="1.5"
+                        >
+                          <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
+                        </svg>
+                      </button>
+
+                    ))}
+
+                  </div>
+
+                </div>
+
+
+                {/* EXPERIENCE */}
+
+                <div className="pd-review-form__experience">
+
+                  <label>
+                    VOTRE EXPÉRIENCE...
+                  </label>
+
+                  <textarea
+                    value={newContent}
+                    onChange={(e) =>
+                      setNewContent(e.target.value)
+                    }
+                    placeholder=""
+                    rows={3}
+                  />
+
+                </div>
+
+
+                {/* ERROR */}
+
+                {submitError && (
+                  <p className="pd-review-form__error">
+                    {submitError}
+                  </p>
+                )}
+
+
+                {/* BUTTONS */}
+
+                <div className="pd-review-form__actions">
+
+                  <motion.button
+                    ref={publishBtnRef}
+                    className="pd-review-form__submit"
+                    onClick={
+                      editingId
+                        ? handleUpdateComment
+                        : handleSubmitComment
+                    }
+                    disabled={
+                      submitting ||
+                      !newContent.trim()
+                    }
+                    whileHover={{
+                      opacity: 0.9
+                    }}
+                    whileTap={{
+                      scale: 0.98
+                    }}
+                  >
+
+                    {submitting ? (
+
+                      <Loader2
+                        size={16}
+                        className="pd-review-form__loader"
+                      />
+
+                    ) : editingId ? (
+
+                      "ENREGISTRER"
+
+                    ) : (
+
+                      "PUBLIER L'AVIS"
+
+                    )}
+
+                  </motion.button>
+
+
+                  {editingId && (
+
+                    <motion.button
+                      className="pd-review-form__cancel"
+                      onClick={handleCancelEdit}
+                      whileHover={{
+                        opacity: 0.7
+                      }}
+                      whileTap={{
+                        scale: 0.98
+                      }}
+                    >
+                      ANNULER
+                    </motion.button>
+
+                  )}
+
+                </div>
+
+              </div>
+
+            ) : (
+
+              /* =========================
+                NOT LOGGED IN
+              ========================= */
+
+              <div className="pd-review-form pd-review-form--login">
+
+                <h3 className="pd-review-form__title">
+                  LAISSER UN AVIS
+                </h3>
+
+                <p>
+                  Connectez-vous pour laisser un avis.
+                </p>
+
+                <Link
+                  href="/connexion"
+                  className="pd-review-form__login-link"
+                >
+                  SE CONNECTER →
+                </Link>
+
+              </div>
+
+            )}
+
+
+            {/* =========================
+                REVIEWS
+            ========================= */}
+
+            {commentsLoading ? (
+
+              <div className="pd-reviews__loading">
+
+                <Loader2
+                  size={28}
+                  className="pd-reviews__loader"
+                />
+
+              </div>
+
+            ) : comments.length === 0 ? (
+
+              <div className="pd-reviews__empty">
+
+                Aucun avis pour le moment.
+                Soyez le premier !
+
+              </div>
+
+            ) : (
+
+              <div className="pd-review-list">
+
+                {comments.map((r, i) => {
+
+                  const isMyComment =
+                    currentUserId === r.user._id;
+
+                  return (
+
+                    <motion.article
+                      key={r._id}
+                      className="pd-review"
+
+                      initial={{
+                        opacity: 0,
+                        y: 14
+                      }}
+
+                      animate={{
+                        opacity: 1,
+                        y: 0
+                      }}
+
+                      transition={{
+                        delay: i * 0.08,
+                        duration: 0.5
+                      }}
+                    >
+
+                      {/* REVIEW TEXT */}
+
+                      <p className="pd-review__text">
+                        “{r.content}”
+                      </p>
+
+
+                      {/* REVIEW FOOTER */}
+
+                      <div className="pd-review__footer">
+
+                        <div className="pd-review__author">
+
+                          <span className="pd-review__name">
+                            {r.user.name}
+                          </span>
+
+                          <span className="pd-review__separator">
+                            —
+                          </span>
+
+                          <span className="pd-review__city">
+                            {(r.user as any).city ||
+                              (r.user as any).location ||
+                              ""}
+                          </span>
+
+                        </div>
+
+
+                        {/* STARS */}
+
+                        <div className="pd-review__stars">
+
+                          {Array.from({
+                            length: 5
+                          }).map((_, si) => (
+
+                            <svg
+                              key={si}
+                              width="10"
+                              height="10"
+                              viewBox="0 0 24 24"
+                              fill={
+                                si < r.rating
+                                  ? "#111"
+                                  : "none"
+                              }
+                              stroke="#111"
+                              strokeWidth="1.5"
+                            >
+                              <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
+                            </svg>
+
+                          ))}
+
+                        </div>
+
+
+                        {/* ACTIONS */}
+
+                        {isMyComment && (
+
+                          <div className="pd-review__actions">
+
+                            {/* EDIT */}
+
+                            <motion.button
+                              className="pd-review__action-btn"
+                              onClick={() =>
+                                handleStartEdit(r)
+                              }
+                              whileHover={{
+                                scale: 1.1
+                              }}
+                              whileTap={{
+                                scale: 0.9
+                              }}
+                              title="Modifier"
+                            >
+
+                              <svg
+                                width="13"
+                                height="13"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                              </svg>
+
+                            </motion.button>
+
+
+                            {/* DELETE */}
+
+                            <motion.button
+                              className="pd-review__action-btn pd-review__action-btn--delete"
+                              onClick={() =>
+                                handleDeleteComment(r._id)
+                              }
+                              whileHover={{
+                                scale: 1.1
+                              }}
+                              whileTap={{
+                                scale: 0.9
+                              }}
+                              title="Supprimer"
+                            >
+
+                              <svg
+                                width="13"
+                                height="13"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <polyline points="3 6 5 6 21 6" />
+
+                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+
+                                <path d="M10 11v6M14 11v6" />
+
+                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+
+                              </svg>
+
+                            </motion.button>
+
+                          </div>
+
+                        )}
+
+                      </div>
+
+
+                      {/* DATE */}
+
+                      <span className="pd-review__date">
+                        {new Date(
+                          r.createdAt
+                        ).toLocaleDateString(
+                          "fr-FR",
+                          {
+                            month: "short",
+                            year: "numeric"
+                          }
+                        )}
+                      </span>
+
+                    </motion.article>
+
+                  );
+
+                })}
+
+              </div>
+
+            )}
+
+          </div>
         </motion.div>
 
         {/* Info panel */}

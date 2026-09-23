@@ -7172,7 +7172,29 @@ img { display: block; max-width: 100%; }
   -moz-box-shadow: -1px 2px 5px 0px rgba(0,0,0,0.75); */
 }
 
+.pd-gallery__main {
+  background: #f0ebe3;   /* matches your placeholder color, only visible while an image loads */
+}
 
+.pd-gallery__main-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  z-index: 0;
+  /* the old image stays fully visible until the new one has faded in over it */
+  transition: opacity 0.25s ease 0.25s;
+}
+
+.pd-gallery__main-img--on {
+  opacity: 1;
+  z-index: 1;
+  transition: opacity 0.25s ease;
+}
+
+.pd-gallery__zoom-hint { z-index: 2; }
 /* Top row: category pill + stock badge */
 /* =========================================================
    FINAL PRODUCT CARD OVERRIDE
@@ -7203,7 +7225,7 @@ img { display: block; max-width: 100%; }
 
 .pd-info__side {
   width: 80px !important;
-  min-width: 80px !important;
+  /* min-width: 80px !important; */
   height: auto !important;
 
   align-self: stretch;
@@ -8977,23 +8999,25 @@ img { display: block; max-width: 100%; }
   .pd-main__gallery { position: static; }
   .pd-main__info  { display: none; } /* Hide desktop info panel on mobile/tablet */
   .pd-main__info-mobile {  
-  width: 100%;
-  min-height: 410px;
-  height: auto;
+    width: 100%;
+    min-height: 410px;
+    height: auto;
 
-  display: flex;
-  flex-direction: row;
+    display: flex;
+    flex-direction: row;
 
-  background: #faf7f0;
-  border: 1px solid #e8e1d6;
-  border-radius: 15px;
+    background: #faf7f0;
+    border: 1px solid #e8e1d6;
+    border-radius: 0px;
 
-  overflow: hidden;
-  box-sizing: border-box;
+    overflow: hidden;
+    box-sizing: border-box;
 
-  padding: 0 !important;
-  margin-top: 2%;
-  box-shadow: 0 18px 45px rgba(35, 27, 20, 0.045);} 
+    padding: 0 !important;
+    margin-top: 0%;
+    box-shadow: 0 18px 45px rgba(35, 27, 20, 0.045);
+    padding-bottom: 0 !important;
+} 
   .pd-gallery     { grid-template-columns: 1fr; gap: 12px; }
   .pd-gallery__thumbs { flex-direction: row; overflow-x: auto; }
   .pd-gallery__thumb  { width: 68px; height: 68px; flex-shrink: 0; }
@@ -9002,21 +9026,59 @@ img { display: block; max-width: 100%; }
   .pd-related     { padding: 64px 48px 80px; }
   .pd-related__grid { grid-template-columns: repeat(2, 1fr); }
   .pd-details-grid { grid-template-columns: 1fr; }
+  .pd-info__side { width: 40px !important;}
+  .pd-wish-btn    { width: 100%; padding: 0.75rem;  margin-top: 15px !important;  margin: 7px 0 0 !important; background-color: var(--terracotta);}
+
 }
 
 @media (max-width: 768px) {
-  .pd-root        { padding: 0 1rem; max-width: 100vw; overflow-x: hidden; }
-  .pd-main        { gap: 2rem; padding: 2rem 1rem 3rem; max-width: 100%; }
-  .pd-main__info  { padding: 16px; border-radius: 12px; }
+  .pd-root {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .pd-main {
+    display: block !important;      /* removes any grid/flex gap or side columns */
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .pd-main__info {
+    margin: 0 !important;
+    width: 100% !important;
+    border-radius: 0;
+  }
   .pd-breadcrumb  { padding: 1rem 1rem 0; font-size: 0.85rem; flex-wrap: wrap; }
   .pd-gallery__thumbs { display: none; }
-  .pd-gallery__main { border-radius: 8px; width: 100%; }
-  .pd-info__title { font-size: 1.5rem; word-wrap: break-word; overflow-wrap: break-word; }
-  .pd-info__price { font-size: 1.75rem; }
-  .pd-actions     { flex-direction: column; gap: 1rem; width: 100%; }
-  .pd-qty         { width: 100%; justify-content: center; }
+  .pd-gallery__main {
+    margin: 0 !important;
+    width: 100% !important;
+    border-radius: 0;
+    background-color: transparent;  /* remove the red debug color */
+  }
+  .pd-info__content {
+  flex: 1;
+
+  min-width: 0;
+
+  padding: 42px 5px 30px !important;
+
+  display: flex;
+  flex-direction: column;
+
+  box-sizing: border-box;
+}
+  .pd-info__title { font-size: 9px; word-wrap: break-word; overflow-wrap: break-word; }
+  .pd-info__price { font-size: 1.5rem; }
+  .pd-actions     { flex-direction: column; gap: 1rem; width: 100%; margin-top: 15px ! important; }
+  .pd-qty         { width: 100%; justify-content: center;height: 30px;}
   .pd-cart-btn    { width: 100%; min-width: auto; padding: 1rem; }
-  .pd-wish-btn    { width: 100%; padding: 0.75rem; }
+  .pd-wish-btn    { width: 100%; padding: 0.75rem;  margin-top: 15px !important;  margin: 7px 0 0 !important; background-color: var(--terracotta);
+}
   .pd-tabs-section { padding: 0 1rem 3rem; max-width: 100%; }
   .pd-tabs__nav   { flex-wrap: wrap; gap: 0.5rem; width: 100%; }
   .pd-tabs__tab   { flex: 1; min-width: 120px; padding: 12px 16px; }
@@ -9027,19 +9089,34 @@ img { display: block; max-width: 100%; }
   .pd-review__head { flex-wrap: wrap; gap: 0.5rem; }
   .pd-artisan-row { flex-direction:row; align-items: flex-start; gap: 0.75rem; }
   .pd-artisan-row__link { width: 100%; text-align: center; padding: 0.5rem; }
-  .pd-gallery__main-img { width: 100%; }
+  .pd-gallery__main-img {
+    width: 100%;
+    display: block;
+  }
+  .pd-gallery {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 0 !important;
+    width: 100% !important;
+  }
+  .pd-info__side { width: 40px !important;}
+   .pd-main__info-mobile { padding-bottom: 0 !important;}
+
 }
 
 @media (max-width: 480px) {
   .pd-root        { padding: 0 0.75rem; max-width: 100vw; overflow-x: hidden; }
   .pd-main        { padding: 1.5rem 0.75rem 2.5rem; gap: 1.5rem; }
   .pd-main__info  { padding: 12px; border-radius: 8px; }
-  .pd-info__title { font-size: 1.25rem; word-wrap: break-word; overflow-wrap: break-word; }
-  .pd-info__price { font-size: 1.5rem; }
-  .pd-info__short-desc { font-size: 0.9rem; }
-  .pd-qty__btn    { width: 36px; height: 44px; font-size: 16px; }
-  .pd-qty__val    { width: 40px; height: 44px; font-size: 14px; }
-  .pd-cart-btn    { height: 44px; font-size: 12px; }
+  .pd-info__title { font-size: 18px !important;  word-wrap: break-word; overflow-wrap: break-word; }
+  .pd-info__price { font-size: 17px; }
+  .pd-info__short-desc { font-size: 13px;  }
+  .pd-qty         { width: 40px ! important; justify-content: center;height: 30px ! important;}
+
+  .pd-qty__btn    { width: 26px; height: 30px; font-size: 16px; border: none !important; }
+  .pd-qty__val    { width: 40px; height: 44px; font-size: 14px; border: none !important; }
+  .pd-cart-btn    { height: 40px !important ; font-size: 12px; margin: 0; }
   .pd-wish-btn    { height: 44px; }
   .pd-tabs__tab   { min-width: 100px; padding: 10px 12px; font-size: 12px; }
   .pd-rel-card__name { font-size: 16px; word-wrap: break-word; }
@@ -9050,6 +9127,9 @@ img { display: block; max-width: 100%; }
   .pd-gallery__main-img { width: 100%; }
   .pd-tabs-section { padding: 0 0.75rem 2.5rem; }
   .pd-related     { padding: 2.5rem 0.75rem 3rem; }
+  .pd-info__side { width: 40px !important;}
+  .pd-main__info-mobile { padding-bottom: 0 !important;}
+
 }
 
 @media (max-width: 680px) {
@@ -9062,8 +9142,30 @@ img { display: block; max-width: 100%; }
   .pd-cart-btn    { min-width: 0; }
   .pd-trust       { gap: 12px; }
   .pd-toast       { left: 16px; right: 16px; bottom: 20px; }
-}
+  .pd-info__side { width: 40px !important;}
+  .pd-main__info-mobile { padding-bottom: 0 !important;}
+  .pd-wish-btn    { width: 100%; padding: 0.75rem;  margin-top: 15px !important;  margin: 7px 0 0 !important; background-color: var(--terracotta);}
 
+
+}
+@media (max-width: 1100px), (hover: none) {
+  .pd-gallery__arrow { display: none; }
+
+  .pd-gallery__main {
+    touch-action: pan-y;        /* vertical scroll still works, horizontal is ours */
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .pd-gallery__main-img {
+    -webkit-user-drag: none;
+    pointer-events: none;       /* the container receives the touch */
+  }
+  .pd-info__side { width: 40px !important;}
+  .pd-main__info-mobile { padding-bottom: 0 !important;}
+  .pd-wish-btn    { width: 100%; padding: 0.75rem;  margin-top: 15px !important;  margin: 7px 0 0 !important; background-color: var(--terracotta);}
+
+}
 
 /* ── Cart drawer ── */
 .cd-overlay {
