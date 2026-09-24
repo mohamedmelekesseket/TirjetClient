@@ -1,18 +1,19 @@
 "use client";
 
 import { useCart } from "../context/CartContext";
-import { useApiToken } from "@/lib/useApiToken";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Trash2, Plus, Minus, ShoppingBag, ArrowRight, Loader2,
-  Package, ClipboardList, Clock, CheckCircle2, XCircle,
-  Truck, RefreshCw, MapPin, CreditCard, Tag, Pin,
+  Package, ClipboardList, Clock, CheckCircle2, XCircle, X,
+  Truck, RefreshCw, MapPin, CreditCard, Tag, Heart,
 } from "lucide-react";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
-import { showErrorToast } from "@/lib/toast";
+import { createPortal } from "react-dom";
+import { showSuccessToast, showErrorToast } from "@/lib/toast";
+import { useApiToken } from "@/lib/useApiToken";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
@@ -347,12 +348,96 @@ function OrderCard({ order, idx }: { order: Order; idx: number }) {
   );
 }
 
+// ─── Confirmation Modal Component ─────────────────────────────────────────────
+interface ConfirmModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  product: any;
+  confirmText?: string;
+  cancelText?: string;
+}
+
+function ConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  product,
+  confirmText = "Confirmer",
+  cancelText = "Annuler"
+}: ConfirmModalProps) {
+  if (!isOpen || !product) return null;
+
+  return createPortal(
+    <div className="confirm-modal-overlay">
+      <motion.div
+        className="confirm-modal"
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="confirm-modal__header">
+          <h3 className="confirm-modal__title">Ajouter au panier</h3>
+          <button onClick={onClose} className="confirm-modal__close">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="confirm-modal__content">
+          <div className="confirm-modal__product">
+            <div className="confirm-modal__image">
+              {product.images?.[0] ? (
+                <img src={product.images[0]} alt={product.title} />
+              ) : (
+                <div className="confirm-modal__placeholder">
+                  <Package size={32} />
+                </div>
+              )}
+            </div>
+            <div className="confirm-modal__details">
+              <h4 className="confirm-modal__product-title">{product.title}</h4>
+              <p className="confirm-modal__product-price">
+                {product.price.toLocaleString("fr-TN")} TND
+              </p>
+            </div>
+          </div>
+          <p className="confirm-modal__message">Êtes-vous sûr de vouloir ajouter ce produit au panier ?</p>
+        </div>
+        <div className="confirm-modal__actions">
+          <button onClick={onClose} className="confirm-modal__btn confirm-modal__btn--cancel">
+            {cancelText}
+          </button>
+          <button onClick={onConfirm} className="confirm-modal__btn confirm-modal__btn--confirm">
+            {confirmText}
+          </button>
+        </div>
+      </motion.div>
+    </div>,
+    document.body
+  );
+}
+
 // ─── Orders Tab ───────────────────────────────────────────────────────────────
-function OrdersTab({ token }: { token: string }) {
+// FIX: `addToCart` is now received as a prop (it only exists in PanierPage via
+// useCart), and the confirmation modal is rendered here so the "Tu pourrais
+// aimer aussi" cards in the empty orders view can actually add to the cart.
+function OrdersTab({
+  token,
+  session,
+  addToCart,
+}: {
+  token: string;
+  session: any;
+  addToCart: (productId: string, quantity: number) => unknown;
+}) {
   const [orders, setOrders]   = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter]   = useState("");
   const [mostViewed, setMostViewed] = useState<any[]>([]);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    product: any;
+  }>({ isOpen: false, product: null });
 
   const load = useCallback(async () => {
     if (!token) {
@@ -405,6 +490,32 @@ function OrdersTab({ token }: { token: string }) {
     fetchMostViewed();
   }, []);
 
+  // ── Add to cart with confirmation ───────────────────────────────────────────
+  const handleAddToCart = useCallback((product: any) => {
+    if (!session) {
+      showErrorToast("Vous devez être connecté pour ajouter au panier");
+      return;
+    }
+
+    setConfirmModal({
+      isOpen: true,
+      product
+    });
+  }, [session]);
+
+  const confirmAddToCart = useCallback(async () => {
+    if (!confirmModal.product) return;
+
+    try {
+      await addToCart(confirmModal.product._id, 1);
+      showSuccessToast("Produit ajouté au panier !");
+      setConfirmModal({ isOpen: false, product: null });
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      showErrorToast("Erreur lors de l'ajout au panier");
+    }
+  }, [confirmModal.product, addToCart]);
+
   const filters = [
     { value: "",           label: "Toutes" },
     { value: "pending",    label: "En attente" },
@@ -452,53 +563,50 @@ function OrdersTab({ token }: { token: string }) {
               <h3 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "1.5rem", textAlign: "center" }}>
                 Tu pourrais aimer aussi
               </h3>
-              <div className="pd-related__grid">
+              <div className="cat__grid cart-mobile-grid">
                 {mostViewed.map((product, i) => (
                   <motion.article
                     key={product._id}
-                    className="pd-rel-card"
-                    initial={{ opacity: 0, y: 28 }}
+                    className="cat__card"
+                    onClick={() => window.location.href = `/boutique/${product._id}`}
+                    initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] as any }}
-                    whileHover={{ y: -6 }}
                   >
-                    <div className="pd-rel-card__media">
+                    <div className="cat__card-img">
                       {product.images?.[0] ? (
-                        <motion.img
-                          src={product.images[0]}
-                          alt={product.title}
-                          whileHover={{ scale: 1.07 }}
-                          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] as any }}
-                        />
+                        <img src={product.images[0]} alt={product.title} />
                       ) : (
-                        <div style={{
-                          width: "100%", height: "100%", background: "#f0ebe3",
-                          display: "flex", alignItems: "center", justifyContent: "center"
-                        }}>
-                          <Package size={28} style={{ opacity: 0.4 }} />
-                        </div>
+                        <div className="cat__card-placeholder"><Package size={28} /></div>
                       )}
-                      <div className="pd-rel-card__shade" />
-                      <span className="pd-rel-card__cat">
-                        {typeof product.category === "object" ? product.category.name : product.category || "ARTISANAT"}
-                      </span>
+
+                      {product.subcategoryL2?.name && (
+                        <span className="cat__card-badge">{product.subcategoryL2.name}</span>
+                      )}
+
+                      <button
+                        className="cat__card-wish"
+                        onClick={(e) => { e.stopPropagation(); /* toggleWish(product._id) */ }}>
+                        <Heart size={16} fill="none" stroke="currentColor" />
+                      </button>
+                      <button
+                        className="cat__card-bag"
+                        onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}
+                        aria-label="Ajouter au panier">
+                        <ShoppingBag size={15} />
+                      </button>
                     </div>
-                    <div className="pd-rel-card__body">
-                      <h4 className="pd-rel-card__name">{product.title}</h4>
-                      <div className="pd-rel-card__row">
-                        <span className="pd-rel-card__loc">
-                          <Pin size={11} />
-                          {product.artisan?.city?.toUpperCase() ?? "TUNISIE"}
-                        </span>
-                        <span className="pd-rel-card__price">{product.price.toLocaleString("fr-TN")} TND</span>
+
+                    <div className="cat__card-body">
+                      <h3 className="cat__card-title">{product.title}</h3>
+                      <div className="cat__card-trail">
+                        {[product.subcategoryL2?.name, product.subcategoryL3?.name].filter(Boolean).join(" • ")}
                       </div>
-                      <Link
-                        href={`/boutique/${product._id}`}
-                        className="pd-rel-card__cta"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        Voir la pièce →
-                      </Link>
+                      <div className="cat__card-foot">
+                        <span className="cat__card-price">
+                          {product.price.toLocaleString("fr-TN")} TND
+                        </span>
+                      </div>
                     </div>
                   </motion.article>
                 ))}
@@ -514,15 +622,29 @@ function OrdersTab({ token }: { token: string }) {
           ))}
         </div>
       )}
+
+      {/* Confirmation Modal (orders tab) */}
+      <AnimatePresence>
+        {confirmModal.isOpen && confirmModal.product && (
+          <ConfirmModal
+            isOpen={confirmModal.isOpen}
+            onClose={() => setConfirmModal({ isOpen: false, product: null })}
+            onConfirm={confirmAddToCart}
+            product={confirmModal.product}
+            confirmText="Oui, ajouter"
+            cancelText="Annuler"
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PanierPage() {
-  const { cart, loading, updateItem, removeItem } = useCart();
+  const { cart, loading, updateItem, removeItem, addToCart } = useCart();
   const { apiToken, session } = useApiToken();
-  const router                                    = useRouter();
+  const router = useRouter();
   const [removing, setRemoving]                   = useState<string | null>(null);
   const [updating, setUpdating]                   = useState<string | null>(null);
   const [tab, setTab]                             = useState<"cart" | "orders">("cart");
@@ -530,6 +652,10 @@ export default function PanierPage() {
   const SHIPPING = 7;
 
   const token = apiToken ?? "";
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    product: any;
+  }>({ isOpen: false, product: null });
 
   // ── Fetch most viewed products ─────────────────────────────────────────────────
   useEffect(() => {
@@ -555,6 +681,32 @@ export default function PanierPage() {
     };
     fetchMostViewed();
   }, []);
+
+  // ── Add to cart with confirmation ───────────────────────────────────────────
+  const handleAddToCart = useCallback((product: any) => {
+    if (!session) {
+      showErrorToast("Vous devez être connecté pour ajouter au panier");
+      return;
+    }
+
+    setConfirmModal({
+      isOpen: true,
+      product
+    });
+  }, [session]);
+
+  const confirmAddToCart = useCallback(async () => {
+    if (!confirmModal.product) return;
+
+    try {
+      await addToCart(confirmModal.product._id, 1);
+      showSuccessToast("Produit ajouté au panier !");
+      setConfirmModal({ isOpen: false, product: null });
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      showErrorToast("Erreur lors de l'ajout au panier");
+    }
+  }, [confirmModal.product, addToCart]);
 
   async function handleRemove(productId: string) {
     setRemoving(productId);
@@ -644,7 +796,7 @@ export default function PanierPage() {
 
             /* Empty */
             ) : isEmpty ? (
-              <motion.div className="cart-empty" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+              <motion.div className="cart-empty"  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
                 <div className="cart-empty__icon"><ShoppingBag size={52} strokeWidth={1.1} /></div>
                 <h2 className="cart-empty__title">Votre panier est vide</h2>
                 <p className="cart-empty__sub">Découvrez nos créations artisanales uniques</p>
@@ -658,53 +810,50 @@ export default function PanierPage() {
                     <h3 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "1.5rem", textAlign: "center" }}>
                       Tu pourrais aimer aussi
                     </h3>
-                    <div className="pd-related__grid" style={{width:"100%"}}>
+                    <div className="cat__grid cart-mobile-grid">
                       {mostViewed.map((product, i) => (
                         <motion.article
                           key={product._id}
-                          className="pd-rel-card"
-                          initial={{ opacity: 0, y: 28 }}
+                          className="cat__card"
+                          onClick={() => window.location.href = `/boutique/${product._id}`}
+                          initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.4, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] as any }}
-                          whileHover={{ y: -6 }}
                         >
-                          <div className="pd-rel-card__media">
+                          <div className="cat__card-img">
                             {product.images?.[0] ? (
-                              <motion.img
-                                src={product.images[0]}
-                                alt={product.title}
-                                whileHover={{ scale: 1.07 }}
-                                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] as any }}
-                              />
+                              <img src={product.images[0]} alt={product.title} />
                             ) : (
-                              <div style={{
-                                width: "100%", height: "100%", background: "#f0ebe3",
-                                display: "flex", alignItems: "center", justifyContent: "center"
-                              }}>
-                                <Package size={28} style={{ opacity: 0.4 }} />
-                              </div>
+                              <div className="cat__card-placeholder"><Package size={28} /></div>
                             )}
-                            <div className="pd-rel-card__shade" />
-                            <span className="pd-rel-card__cat">
-                              {typeof product.category === "object" ? product.category.name : product.category || "ARTISANAT"}
-                            </span>
+
+                            {product.subcategoryL2?.name && (
+                              <span className="cat__card-badge">{product.subcategoryL2.name}</span>
+                            )}
+
+                            <button
+                              className="cat__card-wish"
+                              onClick={(e) => { e.stopPropagation(); /* toggleWish(product._id) */ }}>
+                              <Heart size={16} fill="none" stroke="currentColor" />
+                            </button>
+                            <button
+                              className="cat__card-bag"
+                              onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}
+                              aria-label="Ajouter au panier">
+                              <ShoppingBag size={15} />
+                            </button>
                           </div>
-                          <div className="pd-rel-card__body">
-                            <h4 className="pd-rel-card__name">{product.title}</h4>
-                            <div className="pd-rel-card__row">
-                              <span className="pd-rel-card__loc">
-                                <Pin size={11} />
-                                {product.artisan?.city?.toUpperCase() ?? "TUNISIE"}
-                              </span>
-                              <span className="pd-rel-card__price">{product.price.toLocaleString("fr-TN")} TND</span>
+
+                          <div className="cat__card-body" style={{textAlign:"start"}}>
+                            <h3 className="cat__card-title">{product.title}</h3>
+                            <div className="cat__card-trail">
+                              {[product.subcategoryL2?.name, product.subcategoryL3?.name].filter(Boolean).join(" • ")}
                             </div>
-                            <Link
-                              href={`/boutique/${product._id}`}
-                              className="pd-rel-card__cta"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              Voir la pièce →
-                            </Link>
+                            <div className="cat__card-foot">
+                              <span className="cat__card-price">
+                                {product.price.toLocaleString("fr-TN")} TND
+                              </span>
+                            </div>
                           </div>
                         </motion.article>
                       ))}
@@ -849,10 +998,24 @@ export default function PanierPage() {
             exit={{ opacity: 0, x: -18 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           >
-            <OrdersTab token={token} />
+            <OrdersTab token={token} session={session} addToCart={addToCart} />
           </motion.div>
         )}
 
+      </AnimatePresence>
+
+      {/* Confirmation Modal (cart tab) */}
+      <AnimatePresence>
+        {confirmModal.isOpen && confirmModal.product && (
+          <ConfirmModal
+            isOpen={confirmModal.isOpen}
+            onClose={() => setConfirmModal({ isOpen: false, product: null })}
+            onConfirm={confirmAddToCart}
+            product={confirmModal.product}
+            confirmText="Oui, ajouter"
+            cancelText="Annuler"
+          />
+        )}
       </AnimatePresence>
     </div>
   );

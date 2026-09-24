@@ -4,12 +4,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import {
   ChevronRight, SlidersHorizontal, X, Search,
   Heart, Package, Loader2, ArrowLeft,
-  Grid3X3, LayoutList, ChevronDown, Check,
+  Grid3X3, LayoutList, ShoppingBag, Check,
 } from "lucide-react";
 import { useApiToken } from "@/lib/useApiToken";
+import { useCart } from "../../../context/CartContext";
+import { showSuccessToast, showErrorToast } from "@/lib/toast";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -39,9 +42,79 @@ const SORT_OPTIONS = [
 
 const COLORS = ["Rouge", "Bleu", "Vert", "Jaune", "Noir", "Blanc", "Beige", "Marron", "Gris", "Or", "Argent"];
 
+// ─── Confirmation Modal Component ─────────────────────────────────────────────
+interface ConfirmModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  product: Product | null;
+  confirmText?: string;
+  cancelText?: string;
+}
+
+function ConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  product,
+  confirmText = "Confirmer",
+  cancelText = "Annuler"
+}: ConfirmModalProps) {
+  if (!isOpen || !product) return null;
+
+  return createPortal(
+    <div className="confirm-modal-overlay">
+      <motion.div
+        className="confirm-modal"
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="confirm-modal__header">
+          <h3 className="confirm-modal__title">Ajouter au panier</h3>
+          <button onClick={onClose} className="confirm-modal__close">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="confirm-modal__content">
+          <div className="confirm-modal__product">
+            <div className="confirm-modal__image">
+              {product.images?.[0] ? (
+                <img src={product.images[0]} alt={product.title} />
+              ) : (
+                <div className="confirm-modal__placeholder">
+                  <Package size={32} />
+                </div>
+              )}
+            </div>
+            <div className="confirm-modal__details">
+              <h4 className="confirm-modal__product-title">{product.title}</h4>
+              <p className="confirm-modal__product-price">
+                {product.price.toLocaleString("fr-TN")} TND
+              </p>
+            </div>
+          </div>
+          <p className="confirm-modal__message">Êtes-vous sûr de vouloir ajouter ce produit au panier ?</p>
+        </div>
+        <div className="confirm-modal__actions">
+          <button onClick={onClose} className="confirm-modal__btn confirm-modal__btn--cancel">
+            {cancelText}
+          </button>
+          <button onClick={onConfirm} className="confirm-modal__btn confirm-modal__btn--confirm">
+            {confirmText}
+          </button>
+        </div>
+      </motion.div>
+    </div>,
+    document.body
+  );
+}
+
 export default function CategoryPage() {
   const params = useParams();
   const { apiToken, session } = useApiToken();
+  const { addToCart } = useCart();
 
   // ── Extract all slug segments from the URL ────────────────────────────────
   const slugs = Array.isArray(params?.slug)
@@ -68,6 +141,10 @@ export default function CategoryPage() {
 
   const [wishlist, setWishlist]       = useState<string[]>([]);
   const [wishPending, setWishPending] = useState<Set<string>>(new Set());
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    product: Product | null;
+  }>({ isOpen: false, product: null });
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy]           = useState("newest");
@@ -192,6 +269,32 @@ export default function CategoryPage() {
       setWishPending((prev) => { const s = new Set(prev); s.delete(id); return s; });
     }
   }, [apiToken, wishPending]);
+
+  // ── Add to cart with confirmation ───────────────────────────────────────────
+  const handleAddToCart = useCallback((product: Product) => {
+    if (!session) {
+      showErrorToast("Vous devez être connecté pour ajouter au panier");
+      return;
+    }
+
+    setConfirmModal({
+      isOpen: true,
+      product
+    });
+  }, [session]);
+
+  const confirmAddToCart = useCallback(async () => {
+    if (!confirmModal.product) return;
+
+    try {
+      await addToCart(confirmModal.product._id, 1);
+      showSuccessToast("Produit ajouté au panier !");
+      setConfirmModal({ isOpen: false, product: null });
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      showErrorToast("Erreur lors de l'ajout au panier");
+    }
+  }, [confirmModal.product, addToCart]);
 
   // ── 5. Filter + sort ──────────────────────────────────────────────────────
   const filtered = products
@@ -649,8 +752,15 @@ export default function CategoryPage() {
 
                       <button
                         className="cat__card-wish"
-                        onClick={(e) => { e.stopPropagation(); toggleWish(p._id); }}>
+                        onClick={(e) => { e.stopPropagation(); toggleWish(p._id); }}
+                        disabled={wishPending.has(p._id)}>
                         <Heart size={16} fill={wished ? "red" : "none"} stroke={wished ? "red" : "currentColor"} />
+                      </button>
+                      <button
+                        className="cat__card-bag"
+                        onClick={(e) => { e.stopPropagation(); handleAddToCart(p); }}
+                        aria-label="Ajouter au panier">
+                        <ShoppingBag size={15} />
                       </button>
                     </div>
 
@@ -672,6 +782,20 @@ export default function CategoryPage() {
           </div>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <AnimatePresence>
+        {confirmModal.isOpen && confirmModal.product && (
+          <ConfirmModal
+            isOpen={confirmModal.isOpen}
+            onClose={() => setConfirmModal({ isOpen: false, product: null })}
+            onConfirm={confirmAddToCart}
+            product={confirmModal.product}
+            confirmText="Oui, ajouter"
+            cancelText="Annuler"
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

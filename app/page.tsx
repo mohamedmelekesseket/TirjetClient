@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion, useScroll, useTransform, Variants } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform, Variants } from "framer-motion";
 import Image1 from "../images/hero-artisan.jpg";
 import Image2 from "../images/Untitled.png";
 import story from "../images/story.jpg";
-import { ShoppingBag, ChevronLeft, ChevronRight,Sparkles  } from "lucide-react";
+import { ShoppingBag, ChevronLeft, ChevronRight, Sparkles, X, Package } from "lucide-react";
 import tifinaghImg from "../images/langue.jpg"
 import { useApiToken } from "@/lib/useApiToken";
+import { useCart } from "../app/context/CartContext";
+import { showSuccessToast, showErrorToast } from "@/lib/toast";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -24,6 +27,7 @@ interface Product {
   isHome: boolean;
   isApproved: boolean;
   rating?: number;
+  stock?: number;
 }
 
 interface Category {
@@ -133,6 +137,75 @@ const scaleIn: Variants = {
     },
   }),
 };
+
+// ─── Confirmation Modal (same as the cart page) ───────────────────────────────
+interface ConfirmModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  product: any;
+  confirmText?: string;
+  cancelText?: string;
+}
+
+function ConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  product,
+  confirmText = "Confirmer",
+  cancelText = "Annuler",
+}: ConfirmModalProps) {
+  if (!isOpen || !product) return null;
+
+  return createPortal(
+    <div className="confirm-modal-overlay">
+      <motion.div
+        className="confirm-modal"
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="confirm-modal__header">
+          <h3 className="confirm-modal__title">Ajouter au panier</h3>
+          <button onClick={onClose} className="confirm-modal__close">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="confirm-modal__content">
+          <div className="confirm-modal__product">
+            <div className="confirm-modal__image">
+              {product.images?.[0] ? (
+                <img src={product.images[0]} alt={product.title} />
+              ) : (
+                <div className="confirm-modal__placeholder">
+                  <Package size={32} />
+                </div>
+              )}
+            </div>
+            <div className="confirm-modal__details">
+              <h4 className="confirm-modal__product-title">{product.title}</h4>
+              <p className="confirm-modal__product-price">
+                {product.price.toLocaleString("fr-TN")} TND
+              </p>
+            </div>
+          </div>
+          <p className="confirm-modal__message">Êtes-vous sûr de vouloir ajouter ce produit au panier ?</p>
+        </div>
+        <div className="confirm-modal__actions">
+          <button onClick={onClose} className="confirm-modal__btn confirm-modal__btn--cancel">
+            {cancelText}
+          </button>
+          <button onClick={onConfirm} className="confirm-modal__btn confirm-modal__btn--confirm">
+            {confirmText}
+          </button>
+        </div>
+      </motion.div>
+    </div>,
+    document.body
+  );
+}
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 function Hero() {
@@ -562,9 +635,11 @@ function PremiumArtisans({ allProducts }: { allProducts: Product[] }) {
 function PremiumProducts({
   allProducts,
   categories,
+  onAddToCart,
 }: {
   allProducts: Product[];
   categories: Category[];
+  onAddToCart: (product: Product) => void;
 }) {
   const carouselRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -638,7 +713,10 @@ function PremiumProducts({
                   </div>
                   <button
                     className="pg-cart-btn"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAddToCart(p);
+                    }}
                     aria-label="Ajouter au panier"
                   >
                     <ShoppingBag size={18} />
@@ -910,6 +988,41 @@ export default function Page() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const { apiToken, session, status, update } = useApiToken();
+  const { addToCart } = useCart();
+
+  // ── Add to cart (with confirmation modal) ───────────────────────────────────
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    product: Product | null;
+  }>({ isOpen: false, product: null });
+
+  const handleAddToCart = useCallback(
+    (product: Product) => {
+      if (!session) {
+        showErrorToast("Vous devez être connecté pour ajouter au panier");
+        return;
+      }
+      if (product.stock !== undefined && product.stock <= 0) {
+        showErrorToast("Ce produit est en rupture de stock");
+        return;
+      }
+      setConfirmModal({ isOpen: true, product });
+    },
+    [session]
+  );
+
+  const confirmAddToCart = useCallback(async () => {
+    if (!confirmModal.product) return;
+
+    try {
+      await addToCart(confirmModal.product._id, 1);
+      showSuccessToast("Produit ajouté au panier !");
+      setConfirmModal({ isOpen: false, product: null });
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      showErrorToast("Erreur lors de l'ajout au panier");
+    }
+  }, [confirmModal.product, addToCart]);
 
   useEffect(() => {
     fetch(`${API}/api/categories`)
@@ -945,11 +1058,29 @@ useEffect(() => {
       <Hero />
       <CategoriesSection categories={categories} loading={categoriesLoading} />
       <PremiumArtisans allProducts={allProducts} />
-      <PremiumProducts allProducts={allProducts} categories={categories} />
+      <PremiumProducts
+        allProducts={allProducts}
+        categories={categories}
+        onAddToCart={handleAddToCart}
+      />
       <LangueAmazigh />
       <Values />
       <Story />
       <CTA />
+
+      {/* Confirmation Modal */}
+      <AnimatePresence>
+        {confirmModal.isOpen && confirmModal.product && (
+          <ConfirmModal
+            isOpen={confirmModal.isOpen}
+            onClose={() => setConfirmModal({ isOpen: false, product: null })}
+            onConfirm={confirmAddToCart}
+            product={confirmModal.product}
+            confirmText="Oui, ajouter"
+            cancelText="Annuler"
+          />
+        )}
+      </AnimatePresence>
     </main>
   );
 }
