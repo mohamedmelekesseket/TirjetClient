@@ -136,7 +136,7 @@ function FavCard({
   return (
     <Link href={`/boutique/${item._id}`}>
       <motion.article
-        className="artp-prod-card"
+        className="profile-fav-card"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.92 }}
@@ -144,7 +144,7 @@ function FavCard({
         layout
       >
         {/* Media */}
-        <div className="artp-prod-card__media">
+        <div className="profile-fav-card__media">
           {item.images?.[0] ? (
             <motion.img
               src={item.images[0]}
@@ -167,11 +167,11 @@ function FavCard({
               <Package size={28} style={{ opacity: 0.4 }} />
             </div>
           )}
-          <div className="artp-prod-card__shade" />
-          <span className="artp-prod-card__cat">{categoryLabel}</span>
+          <div className="profile-fav-card__shade" />
+          <span className="profile-fav-card__cat">{categoryLabel}</span>
 
           <motion.button
-            className={`artp-prod-card__wish artp-prod-card__wish--on`}
+            className={`profile-fav-card__wish profile-fav-card__wish--on`}
             onClick={handleRemove}
             disabled={removing}
             whileTap={{ scale: 0.82 }}
@@ -187,20 +187,17 @@ function FavCard({
         </div>
 
         {/* Body */}
-        <div className="artp-prod-card__body">
-          <div className="artp-prod-card__top">
-            <h3 className="artp-prod-card__title">{item.title}</h3>
-            <span className="artp-prod-card__price">
+        <div className="profile-fav-card__body">
+          <h3 className="profile-fav-card__name">{item.title}</h3>
+          <div className="profile-fav-card__row">
+            <span className="profile-fav-card__loc">
+              {item.location ?? categoryLabel}
+            </span>
+            <span className="profile-fav-card__price">
               {price.toLocaleString("fr-TN")} TND
             </span>
           </div>
-         
-          <div className="artp-prod-card__foot">
-            <span className="artp-prod-card__loc">
-              {item.location ?? categoryLabel}
-            </span>
-            <span className="artp-prod-card__cta">Voir la pièce →</span>
-          </div>
+          <span className="profile-fav-card__cta">Voir la pièce →</span>
         </div>
       </motion.article>
     </Link>
@@ -486,7 +483,7 @@ export default function UserProfile() {
           )}
 
           {!loadingFavs && !favError && favourites.length > 0 && (
-            <motion.div className="artp-prod-grid" layout>
+            <motion.div className="profile-fav-grid" layout>
               <AnimatePresence>
                 {favourites.map((item) => (
                   <FavCard

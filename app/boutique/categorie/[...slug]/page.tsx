@@ -40,8 +40,6 @@ const SORT_OPTIONS = [
   { value: "price_desc", label: "Prix décroissant" },
 ];
 
-const COLORS = ["Rouge", "Bleu", "Vert", "Jaune", "Noir", "Blanc", "Beige", "Marron", "Gris", "Or", "Argent"];
-
 // ─── Confirmation Modal Component ─────────────────────────────────────────────
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -444,43 +442,6 @@ export default function CategoryPage() {
           <div className="cat__toolbar-right">
             <span className="cat__count">{`${filtered.length} pièce${filtered.length !== 1 ? "s" : ""}`}</span>
 
-            {/* <div className="cat__sort-wrap" style={{ position: "relative" }}>
-              <button className="cat__sort-btn" onClick={() => setSortOpen((v) => !v)}>
-                {SORT_OPTIONS.find((o) => o.value === sortBy)?.label}
-                <ChevronDown size={13} />
-              </button>
-              <AnimatePresence>
-                {sortOpen && (
-                  <>
-                    <div className="cat__sort-backdrop"
-                      style={{ position: "fixed", inset: 0, zIndex: 10 }}
-                      onClick={() => setSortOpen(false)} />
-                    <motion.div className="cat__sort-dd" style={{ position: "absolute", zIndex: 11 }}
-                      initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                      transition={{ duration: 0.15 }}>
-                      {SORT_OPTIONS.map((opt) => (
-                        <button key={opt.value}
-                          className={`cat__sort-opt${sortBy === opt.value ? " cat__sort-opt--active" : ""}`}
-                          onClick={() => { setSortBy(opt.value); setSortOpen(false); }}>
-                          {opt.label}
-                          {sortBy === opt.value && <Check size={13} />}
-                        </button>
-                      ))}
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div> */}
-
-            {/* <div className="cat__view-toggle">
-              <button className={`cat__view-btn${viewMode === "grid" ? " cat__view-btn--active" : ""}`}
-                onClick={() => setViewMode("grid")} aria-label="Vue grille"><Grid3X3 size={15} /></button>
-              <button className={`cat__view-btn${viewMode === "list" ? " cat__view-btn--active" : ""}`}
-                onClick={() => setViewMode("list")} aria-label="Vue liste"><LayoutList size={15} /></button>
-            </div> */}
-
             <button className="cat__filter-toggle" onClick={() => setSidebarOpen((v) => !v)}>
               <SlidersHorizontal size={15} /> Filtres
             </button>
@@ -562,11 +523,11 @@ export default function CategoryPage() {
             <div className="cat__range-labels"><span>0</span><span>5 000 TND</span></div>
           </div>
 
-          {/* Color filter */}
+          {/* Color filter — derived from the current products, not a hardcoded list */}
           <div className="cat__sidebar-section">
             <div className="cat__sidebar-label">Couleur</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              {COLORS.map((color) => (
+              {Array.from(new Set(products.flatMap(p => p.colors || []))).map((color) => (
                 <button
                   key={color}
                   onClick={() => setFilters(p => ({
@@ -754,7 +715,7 @@ export default function CategoryPage() {
                         className="cat__card-wish"
                         onClick={(e) => { e.stopPropagation(); toggleWish(p._id); }}
                         disabled={wishPending.has(p._id)}>
-                        <Heart size={16} fill={wished ? "red" : "none"} stroke={wished ? "red" : "currentColor"} />
+                        <Heart size={16} fill={wished ? "red" : "none"} stroke={wished ? "red" : "black"} />
                       </button>
                       <button
                         className="cat__card-bag"
