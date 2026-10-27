@@ -7976,69 +7976,220 @@ img { display: block; max-width: 100%; }
 
 
 /* =========================================================
-   HEADER
+   ARTISAN
 ========================================================= */
 
-.pd-reviews__header {
+.pd-artisan {
   width: 100%;
+}
 
+.pd-artisan__header {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   padding-bottom: 42px;
-
   border-bottom: 1px solid #d5d1ca;
 }
 
-
-.pd-reviews__title {
+.pd-artisan__title {
   margin: 0;
-
   font-family: var(--font-sans);
-
   font-size: 32px;
   line-height: 1;
-
   font-weight: 800;
   font-style: italic;
-
   letter-spacing: -0.04em;
-
   color: #080808;
 }
 
-
-/* =========================================================
-   GLOBAL RATING
-========================================================= */
-
-.pd-reviews__rating {
-  display: flex;
+.pd-artisan__badge {
+  display: inline-flex;
   align-items: center;
-
-  gap: 12px;
-}
-
-
-.pd-reviews__rating-number {
-  font-size: 12px;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid #080808;
+  border-radius: 999px;
+  font-size: 11px;
   font-weight: 700;
-
-  color: #111;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #080808;
 }
 
+/* ---------- CARD ---------- */
 
-.pd-reviews__rating-stars {
+.pd-artisan__card {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr auto;
+  align-items: center;
+  gap: 40px;
+  padding: 36px 0;
+  border-bottom: 1px solid #d5d1ca;
+}
+
+.pd-artisan__identity {
   display: flex;
   align-items: center;
-
-  gap: 4px;
+  gap: 20px;
+  min-width: 0;
 }
 
+.pd-artisan__avatar {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #d5d1ca;
+  padding: 3px;
+  background: #fff;
+}
 
-.pd-reviews__rating-stars svg {
-  display: block;
+.pd-artisan__avatar--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #080808;
+  color: #fdfaf4;
+  font-size: 26px;
+  font-weight: 800;
+  font-style: italic;
+  padding: 0;
+}
+
+.pd-artisan__name {
+  margin: 0 0 8px;
+  font-size: 22px;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #080808;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pd-artisan__meta {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: #6b675f;
+}
+
+.pd-artisan__meta i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #a9a59d;
+}
+
+/* ---------- STATS ---------- */
+
+.pd-artisan__stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 32px;
+}
+
+.pd-artisan__stats li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 32px;
+  border-left: 1px solid #d5d1ca;
+}
+
+.pd-artisan__stats li:first-child {
+  padding-left: 0;
+  border-left: none;
+}
+
+.pd-artisan__stats strong {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #080808;
+}
+
+.pd-artisan__stats span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8a867e;
+}
+
+/* ---------- CTA ---------- */
+
+.pd-artisan__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  background: #080808;
+  color: #fdfaf4;
+  border: 1px solid #080808;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+.pd-artisan__cta svg {
+  transition: transform 0.25s ease;
+}
+
+.pd-artisan__cta:hover {
+  background: transparent;
+  color: #080808;
+}
+
+.pd-artisan__cta:hover svg {
+  transform: translateX(4px);
+}
+
+/* ---------- RESPONSIVE ---------- */
+
+@media (max-width: 900px) {
+  .pd-artisan__card {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .pd-artisan__cta {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .pd-artisan__header {
+    padding-bottom: 28px;
+  }
+
+  .pd-artisan__title {
+    font-size: 24px;
+  }
+
+  .pd-artisan__badge {
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+
+  .pd-artisan__stats {
+    gap: 20px;
+  }
+
+  .pd-artisan__stats li {
+    padding-left: 20px;
+  }
 }
 
 

@@ -29,8 +29,15 @@ interface Product {
     _id: string;
     name: string;
     city?: string;
-    avatar?: string;
+    image?: string;      // matches User.image in your schema
+    avatar?: string;     // kept in case other code still reads it
+    createdAt?: string;
   };
+  location?: string;
+  material?: string;
+  dimensions?: string;
+  colors?: string[];
+  tags?: string[];
   stock: number;
   isApproved: boolean;
   createdAt: string;
@@ -983,54 +990,87 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             {/* =========================
                 REVIEWS HEADER
             ========================= */}
-            <div className="pd-reviews__header">
+{/* =========================
+    ARTISAN HEADER
+========================= */}
+{(() => {
+  const artisan = product?.artisan;
+  if (!artisan) return null;
 
-              <h2 className="pd-reviews__title">
-                AVIS CLIENTS
-              </h2>
+  const avg =
+    comments.length > 0
+      ? comments.reduce((s, r) => s + Number(r.rating || 0), 0) / comments.length
+      : 0;
 
-              <div className="pd-reviews__rating">
-                <span className="pd-reviews__rating-number">
-                  {comments.length > 0
-                    ? (
-                        comments.reduce(
-                          (sum, review) => sum + Number(review.rating || 0),
-                          0
-                        ) / comments.length
-                      ).toFixed(1)
-                    : ""}
-                </span>
+  const since = artisan.createdAt
+    ? new Date(artisan.createdAt).getFullYear()
+    : null;
 
-                <div className="pd-reviews__rating-stars">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <svg
-                      key={i}
-                      width="11"
-                      height="11"
-                      viewBox="0 0 24 24"
-                      fill={
-                        i <
-                        Math.round(
-                          comments.length > 0
-                            ? comments.reduce(
-                                (sum, review) => sum + Number(review.rating || 0),
-                                0
-                              ) / comments.length
-                            : 4.9
-                        )
-                          ? "#111"
-                          : "none"
-                      }
-                      stroke="#111"
-                      strokeWidth="1.8"
-                    >
-                      <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
-                    </svg>
-                  ))}
-                </div>
-              </div>
+  return (
+    <div className="pd-artisan">
+      <div className="pd-artisan__header">
+        <h2 className="pd-artisan__title">L'ARTISAN</h2>
 
+        <span className="pd-artisan__badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" strokeWidth="2.2"
+               strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+          Artisan vérifié
+        </span>
+      </div>
+
+      <div className="pd-artisan__card">
+        <div className="pd-artisan__identity">
+          {artisan.image ? (
+            <img
+              src={artisan.image}
+              alt={artisan.name}
+              className="pd-artisan__avatar"
+            />
+          ) : (
+            <div className="pd-artisan__avatar pd-artisan__avatar--fallback">
+              {artisan.name?.charAt(0).toUpperCase()}
             </div>
+          )}
+
+          <div className="pd-artisan__info">
+            <h3 className="pd-artisan__name">{artisan.name}</h3>
+            <p className="pd-artisan__meta">
+              {product.location && <span>{product.location}</span>}
+              {product.location && since && <i />}
+              {since && <span>Artisan depuis {since}</span>}
+            </p>
+          </div>
+        </div>
+
+        <ul className="pd-artisan__stats">
+          <li>
+            <strong>{avg ? avg.toFixed(1) : "—"}</strong>
+            <span>Note</span>
+          </li>
+          
+          {product.material && (
+            <li>
+              <strong>{product.material}</strong>
+              <span>Matière</span>
+            </li>
+          )}
+        </ul>
+
+        <a href={`/Artisanprofile/${artisan._id}`} className="pd-artisan__cta">
+          Voir la boutique
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" strokeWidth="2"
+               strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  );
+})()}
 
 
             {/* =========================
