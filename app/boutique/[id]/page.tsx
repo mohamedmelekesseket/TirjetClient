@@ -1045,7 +1045,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           </div>
         </div>
 
-        <ul className="pd-artisan__stats">
+        {/* <ul className="pd-artisan__stats">
           <li>
             <strong>{avg ? avg.toFixed(1) : "—"}</strong>
             <span>Note</span>
@@ -1057,7 +1057,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               <span>Matière</span>
             </li>
           )}
-        </ul>
+        </ul> */}
 
         <a href={`/Artisanprofile/${artisan._id}`} className="pd-artisan__cta">
           Voir la boutique
