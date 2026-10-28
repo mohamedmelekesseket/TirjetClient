@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, X, Loader2, Package, ShoppingBag, Minus, Plus } from "lucide-react";
+import { Check, X, Loader2, Package, ShoppingBag, Minus, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useApiToken } from "@/lib/useApiToken";
@@ -126,6 +126,84 @@ function StarRow({ rating, total }: { rating: number; total: number }) {
       ))}
       <span className="pd-stars__count">{total === 0 ? "Nouveau" : `(${total} avis)`}</span>
     </div>
+  );
+}
+
+// ─── Confirm Dialog ───────────────────────────────────────────────────────────
+function ConfirmDialog({
+  open, title, message, confirmLabel = "Confirmer", cancelLabel = "Annuler",
+  loading = false, error, onConfirm, onCancel,
+}: {
+  open: boolean;
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  loading?: boolean;
+  error?: string | null;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !loading) onCancel();
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    cancelRef.current?.focus();
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open, loading, onCancel]);
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="cf-overlay"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          transition={{ duration: 0.25 }}
+          onClick={() => !loading && onCancel()}>
+          <motion.div
+            className="cf-modal"
+            role="alertdialog" aria-modal="true"
+            aria-labelledby="cf-title" aria-describedby="cf-message"
+            initial={{ opacity: 0, y: 24, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 380, damping: 28 }}
+            onClick={e => e.stopPropagation()}>
+
+            <button className="cf-modal__x" onClick={onCancel} disabled={loading} aria-label="Fermer">
+              <X size={16} />
+            </button>
+
+            <div className="cf-modal__icon">
+              <Trash2 size={24} />
+            </div>
+
+            <h3 id="cf-title" className="cf-modal__title">{title}</h3>
+            <p id="cf-message" className="cf-modal__message">{message}</p>
+
+            {error && <p role="alert" className="cf-modal__error">{error}</p>}
+
+            <div className="cf-modal__actions">
+              <button ref={cancelRef} className="cf-btn cf-btn--ghost" onClick={onCancel} disabled={loading}>
+                {cancelLabel}
+              </button>
+              <button className="cf-btn cf-btn--danger" onClick={onConfirm} disabled={loading}>
+                {loading ? <Loader2 size={16} className="pd-spin" /> : confirmLabel}
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -534,7 +612,17 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Reviews pagination
+  // Delete confirmation popup
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const closeDelete = useCallback(() => {
+    setDeleteTarget(null);
+    setDeleteError(null);
+  }, []);
+
+  // Reviews: show only the first review by default, expand to see all (paginated)
+  const [showAllReviews, setShowAllReviews] = useState(true);
   const [reviewPage, setReviewPage] = useState(1);
   const reviewListRef = useRef<HTMLDivElement>(null);
   const totalReviewPages = Math.max(1, Math.ceil(comments.length / REVIEWS_PER_PAGE));
@@ -544,10 +632,25 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     setReviewPage(p => Math.min(p, totalReviewPages));
   }, [totalReviewPages]);
 
+  // collapse automatically when there is nothing more to expand
+  // useEffect(() => {
+  //   if (comments.length <= 1) setShowAllReviews(false);
+  // }, [comments.length]);
+
   function goToReviewPage(p: number) {
     setReviewPage(p);
     const el = reviewListRef.current;
     if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 120, behavior: "smooth" });
+  }
+
+  function toggleAllReviews() {
+    const willCollapse = showAllReviews;
+    setShowAllReviews(v => !v);
+    setReviewPage(1);
+    if (willCollapse) {
+      const el = reviewListRef.current;
+      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 120, behavior: "smooth" });
+    }
   }
 
   // ── Categories ─────────────────────────────────────────────────────────────
@@ -693,6 +796,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     setCurrentId(productId);
     setComments([]);
     setReviewPage(1);
+    setShowAllReviews(false);
     setQty(1);
     setAdded(false);
     setWish(false);
@@ -701,6 +805,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     setNewContent("");
     setNewRating(5);
     setSubmitError(null);
+    closeDelete();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -785,17 +890,28 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     }
   }
 
-  async function handleDeleteComment(commentId: string) {
-    if (!confirm("Supprimer cet avis ?")) return;
+  // Opens the custom popup (replaces the native confirm())
+  function handleDeleteComment(commentId: string) {
+    setDeleteError(null);
+    setDeleteTarget(commentId);
+  }
+
+  async function confirmDeleteComment() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError(null);
     try {
-      const res = await fetch(`${API}/api/products/${currentId}/comments/${commentId}`, {
+      const res = await fetch(`${API}/api/products/${currentId}/comments/${deleteTarget}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${apiToken}` },
       });
       if (!res.ok) throw new Error((await res.json()).message);
-      setComments(prev => prev.filter(c => c._id !== commentId));
+      setComments(prev => prev.filter(c => c._id !== deleteTarget));
+      closeDelete();
     } catch (err: any) {
-      setSubmitError(err.message);
+      setDeleteError(err.message ?? "Une erreur est survenue. Réessayez.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -808,6 +924,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     (reviewPage - 1) * REVIEWS_PER_PAGE,
     reviewPage * REVIEWS_PER_PAGE
   );
+
+  // Collapsed: only the first review. Expanded: the paginated list.
+  const visibleComments = showAllReviews ? pagedComments : comments.slice(0, 1);
 
   const drawerItems: DrawerItem[] = (cart?.items ?? []).filter((i: any) => i.product != null);
 
@@ -1095,10 +1214,10 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           ) : comments.length > 0 && (
             <div ref={reviewListRef}>
               <AnimatePresence mode="wait" initial={false}>
-                <motion.div key={reviewPage} className="pd-review-list"
+                <motion.div key={showAllReviews ? `all-${reviewPage}` : "first"} className="pd-review-list"
                   initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.35, ease: EASE }}>
-                  {pagedComments.map(r => {
+                  {visibleComments.map(r => {
                     const isMine = currentUserId === r.user._id;
                     return (
                       <article key={r._id} className="pd-review">
@@ -1145,7 +1264,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 </motion.div>
               </AnimatePresence>
 
-              {totalReviewPages > 1 && (
+              {/* Expanded: pagination */}
+              {showAllReviews && totalReviewPages > 1 && (
                 <nav className="pd-pager" aria-label="Pagination des avis">
                   <button className="pd-pager__arrow" aria-label="Page précédente"
                     onClick={() => goToReviewPage(reviewPage - 1)} disabled={reviewPage === 1}>‹</button>
@@ -1168,9 +1288,21 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 </nav>
               )}
 
-              <p className="pd-pager__info">
-                {(reviewPage - 1) * REVIEWS_PER_PAGE + 1}–{Math.min(reviewPage * REVIEWS_PER_PAGE, comments.length)} sur {comments.length} avis
-              </p>
+              {showAllReviews && (
+                <p className="pd-pager__info">
+                  {(reviewPage - 1) * REVIEWS_PER_PAGE + 1}–{Math.min(reviewPage * REVIEWS_PER_PAGE, comments.length)} sur {comments.length} avis
+                </p>
+              )}
+
+              {/* Toggle: only when there is more than one review */}
+              {/* {comments.length > 1 && (
+                <div className="pd-reviews__toggle-wrap">
+                  <button type="button" className="pd-reviews__toggle"
+                    onClick={toggleAllReviews} aria-expanded={showAllReviews}>
+                    {showAllReviews ? "Réduire les avis" : `Voir tous les avis (${comments.length})`}
+                  </button>
+                </div>
+              )} */}
             </div>
           )}
         </section>
@@ -1224,6 +1356,18 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           )}
         </section>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Supprimer cet avis ?"
+        message="Cette action est définitive. Votre avis sera retiré de cette page."
+        confirmLabel="Supprimer"
+        cancelLabel="Annuler"
+        loading={deleting}
+        error={deleteError}
+        onConfirm={confirmDeleteComment}
+        onCancel={closeDelete}
+      />
 
       <CartDrawer
         open={cartOpen}
