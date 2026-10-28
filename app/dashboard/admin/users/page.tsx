@@ -496,7 +496,7 @@ export default function AdminUsersPage() {
                       const isDeleting = deletingId === u._id;
                       return (
                         <tr key={u._id} style={{ animationDelay: `${i * 0.055}s`, opacity: isDeleting ? 0.5 : 1 }}>
-                          <td>
+                          <td data-label="Utilisateur">
                             <div className="user-cell">
                               <div className="user-row-avatar" style={{ background: avatarGradient[u.role] }}>
                                 {initials(u.name)}
@@ -507,7 +507,7 @@ export default function AdminUsersPage() {
                               </div>
                             </div>
                           </td>
-                          <td>
+                          <td data-label="Rôle">
                             <button
                               onClick={() => setRoleModalUser(u)}
                               title="Changer le rôle"
@@ -520,15 +520,15 @@ export default function AdminUsersPage() {
                               <span style={{ fontSize: "0.68rem", color: "#8B9AB5", fontWeight: 500 }}>✎</span>
                             </button>
                           </td>
-                          <td style={{ color: "#8B9AB5", fontSize: "0.82rem" }}>
+                          <td data-label="Inscrit le" style={{ color: "#8B9AB5", fontSize: "0.82rem" }}>
                             {new Date(u.createdAt).toLocaleDateString("fr-FR")}
                           </td>
-                          <td>
+                          <td data-label="Statut">
                             <span className={`badge ${u.status === "active" ? "badge-success" : "badge-danger"}`}>
                               {u.status === "active" ? "Actif" : "Suspendu"}
                             </span>
                           </td>
-                          <td>
+                          <td data-label="Actions">
                             <div style={{ display: "flex", gap: 6 }}>
                               {/* Change role */}
                               <button

@@ -368,7 +368,7 @@ export default function AdminProductsPage() {
 
                     return (
                       <tr key={p._id} style={{ animationDelay: `${i * 0.055}s`, opacity: isDeleting ? 0.5 : 1 }}>
-                        <td>
+                        <td data-label="Produit">
                           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                             <div style={{
                               width: "36px", height: "36px", borderRadius: "10px",
@@ -380,22 +380,22 @@ export default function AdminProductsPage() {
                             <span style={{ fontWeight: 500,color: "#ffffff",fontSize: "0.875rem" }}>{p.title}</span>
                           </div>
                         </td>
-                        <td style={{ color: "#ffffff", fontSize: "0.875rem" }}>{artisanName}</td>
-                        <td>
+                        <td data-label="Artisan" style={{ color: "#ffffff", fontSize: "0.875rem" }}>{artisanName}</td>
+                        <td data-label="Catégorie">
                           <span className="badge badge-primary">{catDisplay}</span>
                         </td>
-                        <td>
+                        <td data-label="Prix">
                           <span style={{ fontFamily: "'Space Mono',monospace",color: "#ffffff", fontSize: "0.8rem", fontWeight: 700 }}>
                             {price.toLocaleString("fr-FR")} TND
                           </span>
                         </td>
-                        <td className="td-mono" style={{color:"white"}}>{p.stock}</td>
-                        <td style={{color:"white"}}>
+                        <td data-label="Stock" className="td-mono" style={{color:"white"}}>{p.stock}</td>
+                        <td data-label="Views" style={{color:"white"}}>
                           {p.views}
                         </td>
 
                         {/* ── NEW: isHome column ── */}
-                        <td>
+                        <td data-label="Accueil">
                           {p.isHome ? (
                             <button
                               title="Retirer de l'accueil"
@@ -418,10 +418,10 @@ export default function AdminProductsPage() {
                           )}
                         </td>
 
-                        <td>
+                        <td data-label="Statut">
                           <span className={`badge ${statusClass[status] || "badge-gray"}`}>{status}</span>
                         </td>
-                        <td>
+                        <td data-label="Actions">
                           <div style={{ display: "flex", gap: "6px",borderColor:"blue",color:"blue" }}>
                             <Link href={`/dashboard/admin/products/${p._id}`} style={{borderColor:"blue",color:"blue"}} className="icon-btn" title="Voir">
                               <Eye size={16} />

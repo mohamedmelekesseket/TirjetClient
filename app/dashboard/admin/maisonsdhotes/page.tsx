@@ -468,7 +468,7 @@ export default function AdminMaisonsPage() {
 
                       return (
                         <tr key={m._id} style={{ opacity: isDeleting ? 0.5 : 1, animationDelay: `${i * 0.04}s` }}>
-                          <td>
+                          <td data-label="Maison">
                             <div className="mh-property-thumb">
                               {m.images?.[0]
                                 ? <img className="mh-property-img" src={m.images[0]} alt={m.name} />
@@ -484,25 +484,25 @@ export default function AdminMaisonsPage() {
                               </div>
                             </div>
                           </td>
-                          <td style={{ color: '#4A5568', fontSize: '0.875rem' }}>{getHostName(m.host)}</td>
-                          <td>
+                          <td data-label="Hôte" style={{ color: '#4A5568', fontSize: '0.875rem' }}>{getHostName(m.host)}</td>
+                          <td data-label="Type">
                             {m.type === 'traditionnelle'
                               ? <span className="mh-badge mh-badge-trad"><Leaf size={11} /> Traditionnelle</span>
                               : <span className="mh-badge mh-badge-moderne"><Building2 size={11} /> Moderne</span>
                             }
                           </td>
-                          <td>
+                          <td data-label="Localisation">
                             <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.82rem', color: '#4A5568' }}>
                               <MapPin size={12} style={{ color: '#8B9AB5', flexShrink: 0 }} />
                               {m.governorate || m.location || '—'}
                             </div>
                           </td>
-                          <td>
+                          <td data-label="Prix / nuit">
                             <span className="mh-mono">
                               {m.pricePerNight?.toLocaleString('fr-FR')} {m.currency || 'TND'}
                             </span>
                           </td>
-                          <td>
+                          <td data-label="En avant">
                             {m.isFeatured ? (
                               <button
                                 title="Retirer des mis en avant" disabled={isBusyFeatured}
@@ -523,10 +523,10 @@ export default function AdminMaisonsPage() {
                               </button>
                             )}
                           </td>
-                          <td>
+                          <td data-label="Statut">
                             <span className={statusBadge[status] || 'mh-badge mh-badge-gray'}>{status}</span>
                           </td>
-                          <td>
+                          <td data-label="Actions">
                             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                               <Link href={`/dashboard/admin/maisonsdhotes/${m._id}`} className="mh-icon-btn" title="Modifier">
                                 <Eye size={15} />
@@ -640,7 +640,7 @@ export default function AdminMaisonsPage() {
                         <tr key={r._id} style={{ opacity: resDeletingId === r._id ? 0.5 : 1, animationDelay: `${i * 0.04}s` }}>
 
                           {/* Maison */}
-                          <td>
+                          <td data-label="Maison">
                             <div className="mh-property-thumb">
                               {r.maison?.images?.[0]
                                 ? <img className="mh-property-img" src={r.maison.images[0]} alt={r.maison.name} />
@@ -654,7 +654,7 @@ export default function AdminMaisonsPage() {
                           </td>
 
                           {/* Client */}
-                          <td>
+                          <td data-label="Client">
                             <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#2D3748' }}>
                               {r.user?.name ?? '—'}
                             </div>
@@ -663,13 +663,13 @@ export default function AdminMaisonsPage() {
                           </td>
 
                           {/* Dates */}
-                          <td>
+                          <td data-label="Check-in">
                             <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.82rem' }}>
                               <CalendarDays size={12} style={{ color: '#8B9AB5' }} />
                               {fmt(r.checkIn)}
                             </div>
                           </td>
-                          <td>
+                          <td data-label="Check-out">
                             <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.82rem' }}>
                               <CalendarDays size={12} style={{ color: '#8B9AB5' }} />
                               {fmt(r.checkOut)}
@@ -677,31 +677,31 @@ export default function AdminMaisonsPage() {
                           </td>
 
                           {/* Nights */}
-                          <td><span className="mh-mono">{r.nights}</span></td>
+                          <td data-label="Nuits"><span className="mh-mono">{r.nights}</span></td>
 
                           {/* Guests */}
-                          <td>
+                          <td data-label="Voyageurs">
                             <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.82rem', color: '#4A5568' }}>
                               <Users size={12} style={{ color: '#8B9AB5' }} /> {r.guests}
                             </div>
                           </td>
 
                           {/* Total */}
-                          <td>
+                          <td data-label="Total">
                             <span className="mh-mono" style={{ fontWeight: 700, color: '#1A202C' }}>
                               {r.totalPrice.toLocaleString('fr-FR')} {r.currency}
                             </span>
                           </td>
 
                           {/* Status */}
-                          <td>
+                          <td data-label="Statut">
                             <span className={meta.cls} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                               {meta.icon} {meta.label}
                             </span>
                           </td>
 
                           {/* Actions */}
-                          <td>
+                          <td data-label="Actions">
                             <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
 
                               {/* pending: confirm + cancel */}

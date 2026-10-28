@@ -772,7 +772,7 @@ export default function OrdersPage() {
                       key={o._id}
                       style={{ animationDelay: `${i * 0.06}s`, opacity: isBusy ? 0.6 : 1 }}
                     >
-                      <td>
+                      <td data-label="N° Commande">
                         <span style={{
                           fontFamily: "'Space Mono', monospace",
                           fontSize: "0.78rem", fontWeight: 700, color: "#ffffff",
@@ -780,13 +780,13 @@ export default function OrdersPage() {
                           {displayId}
                         </span>
                       </td>
-                      <td style={{ fontWeight: 500 ,color: "#ffffff"}}>{orderProductLabel(o)}</td>
-                      <td>
+                      <td data-label="Produit" style={{ fontWeight: 500 ,color: "#ffffff"}}>{orderProductLabel(o)}</td>
+                      <td data-label="Client">
                         <div style={{ fontWeight: 500, fontSize: "0.875rem",color: "#ffffff" }}>{o.user?.name ?? "—"}</div>
                         <div style={{ fontSize: "0.72rem", color: "#ffffff", marginTop: 2 }}>{o.user?.email ?? ""}</div>
                       </td>
-                      <td style={{ color: "#ffffff", fontSize: "0.82rem" }}>{fmtDate(o.createdAt)}</td>
-                      <td>
+                      <td data-label="Date" style={{ color: "#ffffff", fontSize: "0.82rem" }}>{fmtDate(o.createdAt)}</td>
+                      <td data-label="Montant">
                         <span style={{
                           fontFamily: "'Space Mono', monospace",
                           fontSize: "0.82rem", fontWeight: 700,color: "#ffffff"
@@ -794,13 +794,13 @@ export default function OrdersPage() {
                           {(o.total ?? 0).toLocaleString("fr-FR")} TND
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Statut">
                         <span className={`badge ${cfg.badgeClass}`}>
                           <span className="order-status-dot" style={{ background: cfg.dot }} />
                           {cfg.label}
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Modifier">
                         <button
                           onClick={() => setStatusTarget(o)}
                           disabled={isBusy}
@@ -818,7 +818,7 @@ export default function OrdersPage() {
                           Statut
                         </button>
                       </td>
-                      <td>
+                      <td data-label="Actions">
                         <div className="order-actions-cell">
                           <button
                             className="icon-btn"

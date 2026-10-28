@@ -331,7 +331,7 @@ export default function AdminCultureAmazighPage() {
                     return (
                       <tr key={c._id} style={{ opacity: isDeleting ? 0.5 : 1, animationDelay: `${i * 0.04}s` ,borderBottom:"1px solid #30364b"}}>
                         {/* Publication */}
-                        <td>
+                        <td data-label="Publication">
                           <div className="mh-property-thumb">
                             {c.images?.[0] ? (
                               <img className="mh-property-img" src={c.images[0]} alt={c.title} />
@@ -364,10 +364,10 @@ export default function AdminCultureAmazighPage() {
                         </td>
 
                         {/* Author */}
-                        <td style={{ color: '#fbfbfb', fontSize: '0.875rem' }}>{getHostName(c.host)}</td>
+                        <td data-label="Auteur" style={{ color: '#fbfbfb', fontSize: '0.875rem' }}>{getHostName(c.host)}</td>
 
                         {/* Type */}
-                        <td>
+                        <td data-label="Type">
                           {meta ? (
                             <span
                               className="mh-badge"
@@ -386,7 +386,7 @@ export default function AdminCultureAmazighPage() {
                         </td>
 
                         {/* Rating */}
-                        <td>
+                        <td data-label="Note">
                           {c.rating > 0 ? (
                             <span className="mh-rating">
                               <Star size={13} fill="currentColor" /> {c.rating.toFixed(1)}
@@ -400,14 +400,14 @@ export default function AdminCultureAmazighPage() {
                         </td>
 
                         {/* Views */}
-                        <td>
+                        <td data-label="Vues">
                           <span className="mh-mono" style={{ color: '#4A5568', fontSize: '0.82rem' }}>
                             {c.views ?? 0}
                           </span>
                         </td>
 
                         {/* Featured toggle */}
-                        <td>
+                        <td data-label="En avant">
                           {c.isFeatured ? (
                             <button
                               title="Retirer des mis en avant"
@@ -439,14 +439,14 @@ export default function AdminCultureAmazighPage() {
                         </td>
 
                         {/* Status */}
-                        <td>
+                        <td data-label="Statut">
                           <span className={statusBadge[status] || 'mh-badge mh-badge-gray'}>
                             {status}
                           </span>
                         </td>
 
                         {/* Actions */}
-                        <td>
+                        <td data-label="Actions">
                           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                             <Link
                               href={`/dashboard/admin/cultureamazigh/${c._id}`}

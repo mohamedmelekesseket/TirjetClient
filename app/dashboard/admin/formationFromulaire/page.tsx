@@ -583,28 +583,28 @@ export default function FormationsAdminPage() {
                   const isBusy = updatingId === o._id;
                   return (
                     <tr key={o._id} style={{ animationDelay: `${i * 0.06}s`, opacity: isBusy ? 0.6 : 1 }}>
-                      <td>
+                      <td data-label="Candidat">
                         <div style={{ fontWeight: 600, fontSize: "0.875rem", color: "white" }}>{o.nomPrenom}</div>
                         <div style={{ fontSize: "0.72rem", color: "#8B9AB5", marginTop: 2 }}>
                           {o.genre === "femme" ? "Femme" : "Homme"} · {NIVEAU_LABEL[o.trancheAge] ?? o.trancheAge}
                         </div>
                       </td>
-                      <td>
+                      <td data-label="Contact">
                         <div style={{ fontSize: "0.82rem" ,color:"white"}}>{o.email}</div>
                         <div style={{ fontSize: "0.72rem", color: "#8B9AB5", marginTop: 2 }}>{o.telephone}</div>
                       </td>
-                      <td style={{ fontSize: "0.85rem", color: "#8B9AB5" }}>{o.region}</td>
-                      <td style={{ fontSize: "0.82rem", color: "#8B9AB5" }}>
+                      <td data-label="Région" style={{ fontSize: "0.85rem", color: "#8B9AB5" }}>{o.region}</td>
+                      <td data-label="Niveau études" style={{ fontSize: "0.82rem", color: "#8B9AB5" }}>
                         {NIVEAU_LABEL[o.niveauEtudes] ?? o.niveauEtudes}
                       </td>
-                      <td style={{ color: "#8B9AB5", fontSize: "0.82rem" }}>{fmtDate(o.createdAt)}</td>
-                      <td>
+                      <td data-label="Date" style={{ color: "#8B9AB5", fontSize: "0.82rem" }}>{fmtDate(o.createdAt)}</td>
+                      <td data-label="Statut">
                         <span className={`badge ${cfg.badgeClass}`}>
                           <span className="order-status-dot" style={{ background: cfg.dot }} />
                           {cfg.label}
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Modifier">
                         <button
                           onClick={() => setStatusTarget(o)}
                           disabled={isBusy}
@@ -622,7 +622,7 @@ export default function FormationsAdminPage() {
                           Statut
                         </button>
                       </td>
-                      <td>
+                      <td data-label="Actions">
                         <div className="order-actions-cell">
                           <button className="icon-btn" title="Voir" onClick={() => setDetailTarget(o)}>
                             <Eye color="#0E2B7F" size={16} />

@@ -388,7 +388,7 @@ export default function ArtisanDashboard() {
                 <tbody>
                   {recentProducts.map((p) => (
                     <tr key={p._id}>
-                      <td>
+                      <td data-label="Produit">
                         <div className="product-cell">
                           {p.images?.[0] ? (
                             <img src={p.images[0]} alt={p.title}
@@ -405,16 +405,16 @@ export default function ArtisanDashboard() {
                           </div>
                         </div>
                       </td>
-                      <td style={{ fontWeight: 700, fontSize: '0.8rem' , color: '#ffffff'}}>{p.price} TND</td>
-                      <td style={{ fontSize: '0.8rem', color: p.stock === 0 ? '#e53e3e' : '#ffffff', fontWeight: p.stock === 0 ? 700 : 400 }}>
+                      <td data-label="Prix" style={{ fontWeight: 700, fontSize: '0.8rem' , color: '#ffffff'}}>{p.price} TND</td>
+                      <td data-label="Stock" style={{ fontSize: '0.8rem', color: p.stock === 0 ? '#e53e3e' : '#ffffff', fontWeight: p.stock === 0 ? 700 : 400 }}>
                         {p.stock === 0 ? 'Épuisé' : p.stock}
                       </td>
-                      <td style={{ fontSize: '0.8rem', color: '#cdddfa' }}>
+                      <td data-label="Vues" style={{ fontSize: '0.8rem', color: '#cdddfa' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <Eye size={12} />{p.views ?? 0}
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Statut">
                         <span style={{ fontSize: '0.72rem', fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: p.isSuspended ? '#fff5f5' : p.isApproved ? '#f0fff4' : '#fffbeb', color: p.isSuspended ? '#e53e3e' : p.isApproved ? '#0B9E5E' : '#F59E0B' }}>
                           {p.isSuspended ? 'Suspendu' : p.isApproved ? 'Actif' : 'En attente'}
                         </span>

@@ -636,7 +636,7 @@ const fetchArtisans = async () => {
                     const isRanking = actionLoading === a._id + "-rank";
                     return (
                       <tr key={a._id} style={{ animationDelay: `${i * 0.055}s` }}>
-                        <td>
+                        <td data-label="Artisan">
                           <div className="user-cell">
                             <div className="user-row-avatar">{initials(a.user?.name || "N/A")}</div>
                             <div>
@@ -645,15 +645,15 @@ const fetchArtisans = async () => {
                             </div>
                           </div>
                         </td>
-                        <td style={{ color: "white", fontSize: "0.875rem" }}>
+                        <td data-label="Région" style={{ color: "white", fontSize: "0.875rem" }}>
                           {a.region || <CircleAlert color="red" />}
                         </td>
-                        <td style={{ color: "white", fontSize: "0.875rem" }}>
+                        <td data-label="Téléphone" style={{ color: "white", fontSize: "0.875rem" }}>
                           {a.phone || <CircleAlert color="red" />}
                         </td>
 
                         {/* ── Rank cell ── */}
-                        <td>
+                        <td data-label="Classement">
                           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                             {a.rank != null ? (
                               <RankPill rank={a.rank} />
@@ -669,7 +669,7 @@ const fetchArtisans = async () => {
                           </div>
                         </td>
 
-                        <td>
+                        <td data-label="Statut">
                           <span className={`badge ${statusClass[label] || "badge-gray"}`}>{label}</span>
                           {a.isPremium && (
                             <span style={{ marginLeft: "6px", fontSize: ".7rem", background: "#FEF3C7", color: "#92400E", borderRadius: "4px", padding: "1px 5px" }}>
@@ -677,10 +677,10 @@ const fetchArtisans = async () => {
                             </span>
                           )}
                         </td>
-                        <td style={{ color: "white", fontSize: "0.82rem" }}>
+                        <td data-label="Inscrit le" style={{ color: "white", fontSize: "0.82rem" }}>
                           {new Date(a.createdAt).toLocaleDateString("fr-FR")}
                         </td>
-                        <td>
+                        <td data-label="Actions">
                           <div style={{ display: "flex", gap: "6px" }}>
                             {label === "En attente" && (
                               <>
