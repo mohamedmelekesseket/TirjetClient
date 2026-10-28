@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useScroll, useTransform, Variants } from "framer-motion";
 import Image1 from "../images/hero-artisan.jpg";
 import Image2 from "../images/Untitled.png";
+import logoSplash from "../images/logo2 (2).png";
 import story from "../images/story.jpg";
 import { ShoppingBag, ChevronLeft, ChevronRight, Sparkles, X, Package } from "lucide-react";
 import tifinaghImg from "../images/langue.jpg"
@@ -987,8 +988,14 @@ export default function Page() {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
+  const [homeReady, setHomeReady] = useState(false);
   const { apiToken, session, status, update } = useApiToken();
   const { addToCart } = useCart();
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setHomeReady(true), 1000);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   // ── Add to cart (with confirmation modal) ───────────────────────────────────
   const [confirmModal, setConfirmModal] = useState<{
@@ -1052,6 +1059,17 @@ useEffect(() => {
     .catch(() => {})
     .finally(() => setProductsLoading(false));
 }, []);
+
+  if (!homeReady) {
+    return (
+      <main className="pg-main pg-home-loader-shell">
+        <div className="pg-home-loader" aria-live="polite" aria-busy="true">
+          <div className="pg-home-loader__ring" aria-hidden="true" />
+          <img src={logoSplash.src} alt="Tirjet" className="pg-home-loader__logo-img" />
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="pg-main">
