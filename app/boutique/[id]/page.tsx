@@ -1078,11 +1078,12 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 <motion.button
                   className={`pd-wish-btn${wish ? " pd-wish-btn--on" : ""}`}
                   onClick={() => toggleWish(currentId)}
+                  style={{backgroundColor:"transparent"}}
                   disabled={wishPending.has(currentId)}
                   whileTap={{ scale: 0.96 }}
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                   transition={{ delay: 0.85, duration: 0.6 }}>
-                  <motion.span className="pd-wish-btn__icon"
+                  <motion.span className="pd-wish-btn__icon" 
                     animate={wish ? { scale: [1, 1.5, 1], rotate: [0, -12, 0] } : { scale: 1 }}
                     transition={{ duration: 0.45 }}>
                     <HeartIcon filled={wish} />

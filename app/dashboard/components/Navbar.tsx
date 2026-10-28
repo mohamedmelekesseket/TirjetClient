@@ -3,7 +3,26 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { Bell, Menu, Search, X, Check } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import type { LucideIcon } from 'lucide-react';
+import {
+  Bell,
+  Menu,
+  Search,
+  X,
+  LayoutDashboard,
+  Package,
+  ShoppingBag,
+  User,
+  Users,
+  Tags,
+  BarChart3,
+  Home,
+  Landmark,
+  Compass,
+  GraduationCap,
+  Palette,
+} from 'lucide-react';
 import { useApiToken } from '@/lib/useApiToken';
 
 type Role = 'artisan' | 'admin';
@@ -11,7 +30,7 @@ type Role = 'artisan' | 'admin';
 interface NavItem {
   label: string;
   href: string;
-  icon: string;
+  icon: LucideIcon;
 }
 
 interface Notification {
@@ -24,24 +43,24 @@ interface Notification {
 }
 
 const artisanNav: NavItem[] = [
-  { label: 'Tableau de bord', href: '/dashboard/artisan', icon: '◉' },
-  { label: 'Mes Produits', href: '/dashboard/artisan/products', icon: '◉' },
-  { label: 'Commandes', href: '/dashboard/artisan/orders', icon: '◉' },
-  { label: 'Mon Profil', href: '/dashboard/artisan/profile', icon: '◉' },
+  { label: 'Tableau de bord', href: '/dashboard/artisan', icon: LayoutDashboard },
+  { label: 'Mes Produits', href: '/dashboard/artisan/products', icon: Package },
+  { label: 'Commandes', href: '/dashboard/artisan/orders', icon: ShoppingBag },
+  { label: 'Mon Profil', href: '/dashboard/artisan/profile', icon: User },
 ];
 
 const adminNav: NavItem[] = [
-  { label: 'Tableau de bord', href: '/dashboard/admin',           icon: '◉' },
-  { label: 'Artisans',        href: '/dashboard/admin/artisans',  icon: '◉' },
-  { label: 'formationFromulaire',        href: '/dashboard/admin/formationFromulaire',  icon: '◉' },
-  { label: 'Produits',        href: '/dashboard/admin/products',  icon: '◉' },
-  { label: 'Orders',    href: '/dashboard/admin/orders',     icon: '◉' },
-  { label: 'categories',        href: '/dashboard/admin/categories ',  icon: '◉' },
-  { label: 'Utilisateurs',    href: '/dashboard/admin/users',     icon: '◉' },
-  { label: 'Statistiques',    href: '/dashboard/admin/stats',     icon: '◉' },
-  { label: "Maisons d'Hôtes",    href: '/dashboard/admin/maisonsdhotes',     icon: '◉' },
-  { label: "Culture Amazigh",    href: '/dashboard/admin/cultureamazigh',     icon: '◉' },
-  { label: 'Excursions',    href: '/dashboard/admin/excursions',     icon: '◉' },
+  { label: 'Tableau de bord', href: '/dashboard/admin', icon: LayoutDashboard },
+  { label: 'Artisans', href: '/dashboard/admin/artisans', icon: Palette },
+  { label: 'Formations', href: '/dashboard/admin/formationFromulaire', icon: GraduationCap },
+  { label: 'Produits', href: '/dashboard/admin/products', icon: Package },
+  { label: 'Commandes', href: '/dashboard/admin/orders', icon: ShoppingBag },
+  { label: 'Catégories', href: '/dashboard/admin/categories', icon: Tags },
+  { label: 'Utilisateurs', href: '/dashboard/admin/users', icon: Users },
+  { label: 'Statistiques', href: '/dashboard/admin/stats', icon: BarChart3 },
+  { label: "Maisons d'Hôtes", href: '/dashboard/admin/maisonsdhotes', icon: Home },
+  { label: 'Culture Amazigh', href: '/dashboard/admin/cultureamazigh', icon: Landmark },
+  { label: 'Excursions', href: '/dashboard/admin/excursions', icon: Compass },
 ];
 
 export default function Navbar({ title, role }: { title: string; role: Role }) {
@@ -54,7 +73,7 @@ export default function Navbar({ title, role }: { title: string; role: Role }) {
 
   const nav = useMemo(() => (role === 'artisan' ? artisanNav : adminNav), [role]);
 
-  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
   // Fetch notifications
   useEffect(() => {
@@ -130,9 +149,101 @@ export default function Navbar({ title, role }: { title: string; role: Role }) {
     return date.toLocaleDateString('fr-FR');
   };
 
+  // Close drawer on route change
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
+
+  // Lock page scroll + close on Escape while the drawer is open
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [mobileMenuOpen]);
+
+  const displayName = role === 'artisan' ? 'Ahmed Benali' : 'Administrateur';
+  const displayRole = role === 'artisan' ? 'Artisan certifié' : 'Super Admin';
+  const avatarText = role === 'artisan' ? 'A' : 'AD';
+
+  const mobileDrawer = (
+    <>
+      <div
+        className="dash-mobile-backdrop"
+        onClick={() => setMobileMenuOpen(false)}
+      />
+      <aside
+        className="dash-mobile-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigation dashboard"
+      >
+        <div className="dash-mobile-drawer-head">
+          <div className="dash-mobile-brand">
+            <span className="dash-mobile-brand-mark">T</span>
+            <div>
+              <div className="dash-mobile-brand-name">Tirjet</div>
+              <div className="dash-mobile-brand-sub">
+                {role === 'artisan' ? 'Espace Artisan' : 'Administration'}
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="dash-mobile-close"
+            aria-label="Fermer le menu"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <nav className="dash-mobile-nav">
+          {nav.map((item) => {
+            const Icon = item.icon;
+            const root = `/dashboard/${role}`;
+            const isActive =
+              item.href === root
+                ? pathname === root
+                : pathname.startsWith(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive ? 'page' : undefined}
+                className={`dash-mobile-nav-link${isActive ? ' active' : ''}`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span className="dash-mobile-nav-icon" aria-hidden="true">
+                  <Icon size={18} />
+                </span>
+                <span className="dash-mobile-nav-label">{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="dash-mobile-drawer-foot">
+          <div className="navbar-avatar">{avatarText}</div>
+          <div>
+            <div className="dash-mobile-user-name">{displayName}</div>
+            <div className="dash-mobile-user-role">{displayRole}</div>
+          </div>
+        </div>
+      </aside>
+    </>
+  );
 
   return (
     <header className="navbar">
@@ -143,7 +254,7 @@ export default function Navbar({ title, role }: { title: string; role: Role }) {
             className="navbar-mobile-menu-btn"
             aria-label={mobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
             aria-expanded={mobileMenuOpen}
-            onClick={() => setMobileMenuOpen(v => !v)}
+            onClick={() => setMobileMenuOpen((v) => !v)}
           >
             {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
@@ -319,51 +430,19 @@ export default function Navbar({ title, role }: { title: string; role: Role }) {
           </div>
 
           <div className="navbar-profile">
-            <div className="navbar-avatar">
-              {role === 'artisan' ? 'A' : 'AD'}
-            </div>
+            <div className="navbar-avatar">{avatarText}</div>
             <div>
-              <div className="navbar-profile-name">
-                {role === 'artisan' ? 'Ahmed Benali' : 'Administrateur'}
-              </div>
-              <div className="navbar-profile-role">
-                {role === 'artisan' ? 'Artisan certifié' : 'Super Admin'}
-              </div>
+              <div className="navbar-profile-name">{displayName}</div>
+              <div className="navbar-profile-role">{displayRole}</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Mobile drawer */}
-      {mobileMenuOpen && (
-        <>
-          <div className="dash-mobile-backdrop" onClick={() => setMobileMenuOpen(false)} />
-          <div className="dash-mobile-drawer" role="dialog" aria-label="Navigation dashboard">
-            <div className="dash-mobile-drawer-handle" />
-            <div className="dash-mobile-drawer-title">
-              Navigation — {role === 'artisan' ? 'Artisan' : 'Admin'}
-            </div>
-            <nav className="dash-mobile-nav">
-              {nav.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== `/dashboard/${role}` && pathname.startsWith(item.href));
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`dash-mobile-nav-link${isActive ? ' active' : ''}`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <span className="dash-mobile-nav-icon" aria-hidden="true">{item.icon}</span>
-                    <span className="dash-mobile-nav-label">{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-        </>
-      )}
+      {/* Mobile drawer: rendered in a portal so no parent transform/filter can trap it */}
+      {mobileMenuOpen && typeof document !== 'undefined'
+        ? createPortal(mobileDrawer, document.body)
+        : null}
     </header>
   );
 }

@@ -2,7 +2,7 @@
 
 import { use, useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Plus, Loader2, Package } from "lucide-react";
+import { Check, Plus, Loader2, Package,ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { showSuccessToast } from "@/lib/toast";
@@ -274,7 +274,7 @@ function ProductCard({
         <div className="artp-prod-card__shade" />
 
         {/* Only render the badge if the name resolved — never shows a raw ID */}
-        {catLabel && <span className="artp-prod-card__cat">{catLabel}</span>}
+        {/* {catLabel && <span className="artp-prod-card__cat">{catLabel}</span>} */}
 
         <motion.button
           className={`artp-prod-card__wish${isWished ? " artp-prod-card__wish--on" : ""}`}
@@ -297,7 +297,8 @@ function ProductCard({
         <div className="artp-prod-card__foot">
           <Link href={`/boutique/${p._id}`} className="artp-prod-card__cta"
             onClick={(e) => e.stopPropagation()}>
-            Voir la pièce →
+            Voir la pièce 
+            <ArrowRight size={14}/>
           </Link>
           <motion.button
             className={`artp-prod-card__cart${isAdded ? " artp-prod-card__cart--added" : ""}`}
@@ -426,7 +427,7 @@ function InfoCard({ artisan, joinDate, totalProducts }: {
 
       <div className="artp-info-card__divider" />
 
-      <div className="artp-info-card__stats">
+      {/* <div className="artp-info-card__stats">
         <div className="artp-info-card__stat">
           <span className="artp-info-card__stat-n">4.6</span>
           <span className="artp-info-card__stat-l">Note</span>
@@ -439,9 +440,8 @@ function InfoCard({ artisan, joinDate, totalProducts }: {
           <span className="artp-info-card__stat-n">20+</span>
           <span className="artp-info-card__stat-l">Ans</span>
         </div>
-      </div>
+      </div> */}
 
-      <div className="artp-info-card__divider" />
 
       <div className="artp-info-card__badges">
         {artisan.user.isVerified && (
@@ -670,7 +670,7 @@ export default function ArtisanProfilePage({
             </div>
 
             {/* CTAs */}
-            <div className="artp-hero__ctas">
+            {/* <div className="artp-hero__ctas">
               <motion.button className="artp-hero__btn-contact" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -686,7 +686,7 @@ export default function ArtisanProfilePage({
                   Appeler
                 </motion.a>
               )}
-            </div>
+            </div> */}
           </motion.div>
         </div>
       </section>
