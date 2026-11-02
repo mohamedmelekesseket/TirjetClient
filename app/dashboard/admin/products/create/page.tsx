@@ -41,11 +41,14 @@ interface FieldError {
   price?:      string;
   description?: string;
   vendor?:     string;
+  images?:     string;
 }
+
+interface ToastItem { id: number; type: 'error' | 'success'; message: string; }
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
-function validate(form: FormState, vendorId: string): FieldError {
+function validate(form: FormState, vendorId: string, imageCount: number): FieldError {
   const errors: FieldError = {};
   if (!form.title.trim())       errors.title       = 'Le nom est requis.';
   if (!form.categoryId)         errors.categoryId  = 'La catégorie est requise.';
@@ -53,6 +56,7 @@ function validate(form: FormState, vendorId: string): FieldError {
                                 errors.price       = 'Prix invalide.';
   if (!form.description.trim()) errors.description = 'La description est requise.';
   if (!vendorId)                errors.vendor      = 'Veuillez sélectionner un artisan.';
+  if (imageCount < 1)           errors.images      = 'Au moins une image est requise.';
   return errors;
 }
 
@@ -61,6 +65,19 @@ function validate(form: FormState, vendorId: string): FieldError {
 export default function AdminCreateProductPage() {
   const router   = useRouter();
   const { apiToken } = useApiToken();
+
+  // ── Toast (built-in, bottom, 2s) ─────────────────────────────────────────
+  const [toastItem, setToastItem] = useState<ToastItem | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showToast = (type: 'error' | 'success', message: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToastItem({ id: Date.now(), type, message });
+    toastTimer.current = setTimeout(() => setToastItem(null), 2000);
+  };
+  const toast = {
+    error:   (m: string) => showToast('error', m),
+    success: (m: string) => showToast('success', m),
+  };
 
   // ── Categories (full tree) ───────────────────────────────────────────────
   const [categories, setCategories] = useState<Category[]>([]);
@@ -85,7 +102,6 @@ export default function AdminCreateProductPage() {
   const [previews, setPreviews]     = useState<string[]>([]);
   const [errors, setErrors]         = useState<FieldError>({});
   const [submitting, setSubmitting] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // ── Load categories ──────────────────────────────────────────────────────
@@ -183,10 +199,12 @@ export default function AdminCreateProductPage() {
   // ── Image helpers ─────────────────────────────────────────────────────────
   const handleFiles = (files: FileList | null) => {
     if (!files) return;
+    if (files.length > 8 - images.length) toast.error('Maximum 8 photos.');
     const newFiles    = Array.from(files).slice(0, 8 - images.length);
     const newPreviews = newFiles.map(f => URL.createObjectURL(f));
     setImages(prev   => [...prev, ...newFiles]);
     setPreviews(prev => [...prev, ...newPreviews]);
+    if (newFiles.length) setErrors(prev => ({ ...prev, images: undefined }));
   };
 
   const removeImage = (index: number) => {
@@ -202,12 +220,16 @@ export default function AdminCreateProductPage() {
 
   // ── Submit ────────────────────────────────────────────────────────────────
   const submit = async () => {
-    const fieldErrors = validate(form, selectedVendor?._id ?? '');
-    if (Object.keys(fieldErrors).length) { setErrors(fieldErrors); return; }
+    const fieldErrors = validate(form, selectedVendor?._id ?? '', images.length);
+    if (Object.keys(fieldErrors).length) {
+      setErrors(fieldErrors);
+      const firstError = Object.values(fieldErrors)[0];
+      if (firstError) toast.error(firstError);
+      return;
+    }
 
     try {
       setSubmitting(true);
-      setServerError(null);
 
       const body = new FormData();
       body.append('title',            form.title.trim());
@@ -252,9 +274,10 @@ export default function AdminCreateProductPage() {
         const payload = await res.json().catch(() => ({}));
         throw new Error(payload?.message ?? `Erreur ${res.status}`);
       }
-      router.push('/dashboard/admin/products');
+      toast.success('Produit publié avec succès !');
+      setTimeout(() => router.push('/dashboard/admin/products'), 1200);
     } catch (err: any) {
-      setServerError(err.message);
+      toast.error(err.message || 'Une erreur est survenue.');
     } finally {
       setSubmitting(false);
     }
@@ -263,6 +286,15 @@ export default function AdminCreateProductPage() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div>
+      {/* Toast (bottom, 2s, one at a time) */}
+      {toastItem && (
+        <div key={toastItem.id} className={`app-toast app-toast-${toastItem.type}`} role="alert">
+          <span className="app-toast-icon">{toastItem.type === 'error' ? '!' : '✓'}</span>
+          <span className="app-toast-msg">{toastItem.message}</span>
+          <span className="app-toast-bar" />
+        </div>
+      )}
+
       {/* Header */}
       <div className="page-header anim-fade-up">
         <div>
@@ -273,14 +305,6 @@ export default function AdminCreateProductPage() {
           <p className="page-subtitle">Créez un produit au nom d'un artisan</p>
         </div>
       </div>
-
-      {/* Server error */}
-      {serverError && (
-        <div className="card anim-fade-up"
-          style={{ marginBottom: '1rem', color: '#e53e3e', padding: '1rem' }}>
-          {serverError}
-        </div>
-      )}
 
       <form onSubmit={e => { e.preventDefault(); submit(); }} noValidate>
         <div className="create-product-grid">
@@ -402,8 +426,8 @@ export default function AdminCreateProductPage() {
             {/* Images */}
            <div className="card anim-fade-up anim-d2" style={{backgroundColor:"#18203A"}}>
              <div className="card-header" >
-                <h2 className="card-title" style={{color: "#ffffff" }}>Photos du produit</h2>
-                <span className="card-hint">{images.length}/8 — au moins 3 conseillées</span>
+                <h2 className="card-title" style={{color: "#ffffff" }}>Photos du produit *</h2>
+                <span className="card-hint">{images.length}/8 — au moins 1 requise, 3 conseillées</span>
               </div>
               <div className="card-body" style={{background:"#232C47"}}>
                 {images.length < 8 && (
@@ -413,7 +437,7 @@ export default function AdminCreateProductPage() {
                     role="button" tabIndex={0}
                     onKeyDown={e => e.key === 'Enter' && fileRef.current?.click()}
                     style={{
-                      border: '2px dashed #fefefe',
+                      border: `2px dashed ${errors.images ? '#e53e3e' : '#fefefe'}`,
                       borderRadius: 12, padding: '2rem',
                       textAlign: 'center', cursor: 'pointer',
                       marginBottom: previews.length ? '1rem' : 0,
@@ -428,6 +452,11 @@ export default function AdminCreateProductPage() {
                       style={{ display: 'none' }}
                       onChange={e => handleFiles(e.target.files)} />
                   </div>
+                )}
+                {errors.images && (
+                  <span className="form-error" style={{ display: 'block', marginTop: '.5rem' }}>
+                    {errors.images}
+                  </span>
                 )}
                 {previews.length > 0 && (
                   <div style={{
@@ -644,6 +673,48 @@ export default function AdminCreateProductPage() {
         .input-error { border-color: #E53E3E !important; }
         .form-error  { display: block; margin-top: 4px; font-size: 0.78rem; color: #E53E3E; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Toast ── */
+        .app-toast {
+          position: fixed;
+          left: calc(50% + 100px);           /* centred on the content area (sidebar ≈ 200px) */
+          bottom: 32px;
+          transform: translateX(-50%);
+          z-index: 999999;
+          display: flex; align-items: center; gap: 12px;
+          min-width: 280px; max-width: min(92vw, 460px);
+          padding: 14px 20px;
+          border-radius: 14px;
+          color: #fff; font-size: 0.95rem; font-weight: 600;
+          overflow: hidden;
+          border: 1px solid rgba(255,255,255,.14);
+          box-shadow: 0 14px 36px rgba(0,0,0,.5);
+          animation: toastIn .25s ease-out;
+        }
+        .app-toast-error   { background: linear-gradient(135deg, #7f1d1d, #b91c1c); }
+        .app-toast-success { background: linear-gradient(135deg, #14532d, #15803d); }
+        .app-toast-icon {
+          width: 26px; height: 26px; flex-shrink: 0;
+          display: flex; align-items: center; justify-content: center;
+          border-radius: 50%; background: rgba(255,255,255,.2);
+          font-weight: 800; font-size: .9rem;
+        }
+        .app-toast-msg { line-height: 1.3; }
+        .app-toast-bar {
+          position: absolute; left: 0; bottom: 0;
+          height: 3px; width: 100%;
+          background: rgba(255,255,255,.6);
+          transform-origin: left;
+          animation: toastBar 2s linear forwards;
+        }
+        @keyframes toastIn {
+          from { opacity: 0; transform: translate(-50%, 16px); }
+          to   { opacity: 1; transform: translate(-50%, 0); }
+        }
+        @keyframes toastBar { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+        @media (max-width: 900px) {
+          .app-toast { left: 50%; bottom: 20px; }
+        }
       `}</style>
     </div>
   );
