@@ -4922,6 +4922,8 @@ background-size: 250px 250px;
 
   .lp-right {
     padding: 48px 24px 56px;
+    background-image: url('../images/story.jpg');
+    background-size: cover;
   }
 }
 
