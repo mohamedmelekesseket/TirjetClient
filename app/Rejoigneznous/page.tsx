@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { CheckCircle2, LogIn } from "lucide-react";
+import { useState, useEffect } from "react";
+import { CheckCircle2, LogIn, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useApiToken } from "@/lib/useApiToken";
 import { showSuccessToast, showErrorToast } from "@/lib/toast";
@@ -19,22 +19,28 @@ const specialites = [
   "Autre",
 ];
 
+// Callback-ref version: attaches the observer whenever the element mounts,
+// even if it mounts later (e.g. after the session finishes loading).
 function useInView(threshold = 0.1) {
-  const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
+  const [el, setEl] = useState<HTMLElement | null>(null);
+
   useEffect(() => {
-    const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
       ([e]) => {
-        if (e.isIntersecting) { setVisible(true); obs.disconnect(); }
+        if (e.isIntersecting) {
+          setVisible(true);
+          obs.disconnect();
+        }
       },
       { threshold }
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [threshold]);
-  return { ref, visible };
+  }, [el, threshold]);
+
+  return { ref: setEl, visible };
 }
 
 export default function RejoindrePage() {
@@ -42,18 +48,18 @@ export default function RejoindrePage() {
 
   // Email comes from session — never entered manually
   const sessionEmail = session?.user?.email ?? "";
-  const sessionName  = session?.user?.name  ?? "";
+  const sessionName = session?.user?.name ?? "";
 
-  const [submitted, setSubmitted]   = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [focused, setFocused]       = useState<string | null>(null);
+  const [focused, setFocused] = useState<string | null>(null);
 
   const [values, setValues] = useState({
-    nom:       "",
+    nom: "",
     telephone: "",
-    ville:     "",
-    specialite:"",
-    histoire:  "",
+    ville: "",
+    specialite: "",
+    histoire: "",
   });
 
   const formSect = useInView(0.05);
@@ -68,16 +74,16 @@ export default function RejoindrePage() {
 
     try {
       const formData = new FormData();
-      formData.append("phone",       values.telephone);
-      formData.append("region",      values.ville);
-      formData.append("specialite",  values.specialite);
+      formData.append("phone", values.telephone);
+      formData.append("region", values.ville);
+      formData.append("specialite", values.specialite);
       formData.append("description", values.histoire);
       // email is read server-side from req.user (JWT) — no need to send it
 
       const headers: HeadersInit = {};
       if (apiToken) headers["Authorization"] = `Bearer ${apiToken}`;
 
-      const res  = await fetch(`${API}/api/artisans/apply`, {
+      const res = await fetch(`${API}/api/artisans/apply`, {
         method: "POST",
         headers,
         body: formData,
@@ -98,8 +104,8 @@ export default function RejoindrePage() {
   const filled = (name: string) =>
     values[name as keyof typeof values].length > 0;
 
-  // ── Loading state ──────────────────────────────────────────────
-  if (status === "loading") return null; // or a spinner
+  // NOTE: no early `return null` for status === "loading" anymore.
+  // The section must always render so the IntersectionObserver can attach.
 
   return (
     <div className="rj-page">
@@ -113,7 +119,7 @@ export default function RejoindrePage() {
       <section className="rj-form-section" ref={formSect.ref}>
         <div className={`rj-form-wrap${formSect.visible ? " rj-form-wrap--in" : ""}`}>
 
-          {/* ── Left aside (unchanged) ───────────────────────────── */}
+          {/* ── Left aside ───────────────────────────────────────── */}
           <aside className="rj-form-aside">
             <p className="rj-eyebrow rj-eyebrow--gold">VOTRE CANDIDATURE</p>
             <h2 className="rj-aside__title">Devenez<br /><em>artisan partenaire</em></h2>
@@ -124,8 +130,8 @@ export default function RejoindrePage() {
             <div className="rj-aside__steps">
               {[
                 { n: "01", t: "Candidature", d: "Remplissez ce formulaire" },
-                { n: "02", t: "Entretien",   d: "Échange avec notre équipe" },
-                { n: "03", t: "Boutique",    d: "Mise en ligne de vos créations" },
+                { n: "02", t: "Entretien", d: "Échange avec notre équipe" },
+                { n: "03", t: "Boutique", d: "Mise en ligne de vos créations" },
               ].map((s) => (
                 <div key={s.n} className="rj-step">
                   <span className="rj-step__num">{s.n}</span>
@@ -146,30 +152,39 @@ export default function RejoindrePage() {
 
           {/* ── Form card ────────────────────────────────────────── */}
           <div className="rj-form-card">
-
-            {/* ══ NOT LOGGED IN ══ */}
-            {!session ? (
+            {status === "loading" ? (
+              /* ══ LOADING ══ */
+              <div className="rj-gate" aria-busy="true">
+                <div className="rj-spinner" />
+              </div>
+            ) : !session ? (
+              /* ══ NOT LOGGED IN ══ */
               <div className="rj-gate">
                 <div className="rj-gate__icon" aria-hidden="true">
-                  <LogIn size={32} />
+                  <LogIn size={22} strokeWidth={1.5} />
                 </div>
+
                 <h3 className="rj-gate__title">Connexion requise</h3>
+
                 <p className="rj-gate__desc">
-                  Pour soumettre votre candidature, vous devez d'abord
-                  vous connecter à votre compte.
+                  Pour soumettre votre candidature, vous devez d&apos;abord vous
+                  connecter à votre compte.
                 </p>
-                <Link href="/connexion" className="rj-btn rj-btn--gold">
-                  Se connecter →
+
+                <Link href="/connexion" className="rj-gate__btn">
+                  Se connecter <ArrowRight size={14} />
                 </Link>
+
+                <div className="rj-gate__divider" role="separator">
+                  <span>ou</span>
+                </div>
+
                 <p className="rj-gate__sub">
-                  Pas encore de compte ?{" "}
-                  <Link href="/connexion">Créer un compte</Link>
+                  Pas encore de compte ? <Link href="/connexion">Créer un compte</Link>
                 </p>
               </div>
-            ) :
-
-            /* ══ SUCCESS ══ */
-            submitted ? (
+            ) : submitted ? (
+              /* ══ SUCCESS ══ */
               <div className="rj-success">
                 <div className="rj-success__icon" aria-hidden="true">
                   <CheckCircle2 size={28} />
@@ -177,7 +192,7 @@ export default function RejoindrePage() {
                 <h3 className="rj-success__title">Candidature envoyée !</h3>
                 <p className="rj-success__desc">
                   Merci {(values.nom || sessionName).split(" ")[0]}. Notre équipe
-                  vous contactera sous 48h à l'adresse{" "}
+                  vous contactera sous 48h à l&apos;adresse{" "}
                   <strong>{sessionEmail}</strong>.
                 </p>
                 <button
@@ -190,25 +205,16 @@ export default function RejoindrePage() {
                   Nouvelle candidature
                 </button>
               </div>
-            ) :
-
-            /* ══ FORM (logged in) ══ */
-            (
+            ) : (
+              /* ══ FORM (logged in) ══ */
               <>
                 <div className="rj-form-header">
                   <p className="rj-eyebrow">INFORMATIONS</p>
                   <h3 className="rj-form-title">Votre profil artisan</h3>
-
-                  {/* Connected-as badge */}
-                  {/* <div className="rj-session-badge">
-                    <span className="rj-session-badge__dot" aria-hidden="true" />
-                    Connecté en tant que <strong>{sessionEmail}</strong>
-                  </div> */}
                 </div>
 
-
                 <div className="rj-fields">
-                  {/* Row 1 — Nom (full row, email removed) */}
+                  {/* Nom */}
                   <div className={`rj-field rj-field--full${focused === "nom" ? " rj-field--focus" : ""}${filled("nom") ? " rj-field--filled" : ""}`}>
                     <label className="rj-label" htmlFor="nom">Nom complet</label>
                     <input
@@ -222,7 +228,7 @@ export default function RejoindrePage() {
                     <span className="rj-field__line" />
                   </div>
 
-                  {/* Row 2 — Téléphone + Ville */}
+                  {/* Téléphone + Ville */}
                   <div className="rj-row">
                     <div className={`rj-field${focused === "telephone" ? " rj-field--focus" : ""}${filled("telephone") ? " rj-field--filled" : ""}`}>
                       <label className="rj-label" htmlFor="telephone">Téléphone</label>

@@ -2,7 +2,7 @@
 
 import { motion,Variants  } from "framer-motion";
 import { signIn } from "next-auth/react";
-import { Badge, Leaf, Languages, Zap } from "lucide-react";
+import { Badge, Leaf, Languages, Zap, LogIn, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import logo from '../icon.png'
@@ -76,7 +76,14 @@ export default function LoginPage() {
     }
     showErrorToast(`Connexion impossible (${err}).`);
   }, []);
-
+    const handleGoogle = async () => {
+      try {
+        setIsGoogleLoading(true);
+        await signIn("google", { callbackUrl: "/" });
+      } finally {
+        setIsGoogleLoading(false);
+      }
+    };
   return (
     <div className="lp-root">
       {/* ── LEFT PANEL ── */}

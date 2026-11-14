@@ -7170,49 +7170,106 @@ img { display: block; max-width: 100%; }
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 3rem 2rem;
   gap: 1rem;
   height: 100%;
+  padding: 3rem 2rem;
+  background: linear-gradient(180deg, #1d1813 0%, #17130f 100%);
+  border: 1px solid rgba(212, 175, 110, 0.15);
+  border-radius: 14px;
 }
 
 .rj-gate__icon {
-  width: 64px;
-  height: 64px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  background: #fdf6ec;          /* or your theme's light gold */
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #b8892a;
-  margin-bottom: 0.5rem;
+  color: #d9ad6b;
+  background: rgba(212, 175, 110, 0.06);
+  border: 1px solid rgba(212, 175, 110, 0.4);
+  margin-bottom: 0.75rem;
 }
 
 .rj-gate__title {
-  font-family: var(--font-heading);
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: #1a1a1a;
+  font-family: "Cormorant Garamond", "EB Garamond", Georgia, serif;
+  font-size: 1.75rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: #f1e9db;
   margin: 0;
 }
 
 .rj-gate__desc {
-  color: #666;
-  max-width: 320px;
-  line-height: 1.6;
+  max-width: 250px;
   margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.75;
+  color: #8f8573;
+}
+
+/* Gold gradient button */
+.rj-gate__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding: 0.95rem 1.7rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #1a1410;
+  background: linear-gradient(135deg, #e6c283 0%, #c8955a 100%);
+  border-radius: 2px;
+  box-shadow: 0 0 24px rgba(212, 165, 90, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.rj-gate__btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  box-shadow: 0 0 32px rgba(212, 165, 90, 0.45);
+}
+
+/* "— OU —" divider */
+.rj-gate__divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 255px;
+  margin-top: 0.75rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6f6657;
+}
+
+.rj-gate__divider::before,
+.rj-gate__divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(212, 175, 110, 0.15);
 }
 
 .rj-gate__sub {
-  font-size: 0.875rem;
-  color: #888;
-  margin-top: 0.5rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: #7d7464;
 }
 
 .rj-gate__sub a {
-  color: #b8892a;
-  text-decoration: underline;
+  color: #d9ad6b;
+  text-decoration: none;
+  transition: color 0.2s ease;
 }
 
+.rj-gate__sub a:hover {
+  color: #ecc98f;
+}
 /* ── Session badge (shown inside the form) ─────── */
 .rj-session-badge {
   display: inline-flex;
@@ -8387,10 +8444,10 @@ input, select, textarea { font-family: var(--font-sans); }
 ul { list-style: none; }
 img { display: block; max-width: 100%; }
 
+html { scrollbar-color: #000 transparent; scrollbar-width: thin; }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(2,52,171,0.2); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #0234AB; }
+::-webkit-scrollbar-thumb { background: #000; border-radius: 3px; }
 
 /* ============================================================
    KEYFRAMES
@@ -17403,7 +17460,7 @@ aside {
   border-color: #e9d8fd;
 }
 .mh-card-admin .mh-card-header {
-  background: linear-gradient(90deg, #faf5ff, #fff);
+  background: #18203A;
 }
 
 /* ── Table ───────────────────────────────────────────────────────────────── */
@@ -17997,7 +18054,7 @@ aside {
 
 /* ── Tips card ───────────────────────────────────────────────────────────── */
 .mh-tips-card {
-  background: linear-gradient(135deg, #EEF2FF, #E8EEFF);
+  background: #18203A;
   border: 1.5px solid rgba(2,52,171,0.12);
   border-radius: 14px;
   padding: 18px;
@@ -18006,7 +18063,7 @@ aside {
 .mh-tips-title {
   font-weight: 750;
   font-size: 0.88rem;
-  color: #0234AB;
+  color: white;
   margin-bottom: 10px;
 }
 .mh-tips-list {
@@ -18019,7 +18076,7 @@ aside {
 }
 .mh-tips-list li {
   font-size: 0.78rem;
-  color: #4A5568;
+  color: white;
   display: flex;
   align-items: flex-start;
   gap: 6px;

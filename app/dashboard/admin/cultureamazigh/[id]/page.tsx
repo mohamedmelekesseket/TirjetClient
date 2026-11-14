@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useApiToken } from '@/lib/useApiToken';
 import {
   Loader2, ShieldCheck, ShieldOff, Sparkles, Star,
-  X, BookOpen, Feather, Music, Sprout, Home, Layers, FileText,
+  X, BookOpen, Feather, Music, Sprout, Home, Layers, FileText, Link as LinkIcon, Plus,
   ToggleLeft, ToggleRight, AlertTriangle,
 } from 'lucide-react';
 import UploadImage from '@/app/dashboard/components/UploadImage';
@@ -86,6 +86,9 @@ export default function AdminEditCulturePage({ params }: { params: Promise<{ id:
   const [videoFiles, setVideoFiles] = useState<File[]>([]);
   const [videoPreviews, setVideoPreviews] = useState<string[]>([]);
   const videoFileRef = useRef<HTMLInputElement>(null);
+  const [videoUrls, setVideoUrls] = useState<string[]>([]);
+  const [videoUrlInput, setVideoUrlInput] = useState('');
+  const [videoUrlError, setVideoUrlError] = useState('');
 
   const handleVideoFiles = (files: FileList | null) => {
     if (!files) return;
@@ -146,6 +149,7 @@ export default function AdminEditCulturePage({ params }: { params: Promise<{ id:
         setImages(c.images  ?? []);
         setVideoFiles([]);
         setVideoPreviews(c.videos ?? []);
+        setVideoUrls(Array.isArray(c.videoUrls) ? c.videoUrls.filter(Boolean) : []);
         if (c.host) setHost({ name: c.host.name, email: c.host.email });
       } catch (err: any) {
         setFetchError(err.message);
@@ -180,6 +184,27 @@ export default function AdminEditCulturePage({ params }: { params: Promise<{ id:
   };
   const removeTag = (t: string) => setTags(prev => prev.filter(x => x !== t));
 
+  const addVideoUrl = () => {
+    const url = videoUrlInput.trim();
+    if (!url) return;
+    try {
+      const parsedUrl = new URL(url);
+      if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+        throw new Error('Invalid protocol');
+      }
+    } catch {
+      setVideoUrlError('URL invalide.');
+      return;
+    }
+    if (videoUrls.includes(url)) {
+      setVideoUrlError('Cette URL est déjà ajoutée.');
+      return;
+    }
+    setVideoUrls(prev => [...prev, url]);
+    setVideoUrlInput('');
+    setVideoUrlError('');
+  };
+
   const handleUpload = useCallback((urls: string[]) => {
     setUploading(false);
     setImages(prev => [...prev, ...urls]);
@@ -204,6 +229,7 @@ export default function AdminEditCulturePage({ params }: { params: Promise<{ id:
       tags.forEach(t => body.append('amenities', t));
       cleanImages.forEach(img => body.append('images', img));
       videoFiles.forEach(v => body.append('videos', v));
+      body.append('videoUrls', JSON.stringify(videoUrls));
       
       // Add toggle states
       body.append('isApproved', String(toggles.isApproved));
@@ -383,7 +409,7 @@ export default function AdminEditCulturePage({ params }: { params: Promise<{ id:
               
               {/* Video upload section */}
               <div style={{ marginTop: 20, borderTop: '1px solid #E2E8F0', paddingTop: 16 }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#4A5568', marginBottom: 8 }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#ffffff', marginBottom: 8 }}>
                   Vidéos (max 150MB)
                 </div>
                 {videoPreviews.length > 0 && (
@@ -414,6 +440,60 @@ export default function AdminEditCulturePage({ params }: { params: Promise<{ id:
                     onChange={e => handleVideoFiles(e.target.files)}
                   />
                 </div>
+              </div>
+
+              <div style={{ marginTop: 20, borderTop: '1px solid #E2E8F0', paddingTop: 16 }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fafafa', marginBottom: 8 }}>
+                  Liens vidéo YouTube / Vimeo
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="url"
+                    value={videoUrlInput}
+                    onChange={e => { setVideoUrlInput(e.target.value); setVideoUrlError(''); }}
+                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addVideoUrl())}
+                    className="mh-form-input"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    style={{ flex: 1 }}
+                  />
+                  <button type="button" className="mh-btn mh-btn-primary" onClick={addVideoUrl}>
+                    <Plus size={14} /> Ajouter
+                  </button>
+                </div>
+                {videoUrlError && <span className="mh-form-error">{videoUrlError}</span>}
+                {videoUrls.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+                    {videoUrls.map((url, index) => (
+                      <div key={`${url}-${index}`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <LinkIcon size={14} color='white'/>
+                        <a href={url} target="_blank" rel="noopener noreferrer" style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',color:"white" }}>
+                          {url}
+                        </a>
+                        <button
+                          type="button"
+                          aria-label={`Supprimer le lien vidéo ${index + 1}`}
+                          onClick={() => setVideoUrls(prev => prev.filter((_, i) => i !== index))}
+                          style={{
+                            width: 24,
+                            height: 24,
+                            flexShrink: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 0,
+                            border: 'none',
+                            borderRadius: '50%',
+                            background: 'rgba(255, 255, 255, 0.12)',
+                            color: '#fff',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

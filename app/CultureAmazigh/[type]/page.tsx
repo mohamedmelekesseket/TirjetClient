@@ -17,6 +17,7 @@ interface Publication {
   symbol: string;
   images?: string[];
   videos?: string[];
+  videoUrls?: string[];
   _skeleton?: boolean;
   _placeholder?: boolean;
 }
@@ -188,16 +189,21 @@ function DynamicIllustration({ color, symbol, category }: { color: PubColor; sym
 
 // ── Image carousel ─────────────────────────────────────────────────────────
 
-function ImageCarousel({ images, videos, color, symbol, category, tag }: {
+function ImageCarousel({ images, videos, videoUrls, color, symbol, category, tag }: {
   images: string[];
   videos?: string[];
+  videoUrls?: string[];
   color: PubColor;
   symbol: string;
   category: string;
   tag: string;
 }) {
   const [current, setCurrent] = useState(0);
-  const mediaItems = [...images, ...(videos || [])];
+  const mediaItems = [
+    ...images.map(src => ({ src, kind: "image" as const })),
+    ...(videos || []).map(src => ({ src, kind: "video" as const })),
+    ...(videoUrls || []).map(src => ({ src, kind: "link" as const })),
+  ];
   const hasMultiple = mediaItems.length > 1;
 
   const prev = (e: React.MouseEvent) => {
@@ -221,15 +227,16 @@ function ImageCarousel({ images, videos, color, symbol, category, tag }: {
   }
 
   const currentMedia = mediaItems[current];
-  const isVideo = currentMedia.match(/\.(mp4|webm|ogg|mov)$/i) || (videos && videos.includes(currentMedia));
+  const embedUrl = currentMedia.kind === "link" ? getVideoEmbedUrl(currentMedia.src) : null;
+  const externalUrl = currentMedia.kind === "link" ? getSafeExternalUrl(currentMedia.src) : null;
 
   return (
     <>
       {/* Media strip */}
       <div style={{ position: "absolute", width: "100%", height: "100%", overflow: "hidden", borderRadius: "inherit" }}>
-        {isVideo ? (
+        {currentMedia.kind === "video" ? (
           <video
-            src={currentMedia}
+            src={currentMedia.src}
             controls
             style={{
               width: "100%",
@@ -238,9 +245,39 @@ function ImageCarousel({ images, videos, color, symbol, category, tag }: {
               display: "block",
             }}
           />
+        ) : currentMedia.kind === "link" && embedUrl ? (
+          <iframe
+            src={embedUrl}
+            title={`Vidéo ${current + 1}`}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            style={{ width: "100%", height: "100%", display: "block", border: "none" }}
+          />
+        ) : currentMedia.kind === "link" && externalUrl ? (
+          <a
+            href={externalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#fff",
+              background: "#2D3748",
+              textDecoration: "underline",
+            }}
+          >
+            Ouvrir le lien vidéo ↗
+          </a>
+        ) : currentMedia.kind === "link" ? (
+          <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", color: "#fff", background: "#2D3748" }}>
+            Lien vidéo indisponible
+          </div>
         ) : (
           <img
-            src={currentMedia}
+            src={currentMedia.src}
             alt={`${category} ${current + 1}`}
             style={{
               width: "100%",
@@ -329,6 +366,42 @@ function ImageCarousel({ images, videos, color, symbol, category, tag }: {
   );
 }
 
+function getVideoEmbedUrl(url: string): string | null {
+  try {
+    const parsedUrl = new URL(url);
+    const hostname = parsedUrl.hostname.toLowerCase();
+
+    if (hostname === "youtu.be" || hostname.endsWith(".youtu.be")) {
+      const videoId = parsedUrl.pathname.split("/").filter(Boolean)[0];
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+
+    if (hostname === "youtube.com" || hostname.endsWith(".youtube.com")) {
+      const videoId = parsedUrl.searchParams.get("v")
+        ?? parsedUrl.pathname.match(/\/(?:embed|shorts)\/([^/]+)/)?.[1];
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+
+    if (hostname === "vimeo.com" || hostname.endsWith(".vimeo.com")) {
+      const videoId = parsedUrl.pathname.match(/\/(\d+)/)?.[1];
+      return videoId ? `https://player.vimeo.com/video/${videoId}` : null;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function getSafeExternalUrl(url: string): string | null {
+  try {
+    const parsedUrl = new URL(url);
+    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:" ? url : null;
+  } catch {
+    return null;
+  }
+}
+
 // ── Sub-components ─────────────────────────────────────────────────────────
 
 function Breadcrumb({ label }: { label: string }) {
@@ -390,6 +463,7 @@ function PublicationCard({ pub }: { pub: Publication }) {
         <ImageCarousel
           images={pub.images ?? []}
           videos={pub.videos}
+          videoUrls={pub.videoUrls}
           color={pub.color}
           symbol={pub.symbol}
           category={pub.category}
@@ -577,6 +651,7 @@ export default function CultureAmazighPage() {
           body:     c.description ?? "",
           images:   Array.isArray(c.images) ? c.images.filter(Boolean) : [],
           videos:   Array.isArray(c.videos) ? c.videos.filter(Boolean) : [],
+          videoUrls: Array.isArray(c.videoUrls) ? c.videoUrls.filter(Boolean) : [],
         })
       );
 

@@ -79,7 +79,12 @@ function getVideoEmbed(url: string): string | null {
 }
 
 function isValidVideoUrl(url: string): boolean {
-  try { new URL(url); return true; } catch { return false; }
+  try {
+    const parsedUrl = new URL(url);
+    return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 // ── Preset tags ────────────────────────────────────────────────────────────
@@ -290,7 +295,7 @@ export default function AdminCreateCulturePage() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 600000); // 5 minute timeout
 
-      setUploadProgress(`Envoi de ${images.length} image(s) et ${videoFiles.length} vidéo(s)...`);
+      setUploadProgress(`Envoi de ${images.length} image(s), ${videoFiles.length} vidéo(s) et ${videoUrls.length} lien(s)...`);
 
       let res;
       try {
@@ -389,11 +394,11 @@ export default function AdminCreateCulturePage() {
                         style={{
                           padding: '9px 12px', borderRadius: 10, cursor: 'pointer',
                           border: `2px solid ${form.type === t ? '#7C3AED' : '#E2E8F0'}`,
-                          background: form.type === t ? '#F5F3FF' : '#fff',
+                          background: form.type === t ? '#F5F3FF' : '#232C47',
                           display: 'flex', alignItems: 'center', gap: 7,
                           fontWeight: form.type === t ? 650 : 400,
                           fontSize: '0.82rem',
-                          color: form.type === t ? '#7C3AED' : '#4A5568',
+                          color: form.type === t ? '#7C3AED' : '#ffffff',
                           transition: 'all 0.18s', textAlign: 'left',
                         }}
                       >
@@ -437,7 +442,7 @@ export default function AdminCreateCulturePage() {
                     onClick={() => setMediaTab(tab)}
                     style={{
                       padding: '10px 16px', fontSize: '0.83rem', fontWeight: mediaTab === tab ? 650 : 400,
-                      color: mediaTab === tab ? '#7C3AED' : '#8B9AB5',
+                      color: mediaTab === tab ? '#7C3AED' : '#f9f9f9',
                       border: `2px solid ${mediaTab === tab ? '#7C3AED' : 'transparent'}`,
                       background: 'none', borderRadius: 0,
                       cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
@@ -502,7 +507,7 @@ export default function AdminCreateCulturePage() {
 
                     {/* — Upload section — */}
                     <div>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4A5568', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#fefefe', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                         <Video size={13} /> Téléverser une vidéo
                       </div>
                       <div
@@ -563,7 +568,7 @@ export default function AdminCreateCulturePage() {
 
                     {/* — URL section — */}
                     <div>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4A5568', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#ffffff', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                         <LinkIcon size={13} /> Ajouter un lien YouTube / Vimeo
                       </div>
                       <div style={{ display: 'flex', gap: 8 }}>
@@ -780,7 +785,7 @@ export default function AdminCreateCulturePage() {
 
             {/* Tips */}
             <div className="mh-tips-card mh-anim-fade-up mh-anim-d2">
-              <div className="mh-tips-icon"><Info /></div>
+              <div className="mh-tips-icon"><Info color='white'/></div>
               <div className="mh-tips-title">Conseils pour une bonne publication</div>
               <ul className="mh-tips-list">
                 <li>Titre précis et évocateur</li>
