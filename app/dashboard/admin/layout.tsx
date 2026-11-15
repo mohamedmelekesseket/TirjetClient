@@ -1,5 +1,6 @@
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
+import PageTransition from '@/components/PageTransition';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -10,7 +11,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="dashboard-content">
           <div className="orb orb-1" />
           <div className="orb orb-2" />
-          <div className="dashboard-inner">{children}</div>
+          <div className="dashboard-inner">
+            <PageTransition dashboardContent>{children}</PageTransition>
+          </div>
         </div>
       </div>
     </div>

@@ -5,10 +5,16 @@ import { usePathname } from "next/navigation";
 
 export default function PageTransition({
   children,
+  dashboardContent = false,
 }: {
   children: React.ReactNode;
+  dashboardContent?: boolean;
 }) {
   const pathname = usePathname();
+
+  if (!dashboardContent && pathname.startsWith("/dashboard")) {
+    return children;
+  }
 
   return (
     <AnimatePresence mode="wait">
