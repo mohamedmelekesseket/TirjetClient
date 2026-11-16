@@ -20,6 +20,7 @@ interface FormState {
   subcategoryL3Slug: string;
   subcategoryL4Slug: string;
   price: string;
+  solde: string;
   stock: string;
   description: string;
 }
@@ -33,7 +34,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [form, setForm] = useState<FormState>({
     title: '', categoryId: '',
     subcategoryL2Slug: '', subcategoryL3Slug: '', subcategoryL4Slug: '',
-    price: '', stock: '', description: '',
+    price: '', solde: '', stock: '', description: '',
   });
   const [images, setImages]       = useState<string[]>([]);
   const [loading, setLoading]     = useState(true);
@@ -68,6 +69,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           subcategoryL3Slug: p.subcategoryL3?.slug ?? '',
           subcategoryL4Slug: p.subcategoryL4?.slug ?? '',
           price:             String(p.price ?? ''),
+          solde:             String(p.solde ?? ''),
           stock:             String(p.stock ?? ''),
           description:       p.description ?? '',
         });
@@ -101,6 +103,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   };
 
   const handleSave = async () => {
+    if (form.solde && (!Number.isFinite(Number(form.solde)) || Number(form.solde) <= 0 || Number(form.solde) >= Number(form.price))) {
+      setSaveError("Le prix soldé doit être positif et inférieur au prix normal.");
+      return;
+    }
     try {
       setSaving(true);
       setSaveError(null);
@@ -114,6 +120,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           title:             form.title,
           category:          form.categoryId,
           price:             Number(form.price),
+          solde:             form.solde ? Number(form.solde) : '',
           stock:             Number(form.stock),
           description:       form.description,
           images,
@@ -259,6 +266,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 <div className="input-prefix-wrap">
                   <span className="input-prefix">TND</span>
                   <input name="price" type="number" min={0} value={form.price} onChange={handle} className="form-input" style={{color:"white"}} />
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Prix soldé (TND)</label>
+                <div className="input-prefix-wrap">
+                  <span className="input-prefix">TND</span>
+                  <input name="solde" type="number" min={0.01} step="0.01" value={form.solde} onChange={handle}
+                    className="form-input" style={{color:"white"}} placeholder="Laisser vide sans promotion" />
                 </div>
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>

@@ -5,6 +5,7 @@ import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion"
 import { Check, X } from "lucide-react";
 import Link from "next/link";
 import { showSuccessToast } from "@/lib/toast";
+import ProductPrice from "@/components/ProductPrice";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Product {
@@ -12,6 +13,7 @@ interface Product {
   title: string;
   description: string;
   price: number;
+  solde?: number;
   images: string[];
   category: "margoum" | "fokhar" | "bijoux" | "tissage";
   artisan: {
@@ -323,7 +325,7 @@ export default function ProductPage() {
 
           {/* Price */}
           <div className="pd-info__price-row">
-            <span className="pd-info__price">{product.price} TND</span>
+            <ProductPrice price={product.price} solde={product.solde} className="pd-info__price" />
             <span className="pd-info__price-sub">TVA incluse · Livraison gratuite</span>
           </div>
 

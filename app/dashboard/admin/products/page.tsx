@@ -6,6 +6,7 @@ import { Check, Plus, Eye, Flag, Gem, Package, Search, Shirt, Lamp, X, Loader2, 
 import type { ComponentType } from "react";
 import Link from "next/link";
 import { showErrorToast, showSuccessToast } from "@/lib/toast";
+import ProductPrice from "@/components/ProductPrice";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -13,6 +14,7 @@ interface Product {
   _id: string;
   title: string;
   price: number;
+  solde?: number;
   category: string | { _id: string; name: string; slug?: string; mainCategory?: any };
   stock: number;
   views: number;
@@ -367,7 +369,7 @@ export default function AdminProductsPage() {
                     const isHomeBusy = actionLoading === p._id + "-home";
 
                     return (
-                      <tr key={p._id} style={{ animationDelay: `${i * 0.055}s`, opacity: isDeleting ? 0.5 : 1 }}>
+                      <tr key={p._id} style={{ color:"white",animationDelay: `${i * 0.055}s`, opacity: isDeleting ? 0.5 : 1 }}>
                         <td data-label="Produit">
                           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                             <div style={{
@@ -385,9 +387,7 @@ export default function AdminProductsPage() {
                           <span className="badge badge-primary">{catDisplay}</span>
                         </td>
                         <td data-label="Prix">
-                          <span style={{ fontFamily: "'Space Mono',monospace",color: "#ffffff", fontSize: "0.8rem", fontWeight: 700 }}>
-                            {price.toLocaleString("fr-FR")} TND
-                          </span>
+                          <ProductPrice price={price} solde={p.solde} regularColor="#ffffff" />
                         </td>
                         <td data-label="Stock" className="td-mono" style={{color:"white"}}>{p.stock}</td>
                         <td data-label="Views" style={{color:"white"}}>

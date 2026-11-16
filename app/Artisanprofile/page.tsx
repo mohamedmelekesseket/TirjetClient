@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, Plus } from "lucide-react";
 import Link from "next/link";
 import { showSuccessToast } from "@/lib/toast";
+import ProductPrice from "@/components/ProductPrice";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface User {
@@ -18,7 +19,7 @@ interface ArtisanProfile {
   specialty?: string; availability?: string;
 }
 interface Product {
-  _id: string; title: string; description: string; price: number;
+  _id: string; title: string; description: string; price: number; solde?: number;
   images: string[]; category: "margoum" | "fokhar" | "bijoux" | "tissage"; stock: number;
 }
 
@@ -142,7 +143,7 @@ function ProductCard({ p, index, wishlist, cartAdded, onWishToggle, onCart }:
       <div className="artp-prod-card__body">
         <div className="artp-prod-card__top">
           <h3 className="artp-prod-card__title">{p.title}</h3>
-          <span className="artp-prod-card__price">{p.price} TND</span>
+          <ProductPrice price={p.price} solde={p.solde} className="artp-prod-card__price" />
         </div>
         <p className="artp-prod-card__desc">{p.description}</p>
         <div className="artp-prod-card__foot">

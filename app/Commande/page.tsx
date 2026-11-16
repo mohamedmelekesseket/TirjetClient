@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { showSuccessToast, showErrorToast } from "@/lib/toast";
+import ProductPrice from "@/components/ProductPrice";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -294,7 +295,12 @@ async function handleConfirm() {
                       <span className="cmd-recap-item__name">{item.product.title}</span>
                       <span className="cmd-recap-item__qty">× {item.quantity}</span>
                       <span className="cmd-recap-item__price">
-                        {(item.price * item.quantity).toLocaleString("fr-TN")} TND
+                        <ProductPrice
+                          price={item.product.price * item.quantity}
+                          solde={item.product.solde && item.product.solde > 0 && item.product.solde < item.product.price
+                            ? item.product.solde * item.quantity
+                            : undefined}
+                        />
                       </span>
                     </div>
                   ))}
@@ -340,7 +346,12 @@ async function handleConfirm() {
                 </span>
                 <span className="cmd-recap-item__qty">×{item.quantity}</span>
                 <span className="cmd-recap-item__price" style={{ fontSize: "0.82rem" }}>
-                  {(item.price * item.quantity).toLocaleString("fr-TN")} TND
+                  <ProductPrice
+                    price={item.product.price * item.quantity}
+                    solde={item.product.solde && item.product.solde > 0 && item.product.solde < item.product.price
+                      ? item.product.solde * item.quantity
+                      : undefined}
+                  />
                 </span>
               </div>
             ))}

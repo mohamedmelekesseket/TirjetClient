@@ -1,5 +1,8 @@
 import React from "react";
 import Link from "next/link";
+import { CultureAmazighCountsProvider, CultureCategoryCount } from "./CultureAmazighCounts";
+
+export const dynamic = "force-static";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -10,7 +13,8 @@ interface Category {
   tifinagh: string;
   name: string;
   desc: string;
-  count: string;
+  apiType: string;
+  isResource?: boolean;
 }
 
 interface Highlight {
@@ -42,7 +46,7 @@ const CATEGORIES: Category[] = [
     tifinagh: "ⵜⴰⵎⴰⵣⵉⵖⵜ",
     name: "Langue amazigh",
     desc: "L'alphabet Tifinagh, les dialectes et la poésie orale — une langue vivante de 3000 ans.",
-    count: "12 articles",
+    apiType: "Langue amazigh",
   },
   {
     id: 2,
@@ -51,7 +55,7 @@ const CATEGORIES: Category[] = [
     tifinagh: "ⵉⵎⴰⵍⴰⵙⵙⵏ",
     name: "Événements & traditions",
     desc: "Yennayer, Tiwizi, Imilchil… Les grandes fêtes et rituels qui rythment la vie amazighe.",
-    count: "8 articles",
+    apiType: "Événements & traditions",
   },
   {
     id: 3,
@@ -60,7 +64,7 @@ const CATEGORIES: Category[] = [
     tifinagh: "ⵜⵉⵔⵎⴰⴷ",
     name: "Symboles et motifs",
     desc: "Géométrie sacrée, tatouages berbères, motifs de tapis — un langage visuel millénaire.",
-    count: "15 articles",
+    apiType: "Symboles et motifs berbères",
   },
   {
     id: 4,
@@ -69,7 +73,7 @@ const CATEGORIES: Category[] = [
     tifinagh: "ⵉⵣⵍⴰⵏ",
     name: "Musique amazigh",
     desc: "Ahwach, Ahidous, gnaoua — les rythmes et chants qui portent l'âme du peuple libre.",
-    count: "10 articles",
+    apiType: "Musique amazigh",
   },
   {
     id: 5,
@@ -78,7 +82,7 @@ const CATEGORIES: Category[] = [
     tifinagh: "ⴰⵎⵣⵔⵓⵢ",
     name: "Patrimoine et Traditions",
     desc: "Artisanat, costumes, bijoux et savoir-faire transmis de génération en génération.",
-    count: "18 articles",
+    apiType: "Patrimoine et Traditions",
   },
   {
     id: 6,
@@ -87,7 +91,7 @@ const CATEGORIES: Category[] = [
     tifinagh: "ⵜⴰⴳⵔⴰⵡⵜ",
     name: "Agriculture amazigh",
     desc: "Khettaras, jardins oasiens, cultures séculaires — l'homme amazigh et sa terre nourricière.",
-    count: "7 articles",
+    apiType: "Agriculture amazigh",
   },
   {
     id: 7,
@@ -96,7 +100,7 @@ const CATEGORIES: Category[] = [
     tifinagh: "ⵉⵖⵔⵎⴰⵏ",
     name: "Architecture amazigh",
     desc: "Ksours, Tighremt, greniers collectifs — une architecture de terre qui défie le temps.",
-    count: "9 articles",
+    apiType: "Architecture amazigh",
   },
   {
     id: 8,
@@ -105,7 +109,8 @@ const CATEGORIES: Category[] = [
     tifinagh: "ⵜⵉⵔⵔⴰ",
     name: "Documentation",
     desc: "Textes, archives, études et ressources pour approfondir la connaissance amazighe.",
-    count: "24 ressources",
+    apiType: "Documentation",
+    isResource: true,
   },
 ];
 
@@ -209,69 +214,7 @@ const CatIllustrations: Record<string, () => React.ReactElement> = {
   ),
 };
 
-// ── Sub-components ─────────────────────────────────────────────────────────
 
-function NavBar() {
-  return (
-    <nav className="cult-nav">
-      <div className="cult-nav-logo">
-        <div className="cult-nav-logo-icon">
-          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M18 4 L22 14 L33 14 L24 21 L27 32 L18 25 L9 32 L12 21 L3 14 L14 14Z"
-              fill="white" opacity=".9" />
-          </svg>
-        </div>
-        <div>
-          <span className="cult-nav-logo-name">TIRJET</span>
-          <span className="cult-nav-logo-sub">CULTURE AMAZIGHE</span>
-        </div>
-      </div>
-
-      <ul className="cult-nav-links">
-        <li><a href="#">Accueil</a></li>
-        <li className="cult-active">
-          <a href="#">Culture Amazigh <span className="cult-nav-chevron">▾</span></a>
-        </li>
-        <li><a href="#">Artisans</a></li>
-        <li>
-          <a href="#">Tourisme et Loisir <span className="cult-nav-chevron">▾</span></a>
-        </li>
-        <li><a href="#">À propos</a></li>
-      </ul>
-
-      <div className="cult-nav-actions">
-        <button className="cult-nav-icon-btn" aria-label="Panier">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <path d="M16 10a4 4 0 01-8 0" />
-          </svg>
-        </button>
-        <button className="cult-nav-icon-btn" aria-label="Compte">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-        </button>
-        <button className="cult-nav-btn">REJOINDRE</button>
-      </div>
-    </nav>
-  );
-}
-
-function SecondaryNav() {
-  return (
-    <div className="cult-sec-nav">
-      <ul className="cult-sec-nav-list">
-        {SECONDARY_NAV.map((item) => (
-          <li key={item}>
-            <a href="#">{item} <span className="cult-nav-chevron">▾</span></a>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
 
 function Hero() {
   return (
@@ -304,10 +247,10 @@ function Hero() {
           symboles et traditions d'un peuple libre qui a façonné l'Afrique du Nord depuis la nuit des temps.
         </p>
 
-        <div className="cult-hero-cta-row">
+        {/* <div className="cult-hero-cta-row">
           <button className="cult-hero-cta-primary">Explorer la culture</button>
           <button className="cult-hero-cta-ghost">Voir la documentation</button>
-        </div>
+        </div> */}
       </div>
 
       <div className="cult-hero-scroll-hint">
@@ -342,29 +285,31 @@ function CategoriesSection() {
         </p>
       </div>
 
-      <div className="cult-categories-grid">
-        {CATEGORIES.map((cat) => {
-          const Illus = CatIllustrations[cat.color];
-          return (
-            <Link key={cat.id} href={`/CultureAmazigh/${cat.slug}`} className="cult-cat-card" data-color={cat.color}>
-              <div className="cult-cat-card-top">
-                <div className="cult-cat-illus">
-                  <Illus />
+      <CultureAmazighCountsProvider>
+        <div className="cult-categories-grid">
+          {CATEGORIES.map((cat) => {
+            const Illus = CatIllustrations[cat.color];
+            return (
+              <Link key={cat.id} href={`/CultureAmazigh/${cat.slug}`} className="cult-cat-card" data-color={cat.color}>
+                <div className="cult-cat-card-top">
+                  <div className="cult-cat-illus">
+                    <Illus />
+                  </div>
+                  <span className="cult-cat-tif">{cat.tifinagh}</span>
                 </div>
-                <span className="cult-cat-tif">{cat.tifinagh}</span>
-              </div>
-              <div className="cult-cat-card-body">
-                <h3 className="cult-cat-name">{cat.name}</h3>
-                <p className="cult-cat-desc">{cat.desc}</p>
-                <div className="cult-cat-footer">
-                  <span className="cult-cat-count">{cat.count}</span>
-                  <span className="cult-cat-arrow">→</span>
+                <div className="cult-cat-card-body">
+                  <h3 className="cult-cat-name">{cat.name}</h3>
+                  <p className="cult-cat-desc">{cat.desc}</p>
+                  <div className="cult-cat-footer">
+                    <CultureCategoryCount type={cat.apiType} isResource={cat.isResource} />
+                    <span className="cult-cat-arrow">→</span>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+              </Link>
+            );
+          })}
+        </div>
+      </CultureAmazighCountsProvider>
     </section>
   );
 }
@@ -487,15 +432,13 @@ function MapSection() {
 
 export default function CultureAmazighPage() {
   return (
-    <>
-      <NavBar />
-      <SecondaryNav />
+    <main className="cult-static-page">
       <Hero />
       <StatsBar />
       <CategoriesSection />
       <HighlightsSection />
       <QuoteSection />
       <MapSection />
-    </>
+    </main>
   );
 }

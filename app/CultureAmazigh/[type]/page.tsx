@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowDown, Search, X } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 type PubColor = "clay" | "amber" | "brown" | "forest" | "navy" | "plum";
 
 interface Publication {
-  id: number;
+  id: string | number;
   color: PubColor;
   category: string;
   title: string;
@@ -29,6 +32,25 @@ interface VocabWord {
 }
 
 type LoadStatus = "loading" | "success" | "error";
+
+interface ApiPublication {
+  _id?: string;
+  Auteur?: string;
+  title?: string;
+  description?: string;
+  type?: string;
+  symbol?: string;
+  images?: unknown[];
+  videos?: unknown[];
+  videoUrls?: unknown[];
+}
+
+interface CultureListResponse {
+  cultures?: ApiPublication[];
+  data?: ApiPublication[];
+  pages?: number;
+  total?: number;
+}
 
 // ── Slug → display label map ───────────────────────────────────────────────
 
@@ -407,7 +429,7 @@ function getSafeExternalUrl(url: string): string | null {
 function Breadcrumb({ label }: { label: string }) {
   return (
     <div className="langue-breadcrumb">
-      <a href="/CultureAmazigh">Culture Amazigh</a>
+      <Link href="/CultureAmazigh">Culture Amazigh</Link>
       <span className="langue-breadcrumb-sep">›</span>
       <span className="langue-breadcrumb-current">{label}</span>
     </div>
@@ -455,6 +477,7 @@ function Marquee() {
 function PublicationCard({ pub }: { pub: Publication }) {
   return (
     <article
+      id={`culture-article-${pub.id}`}
       className="langue-pub-card"
       data-color={pub.color}
       style={pub._placeholder ? { opacity: 0.75 } : undefined}
@@ -536,7 +559,7 @@ function AlphabetSection() {
   return (
     <section className="langue-alpha-section">
       <div className="langue-section-header">
-        <p className="langue-section-tag">L'Alphabet · Tifinagh</p>
+        <p className="langue-section-tag">L&apos;Alphabet · Tifinagh</p>
         <h2 className="langue-section-title">Les signes du Tifinagh</h2>
       </div>
       <div className="langue-alpha-grid">
@@ -553,7 +576,7 @@ function Footer() {
     <footer className="langue-footer">
       <p className="langue-footer-tif">ⴰⵎⴰⵣⵉⵖ</p>
       <h3 className="langue-footer-title">
-        Préserver la langue, c'est préserver l'âme d'un peuple
+        Préserver la langue, c&apos;est préserver l&apos;âme d&apos;un peuple
       </h3>
       <p className="langue-footer-desc">
         Rejoignez Tirjet et participez à la valorisation de la culture et de la langue amazighe.
@@ -609,6 +632,149 @@ function StatusBanner({ status, onRetry, show }: { status: LoadStatus; onRetry: 
   return null;
 }
 
+function normalizeSearch(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+function ArticleSearch({
+  articles,
+  loading,
+  typeLabel,
+  onSelect,
+}: {
+  articles: Publication[];
+  loading: boolean;
+  typeLabel: string;
+  onSelect: (id: Publication["id"]) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const searchTerm = normalizeSearch(query.trim());
+  const matches = useMemo(
+    () =>
+      articles.filter((article) =>
+        normalizeSearch(`${article.title} ${article.subtitle} ${article.category}`).includes(searchTerm)
+      ),
+    [articles, searchTerm]
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (event.target instanceof Node && !containerRef.current?.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    return () => document.removeEventListener("pointerdown", closeOnOutsideClick);
+  }, [open]);
+
+  return (
+    <section className="langue-article-explorer" aria-label={`Rechercher un article de ${typeLabel}`}>
+      <div className="langue-article-search-card">
+        <div className="langue-article-search-heading">
+          <div>
+            <p className="langue-article-search-eyebrow">Explorer la collection</p>
+            <h2>Retrouvez un article</h2>
+          </div>
+          <span className="langue-article-count">
+            {loading ? "Chargement…" : `${articles.length} article${articles.length === 1 ? "" : "s"}`}
+          </span>
+        </div>
+
+        <div className="langue-article-search-control" ref={containerRef}>
+          <Search size={19} aria-hidden="true" className="langue-article-search-icon" />
+          <input
+            type="search"
+            role="combobox"
+            aria-label={`Rechercher parmi les articles de ${typeLabel}`}
+            aria-expanded={open}
+            aria-controls="langue-article-results"
+            aria-autocomplete="list"
+            autoComplete="off"
+            placeholder={loading ? "Chargement des articles…" : "Rechercher par titre, auteur ou thème…"}
+            value={query}
+            disabled={loading}
+            onFocus={() => setOpen(true)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setOpen(true);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") setOpen(false);
+            }}
+          />
+          {query && (
+            <button
+              type="button"
+              className="langue-article-search-clear"
+              aria-label="Effacer la recherche"
+              onClick={() => {
+                setQuery("");
+                setOpen(true);
+              }}
+            >
+              <X size={16} />
+            </button>
+          )}
+
+          <AnimatePresence>
+            {open && !loading && (
+              <motion.div
+                id="langue-article-results"
+                role="listbox"
+                className="langue-article-results"
+                initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+              >
+                <p className="langue-article-results-label">
+                  {searchTerm ? `${matches.length} résultat${matches.length === 1 ? "" : "s"}` : "Tous les articles"}
+                </p>
+                <div className="langue-article-results-list">
+                  {matches.length > 0 ? (
+                    matches.map((article, index) => (
+                      <motion.button
+                        type="button"
+                        role="option"
+                        aria-selected="false"
+                        key={article.id}
+                        className="langue-article-result"
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.16, delay: Math.min(index, 12) * 0.02 }}
+                        onClick={() => {
+                          setQuery("");
+                          setOpen(false);
+                          onSelect(article.id);
+                        }}
+                      >
+                        <span className="langue-article-result-copy">
+                          <span className="langue-article-result-title">{article.title}</span>
+                          <span className="langue-article-result-meta">
+                            {[article.subtitle, article.category].filter(Boolean).join(" · ")}
+                          </span>
+                        </span>
+                        <ArrowDown size={16} aria-hidden="true" />
+                      </motion.button>
+                    ))
+                  ) : (
+                    <p className="langue-article-results-empty">
+                      {articles.length ? "Aucun article ne correspond à votre recherche." : "Aucun article publié dans cette rubrique."}
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function CultureAmazighPage() {
@@ -636,24 +802,34 @@ export default function CultureAmazighPage() {
     try {
       // Map frontend slug → backend ALLOWED_TYPES value (e.g. "langueAmazigh" → "Langue amazigh")
       const apiType = SLUG_TO_API_TYPE[typeParam] ?? typeParam;
-      const res = await fetch(`${API}/api/culture-amazigh/type/${encodeURIComponent(apiType)}`);
-      if (!res.ok) throw new Error(`Erreur ${res.status}`);
-      const data = await res.json();
+      const baseUrl = `${API}/api/culture-amazigh/type/${encodeURIComponent(apiType)}`;
+      const pageSize = 100;
+      let page = 1;
+      let pages = 1;
+      const apiPublications: ApiPublication[] = [];
 
-      const pubs: Publication[] = (data.cultures || data.data || []).map(
-        (c: any, i: number): Publication => ({
-          id:       i + 1,
-          color:    COLORS[i % COLORS.length],
-          category: c.type        ?? "Culture",
-          title:    c.title       ?? "Publication amazighe",
-          subtitle: c.Auteur      ?? "",
-          symbol:   c.symbol      ?? "ⴰⵎⴰⵣⵉⵖ",
-          body:     c.description ?? "",
-          images:   Array.isArray(c.images) ? c.images.filter(Boolean) : [],
-          videos:   Array.isArray(c.videos) ? c.videos.filter(Boolean) : [],
-          videoUrls: Array.isArray(c.videoUrls) ? c.videoUrls.filter(Boolean) : [],
-        })
-      );
+      do {
+        const res = await fetch(`${baseUrl}?page=${page}&limit=${pageSize}`);
+        if (!res.ok) throw new Error(`Erreur ${res.status}`);
+
+        const data = await res.json() as CultureListResponse;
+        apiPublications.push(...(data.cultures ?? data.data ?? []));
+        pages = Math.max(1, Number(data.pages) || Math.ceil((data.total ?? apiPublications.length) / pageSize));
+        page += 1;
+      } while (page <= pages);
+
+      const pubs: Publication[] = apiPublications.map((c, i) => ({
+        id:        c._id ?? i + 1,
+        color:     COLORS[i % COLORS.length],
+        category:  c.type ?? "Culture",
+        title:     c.title ?? "Publication amazighe",
+        subtitle:  c.Auteur ?? "",
+        symbol:    c.symbol ?? "ⴰⵎⴰⵣⵉⵖ",
+        body:      c.description ?? "",
+        images:    Array.isArray(c.images) ? c.images.filter((image): image is string => typeof image === "string" && Boolean(image)) : [],
+        videos:    Array.isArray(c.videos) ? c.videos.filter((video): video is string => typeof video === "string" && Boolean(video)) : [],
+        videoUrls: Array.isArray(c.videoUrls) ? c.videoUrls.filter((url): url is string => typeof url === "string" && Boolean(url)) : [],
+      }));
 
       if (pubs.length === 0) {
         // API is reachable but no publications yet → show placeholder
@@ -682,6 +858,11 @@ export default function CultureAmazighPage() {
       id: i, _skeleton: true, color: COLORS[i],
       category: "", title: "", subtitle: "", body: "", symbol: "",
     }));
+  const articles = (publications ?? []).filter((publication) => !publication._placeholder && !publication._skeleton);
+
+  const scrollToArticle = (id: Publication["id"]) => {
+    document.getElementById(`culture-article-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
 
   return (
     <>
@@ -689,6 +870,7 @@ export default function CultureAmazighPage() {
       <Hero meta={meta} />
       <StatusBanner status={status} onRetry={loadPublications} show={showErrorBanner} />
       <Marquee />
+      <ArticleSearch articles={articles} loading={status === "loading"} typeLabel={meta.label} onSelect={scrollToArticle} />
       <main className="langue-publications">
         {displayPubs.map((pub, i) =>
           pub._skeleton
@@ -704,6 +886,171 @@ export default function CultureAmazighPage() {
         @keyframes pulse {
           0%, 100% { opacity: 0.55; }
           50%       { opacity: 0.75; }
+        }
+
+        .langue-article-explorer {
+          width: min(calc(100% - 48px), 1100px);
+          margin: 34px auto -34px;
+          position: relative;
+          z-index: 4;
+        }
+        .langue-article-search-card {
+          padding: 22px 24px;
+          border: 1px solid rgba(92, 74, 30, 0.14);
+          border-radius: 20px;
+          background: linear-gradient(135deg, #fffefa 0%, #f8f1e7 100%);
+          box-shadow: 0 16px 42px rgba(62, 42, 18, 0.09);
+        }
+        .langue-article-search-heading {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 14px;
+        }
+        .langue-article-search-heading h2 {
+          margin: 3px 0 0;
+          color: #38291d;
+          font: 700 20px/1.2 Georgia, serif;
+        }
+        .langue-article-search-eyebrow {
+          margin: 0;
+          color: #a45b31;
+          font: 600 10px/1.4 ui-monospace, monospace;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+        }
+        .langue-article-count {
+          flex: 0 0 auto;
+          padding: 7px 11px;
+          border: 1px solid rgba(164, 91, 49, 0.18);
+          border-radius: 999px;
+          background: rgba(255,255,255,0.72);
+          color: #78563b;
+          font-size: 12px;
+          font-weight: 600;
+        }
+        .langue-article-search-control { position: relative; }
+        .langue-article-search-icon {
+          position: absolute;
+          top: 50%;
+          left: 16px;
+          z-index: 1;
+          color: #a45b31;
+          transform: translateY(-50%);
+          pointer-events: none;
+        }
+        .langue-article-search-control input {
+          width: 100%;
+          height: 52px;
+          padding: 0 48px;
+          border: 1px solid rgba(92, 74, 30, 0.2);
+          border-radius: 13px;
+          outline: none;
+          background: #fff;
+          color: #38291d;
+          font-family: inherit;
+          font-size: 14px;
+          font-weight: 500;
+          line-height: 1.4;
+          transition: border-color 180ms ease, box-shadow 180ms ease;
+        }
+        .langue-article-search-control input:focus {
+          border-color: #b66a3d;
+          box-shadow: 0 0 0 4px rgba(182, 106, 61, 0.12);
+        }
+        .langue-article-search-control input:disabled { cursor: wait; opacity: 0.65; }
+        .langue-article-search-clear {
+          position: absolute;
+          top: 50%;
+          right: 12px;
+          display: grid;
+          width: 30px;
+          height: 30px;
+          place-items: center;
+          border: 0;
+          border-radius: 50%;
+          background: transparent;
+          color: #78563b;
+          cursor: pointer;
+          transform: translateY(-50%);
+        }
+        .langue-article-search-clear:hover { background: #f3e7d8; }
+        .langue-article-results {
+          position: absolute;
+          top: calc(100% + 9px);
+          right: 0;
+          left: 0;
+          padding: 8px;
+          border: 1px solid rgba(92, 74, 30, 0.15);
+          border-radius: 15px;
+          background: #fffefa;
+          box-shadow: 0 20px 50px rgba(62, 42, 18, 0.18);
+        }
+        .langue-article-results-list {
+          max-height: 300px;
+          overflow-y: auto;
+          overscroll-behavior: contain;
+          scroll-behavior: smooth;
+        }
+        .langue-article-results-label {
+          margin: 5px 10px 8px;
+          color: #9a8065;
+          font: 600 10px/1.4 ui-monospace, monospace;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+        }
+        .langue-article-result {
+          display: flex;
+          box-sizing: border-box;
+          width: 100%;
+          height: 60px;
+          flex: 0 0 60px;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 11px 12px;
+          border: 0;
+          border-radius: 10px;
+          background: transparent;
+          color: #4a3728;
+          text-align: left;
+          cursor: pointer;
+          transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+        }
+        .langue-article-result:hover, .langue-article-result:focus-visible {
+          outline: none;
+          background: #f5eadc;
+          color: #9b4e27;
+          transform: translateX(3px);
+        }
+        .langue-article-result > svg { flex: 0 0 auto; transform: rotate(-45deg); }
+        .langue-article-result-copy { display: grid; min-width: 0; gap: 4px; }
+        .langue-article-result-title {
+          overflow: hidden;
+          font: 600 14px/1.35 Georgia, serif;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .langue-article-result-meta {
+          overflow: hidden;
+          color: #9a8065;
+          font-size: 11px;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .langue-article-results-empty {
+          margin: 0;
+          padding: 16px 12px;
+          color: #78563b;
+          font-size: 13px;
+        }
+        .langue-pub-card[id^="culture-article-"] { scroll-margin-top: 100px; }
+        @media (max-width: 600px) {
+          .langue-article-explorer { width: calc(100% - 32px); margin: 24px auto -38px; }
+          .langue-article-search-card { padding: 17px 15px; border-radius: 16px; }
+          .langue-article-search-heading h2 { font-size: 18px; }
+          .langue-article-search-control input { height: 48px; font-size: 13px; }
         }
       `}</style>
     </>

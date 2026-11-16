@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useApiToken } from '@/lib/useApiToken';
 import { Package, Search, Plus, Pencil, X, Loader2 } from 'lucide-react';
 import { showErrorToast, showSuccessToast } from '@/lib/toast';
+import ProductPrice from '@/components/ProductPrice';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -12,6 +13,7 @@ interface Product {
   title: string;
   description: string;
   price: number;
+  solde?: number;
   images: string[];
   category:
     | string
@@ -315,7 +317,7 @@ export default function ProductsPage() {
                   </div>
 
                   <div className="product-card-name">{p.title}</div>
-                  <div className="product-card-price">{p.price.toLocaleString('fr-FR')} TND</div>
+                  <ProductPrice price={p.price} solde={p.solde} className="product-card-price" />
 
                   <div className="product-card-meta">
                     <div className="product-card-meta-item">

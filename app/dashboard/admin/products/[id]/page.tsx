@@ -152,6 +152,10 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
 
   const handleSave = async () => {
     if (uploading) { setSaveError("Veuillez attendre la fin du téléchargement des images."); return; }
+    if (form.solde && (!Number.isFinite(Number(form.solde)) || Number(form.solde) <= 0 || Number(form.solde) >= Number(form.price))) {
+      setSaveError("Le prix soldé doit être positif et inférieur au prix normal.");
+      return;
+    }
     try {
       setSaving(true);
       setSaveError(null);
@@ -377,17 +381,17 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
 
               <div className="form-group">
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Tag size={13} /> Prix soldé (%)
+                  <Tag size={13} /> Prix soldé
                   <span style={{ fontSize: '0.75rem', color: '#8B9AB5', fontWeight: 400 }}>optionnel</span>
                 </label>
                 <div className="input-prefix-wrap">
-                  <span className="input-prefix" style={{ color: '#e53e3e' }}>%</span>
-                  <input name="solde" type="number" min={0} value={form.solde} onChange={handle}
-                    className="form-input" placeholder="Ex: 45" />
+                  <span className="input-prefix" style={{ color: '#e53e3e' }}>TND</span>
+                  <input name="solde" type="number" min={0.01} step="0.01" value={form.solde} onChange={handle}
+                    className="form-input" placeholder="Laisser vide sans promotion" />
                 </div>
                 {form.solde && Number(form.solde) > 0 && Number(form.price) > 0 && (
                   <p style={{ fontSize: '0.78rem', color: '#0B9E5E', marginTop: 4 }}>
-                    Prix après solde : <strong>{(Number(form.price) * (1 - Number(form.solde) / 100)).toFixed(2)} TND</strong>
+                    Prix de vente : <strong>{Number(form.solde).toLocaleString('fr-TN')} TND</strong>
                   </p>
                 )}
               </div>

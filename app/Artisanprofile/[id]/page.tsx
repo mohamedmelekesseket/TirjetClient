@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { showSuccessToast } from "@/lib/toast";
 import { useApiToken } from "@/lib/useApiToken";
+import ProductPrice from "@/components/ProductPrice";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -44,6 +45,7 @@ interface Product {
   title: string;
   description: string;
   price: number;
+  solde?: number;
   images: string[];
   // category can be a populated object OR a raw _id string
   category: { _id: string; name: string; slug?: string } | string;
@@ -291,7 +293,7 @@ function ProductCard({
       <div className="artp-prod-card__body">
         <div className="artp-prod-card__top">
           <h3 className="artp-prod-card__title">{p.title}</h3>
-          <span className="artp-prod-card__price">{p.price.toLocaleString("fr-TN")} TND</span>
+          <ProductPrice price={p.price} solde={p.solde} className="artp-prod-card__price" />
         </div>
         <p className="artp-prod-card__desc">{p.description}</p>
         <div className="artp-prod-card__foot">

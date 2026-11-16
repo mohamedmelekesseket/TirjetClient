@@ -1,11 +1,13 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useCallback } from "react";
+import { use, useState, useEffect, useCallback } from "react";
 import { Check, Heart, HeartOff, Search, SlidersHorizontal, X, Loader2, Package } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useApiToken } from "@/lib/useApiToken";
+import { getProductPrice, hasProductDiscount } from "@/lib/productPricing";
+import ProductPrice from "@/components/ProductPrice";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -48,7 +50,13 @@ interface Product {
 
 type FilterGroup = "cat" | "region" | "mat" | "color" | "tag";
 
-export default function Boutique() {
+export default function Boutique({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const searchParam = use(searchParams).search;
+  const initialSearch = typeof searchParam === "string" ? searchParam : "";
   const { apiToken, session } = useApiToken();
   const router = useRouter();
 
@@ -62,7 +70,7 @@ export default function Boutique() {
 
   const [addedIds, setAddedIds]   = useState<string[]>([]);
   const [panelOpen, setPanelOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [sortBy, setSortBy] = useState<"newest" | "popular" | "price-asc" | "price-desc">("newest");
   const [filters, setFilters] = useState({
     cat:      [] as string[],
@@ -76,6 +84,10 @@ export default function Boutique() {
     onSale:   false,
     featured: false,
   });
+
+  useEffect(() => {
+    setSearchQuery(initialSearch);
+  }, [initialSearch]);
 
   // ── Resolve category name from either a populated object or a raw ID ────────
   const getCategoryName = useCallback((category: Product["category"]): string => {
@@ -203,9 +215,10 @@ export default function Boutique() {
     if (filters.mat.length    && !filters.mat.includes(p.material ?? ""))      return false;
     if (filters.color.length && !filters.color.some((c: string) => p.colors?.includes(c))) return false;
     if (filters.tag.length   && !filters.tag.some((t: string) => p.tags?.includes(t))) return false;
-    if (p.price < filters.minPrice || p.price > filters.maxPrice)              return false;
+    const price = getProductPrice(p);
+    if (price < filters.minPrice || price > filters.maxPrice)                   return false;
     if (filters.inStock && p.stock <= 0) return false;
-    if (filters.onSale && !p.solde) return false;
+    if (filters.onSale && !hasProductDiscount(p)) return false;
     if (filters.featured && !p.isHome) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -222,9 +235,9 @@ export default function Boutique() {
       case "popular":
         return (b.views || 0) - (a.views || 0);
       case "price-asc":
-        return a.price - b.price;
+        return getProductPrice(a) - getProductPrice(b);
       case "price-desc":
-        return b.price - a.price;
+        return getProductPrice(b) - getProductPrice(a);
       default:
         return 0;
     }
@@ -580,7 +593,7 @@ export default function Boutique() {
                   <div className="boutique__card-body">
                     <div className="boutique__card-top">
                       <h3 className="boutique__card-title">{p.title}</h3>
-                      <span className="boutique__card-price">{p.price.toLocaleString("fr-TN")} TND</span>
+                      <ProductPrice price={p.price} solde={p.solde} className="boutique__card-price" />
                     </div>
                     <p className="boutique__card-desc">{p.description.slice(0, 120)} ...</p>
                   </div>

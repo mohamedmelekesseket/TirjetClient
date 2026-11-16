@@ -13,6 +13,7 @@ interface CartItem {
     title: string;
     images: string[];
     price: number;
+    solde?: number;
     stock: number;
     artisan?: { name: string; city?: string };
   };

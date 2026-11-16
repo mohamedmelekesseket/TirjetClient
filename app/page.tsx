@@ -14,6 +14,7 @@ import tifinaghImg from "../images/langue.jpg"
 import { useApiToken } from "@/lib/useApiToken";
 import { useCart } from "../app/context/CartContext";
 import { showSuccessToast, showErrorToast } from "@/lib/toast";
+import ProductPrice from "@/components/ProductPrice";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -21,6 +22,7 @@ interface Product {
   _id: string;
   title: string;
   price: number;
+  solde?: number;
   images: string[];
   category: { _id: string; name: string } | string;
   subcategory?: { name: string; slug: string };
@@ -188,7 +190,7 @@ function ConfirmModal({
             <div className="confirm-modal__details">
               <h4 className="confirm-modal__product-title">{product.title}</h4>
               <p className="confirm-modal__product-price">
-                {product.price.toLocaleString("fr-TN")} TND
+                <ProductPrice price={product.price} solde={product.solde} />
               </p>
             </div>
           </div>
@@ -587,7 +589,7 @@ function PremiumArtisans({ allProducts }: { allProducts: Product[] }) {
                             <div className="pg-artisan-prod__fallback">🏺</div>
                           )}
                           <span className="pg-artisan-prod__price">
-                            {prod.price?.toLocaleString("fr-FR")} DT
+                            <ProductPrice price={prod.price ?? 0} solde={prod.solde} currency="DT" />
                           </span>
                         </div>
                         <p className="pg-artisan-prod__name">{prod.title}</p>
@@ -709,7 +711,7 @@ function PremiumProducts({
                 <div className="pg-prod-card-h__footer">
                   <div>
                     <span className="pg-prod-card-h__price">
-                      {p.price.toLocaleString("fr-FR")} DT
+                      <ProductPrice price={p.price} solde={p.solde} currency="DT" />
                     </span>
                   </div>
                   <button

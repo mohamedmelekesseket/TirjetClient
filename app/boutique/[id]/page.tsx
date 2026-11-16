@@ -7,6 +7,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useApiToken } from "@/lib/useApiToken";
 import { useCart } from "../../context/CartContext";
+import { getProductPrice, hasProductDiscount } from "@/lib/productPricing";
+import ProductPrice from "@/components/ProductPrice";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const EASE = [0.22, 1, 0.36, 1] as any;
@@ -24,6 +26,7 @@ interface Product {
   title: string;
   description: string;
   price: number;
+  solde?: number;
   images: string[];
   views: number;
   category: { _id: string; name: string } | string;
@@ -59,6 +62,7 @@ interface DrawerItem {
     title: string;
     images?: string[];
     price: number;
+    solde?: number;
     stock?: number;
   };
   quantity: number;
@@ -315,7 +319,7 @@ function CartDrawer({
     enqueue(id, () => onRemoveRef.current(id));
   }
 
-  const total = localItems.reduce((s, i) => s + i.product.price * i.quantity, 0);
+  const total = localItems.reduce((s, i) => s + getProductPrice(i.product) * i.quantity, 0);
 
   return (
     <AnimatePresence>
@@ -400,7 +404,11 @@ function CartDrawer({
                       )}
 
                       <div className="cd-item__row">
-                        <span className="cd-item__price">{(p.price * quantity).toLocaleString("fr-TN")} TND</span>
+                        <ProductPrice
+                          price={p.price * quantity}
+                          solde={hasProductDiscount(p) ? Number(p.solde) * quantity : undefined}
+                          className="cd-item__price"
+                        />
                         <button className="cd-item__remove" onClick={() => handleRemove(p._id)}>
                           Supprimer
                         </button>
@@ -952,7 +960,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const relatedList = related.length > 0 ? related : mostViewed;
   const artisan = product.artisan;
   const since = artisan?.createdAt ? new Date(artisan.createdAt).getFullYear() : null;
-  const totalPrice = (product.price * qty).toLocaleString("fr-TN");
+  const totalPrice = (getProductPrice(product) * qty).toLocaleString("fr-TN");
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -1010,7 +1018,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                   <motion.div className="pd-info__price-row"
                     initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.5, type: "spring", stiffness: 220, damping: 14 }}>
-                    <span className="pd-info__price">{product.price.toLocaleString("fr-TN")}</span>
+                    <ProductPrice price={product.price} solde={product.solde} currency="" className="pd-info__price" />
                     <span className="pd-info__currency">TND</span>
                   </motion.div>
                 </div>
@@ -1346,7 +1354,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                   <div className="pd-rel-card__body">
                     <div className="pd-rel-card__top">
                       <h4 className="pd-rel-card__name">{p.title}</h4>
-                      <span className="pd-rel-card__price">{p.price.toLocaleString("fr-TN")}<small>TND</small></span>
+                      <ProductPrice price={p.price} solde={p.solde} className="pd-rel-card__price" />
                     </div>
                     <span className="pd-rel-card__loc"><Pin />{p.artisan?.city?.toUpperCase() ?? "TUNISIE"}</span>
                     <span className="pd-rel-card__cta">Voir la pièce <span>→</span></span>

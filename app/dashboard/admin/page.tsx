@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useApiToken } from '@/lib/useApiToken';
+import ProductPrice from '@/components/ProductPrice';
 import {
   Loader2, Users, Package, ShoppingCart, TrendingUp,
   Clock, CheckCircle, XCircle, AlertTriangle, BarChart2,
@@ -23,6 +24,7 @@ interface Product {
   _id: string;
   title: string;
   price: number;
+  solde?: number;
   views: number;
   isApproved: boolean;
   isSuspended: boolean;
@@ -482,7 +484,9 @@ export default function AdminDashboard() {
                     </Link>
                   </td>
                   <td data-label="Artisan" style={{ fontSize: '0.8rem', color: '#8B9AB5' }}>{p.artisan?.name ?? '—'}</td>
-                  <td data-label="Prix" style={{ fontWeight: 700,color:"white", fontSize: '0.8rem' }}>{p.price} TND</td>
+                  <td data-label="Prix" style={{ fontWeight: 700,color:"white", fontSize: '0.8rem' }}>
+                    <ProductPrice price={p.price} solde={p.solde} />
+                  </td>
                   <td data-label="Statut">
                     <span style={{ fontSize: '0.72rem', fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: p.isSuspended ? '#18203A' : p.isApproved ? '#f0fff4' : '#fffbeb', color: p.isSuspended ? '#e53e3e' : p.isApproved ? '#0B9E5E' : '#F59E0B' }}>
                       {p.isSuspended ? 'Suspendu' : p.isApproved ? 'Approuvé' : 'En attente'}

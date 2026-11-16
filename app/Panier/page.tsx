@@ -14,6 +14,7 @@ import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { showSuccessToast, showErrorToast } from "@/lib/toast";
 import { useApiToken } from "@/lib/useApiToken";
+import ProductPrice from "@/components/ProductPrice";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
@@ -397,7 +398,7 @@ function ConfirmModal({
             <div className="confirm-modal__details">
               <h4 className="confirm-modal__product-title">{product.title}</h4>
               <p className="confirm-modal__product-price">
-                {product.price.toLocaleString("fr-TN")} TND
+                <ProductPrice price={product.price} solde={product.solde} />
               </p>
             </div>
           </div>
@@ -604,7 +605,7 @@ function OrdersTab({
                       </div>
                       <div className="cat__card-foot">
                         <span className="cat__card-price">
-                          {product.price.toLocaleString("fr-TN")} TND
+                          <ProductPrice price={product.price} solde={product.solde} />
                         </span>
                       </div>
                     </div>
@@ -723,7 +724,7 @@ export default function PanierPage() {
 
   const validItems = cart.items.filter(item => item.product != null);
   const isEmpty    = validItems.length === 0;
-  const subtotal   = validItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const subtotal   = validItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const cartCount  = validItems.reduce((s, i) => s + i.quantity, 0);
 
   // ── Not logged in ──────────────────────────────────────────────────────────
@@ -851,7 +852,7 @@ export default function PanierPage() {
                             </div>
                             <div className="cat__card-foot">
                               <span className="cat__card-price">
-                                {product.price.toLocaleString("fr-TN")} TND
+                                <ProductPrice price={product.price} solde={product.solde} />
                               </span>
                             </div>
                           </div>
@@ -895,7 +896,7 @@ export default function PanierPage() {
                             )}
                             <span className="cart-item__unit-price">
                               <Tag size={11} />
-                              {p.price.toLocaleString("fr-TN")} TND / pièce
+                              <ProductPrice price={p.price} solde={p.solde} currency="TND / pièce" />
                             </span>
                           </div>
 
@@ -924,7 +925,7 @@ export default function PanierPage() {
                           </div>
 
                           <div className="cart-item__subtotal">
-                            {(p.price * item.quantity).toLocaleString("fr-TN")} TND
+                            {(item.price * item.quantity).toLocaleString("fr-TN")} TND
                           </div>
 
                           <motion.button

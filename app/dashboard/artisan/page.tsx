@@ -6,6 +6,7 @@ import {
   Loader2, Package, ShoppingCart, TrendingUp,
   Eye, Plus, AlertTriangle, BarChart2,
 } from 'lucide-react';
+import ProductPrice from '@/components/ProductPrice';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -13,6 +14,7 @@ interface Product {
   _id: string;
   title: string;
   price: number;
+  solde?: number;
   stock: number;
   views: number;
   isApproved: boolean;
@@ -405,7 +407,9 @@ export default function ArtisanDashboard() {
                           </div>
                         </div>
                       </td>
-                      <td data-label="Prix" style={{ fontWeight: 700, fontSize: '0.8rem' , color: '#ffffff'}}>{p.price} TND</td>
+                      <td data-label="Prix" style={{ fontWeight: 700, fontSize: '0.8rem' , color: '#ffffff'}}>
+                        <ProductPrice price={p.price} solde={p.solde} />
+                      </td>
                       <td data-label="Stock" style={{ fontSize: '0.8rem', color: p.stock === 0 ? '#e53e3e' : '#ffffff', fontWeight: p.stock === 0 ? 700 : 400 }}>
                         {p.stock === 0 ? 'Épuisé' : p.stock}
                       </td>

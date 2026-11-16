@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useApiToken } from "@/lib/useApiToken";
+import ProductPrice from "@/components/ProductPrice";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -36,6 +37,7 @@ type FavProduct = {
   title: string;
   description: string;
   price: number;
+  solde?: number;
   images: string[];
   category: string | { _id: string; name: string; slug?: string };
   location?: string;
@@ -193,9 +195,7 @@ function FavCard({
             <span className="profile-fav-card__loc">
               {item.location ?? categoryLabel}
             </span>
-            <span className="profile-fav-card__price">
-              {price.toLocaleString("fr-TN")} TND
-            </span>
+            <ProductPrice price={price} solde={item.solde} className="profile-fav-card__price" />
           </div>
           <span className="profile-fav-card__cta">Voir la pièce →</span>
         </div>

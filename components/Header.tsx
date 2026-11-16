@@ -6,11 +6,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useRef, useMemo } from "react";
 import {
   Menu, User, LogOut, X, ShoppingBag,
-  ChevronDown, ShieldUser, ChevronRight, ArrowUpRight,
+  ChevronDown, ShieldUser, ChevronRight, ArrowUpRight, Search,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useApiToken } from "@/lib/useApiToken";
 import logo from "../images/logo2 (2).png";
+import SearchModal from "./SearchModal"; // ← NEW (adjust path if needed)
 
 const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/categories?mainCategory=artisanat`;
 const MAISONS_API = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/maisons-dhotes?limit=1&approved=true`;
@@ -95,6 +96,7 @@ const Header = () => {
   const [lastScroll,   setLastScroll]   = useState(0);
   const [menuOpen,     setMenuOpen]     = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [searchOpen,   setSearchOpen]   = useState(false); // ← NEW
   const [categories,   setCategories]   = useState<Category[]>([]);
   const [maisonsExist, setMaisonsExist] = useState(false);
 
@@ -118,24 +120,24 @@ const Header = () => {
       href: "/CultureAmazigh",
       label: "Culture Amazigh",
       dropdown: [
-        { label: "Langue amazigh",             href: "/CultureAmazigh/langueAmazigh" },
-        { label: "Événements & traditions",     href: "/CultureAmazigh/evenements" },
-        { label: "Symboles et motifs berbères", href: "/CultureAmazigh/symboles" },
-        { label: "Musique amazigh",             href: "/CultureAmazigh/musique" },
-        { label: "Patrimoine et Traditions",    href: "/CultureAmazigh/patrimoine" },
-        { label: "Agriculture amazigh",         href: "/CultureAmazigh/agriculture" },
-        { label: "Architecture amazigh",        href: "/CultureAmazigh/architecture" },
-        { label: "Documentation",              href: "/CultureAmazigh/documentation" },
+        { label: "Langue amazigh",              href: "/CultureAmazigh/langueAmazigh" },
+        { label: "Événements & traditions",      href: "/CultureAmazigh/evenements" },
+        { label: "Symboles et motifs berbères",  href: "/CultureAmazigh/symboles" },
+        { label: "Musique amazigh",              href: "/CultureAmazigh/musique" },
+        { label: "Patrimoine et Traditions",     href: "/CultureAmazigh/patrimoine" },
+        { label: "Agriculture amazigh",          href: "/CultureAmazigh/agriculture" },
+        { label: "Architecture amazigh",         href: "/CultureAmazigh/architecture" },
+        { label: "Documentation",               href: "/CultureAmazigh/documentation" },
       ],
     },
     { href: "/Artisans", label: "Artisans" },
-...(maisonsExist ? [{
-  href: "/TourismeetLoisir",
-  label: "Tourisme et Loisir",
-  dropdown: [
-    { label: "Maisons d'hôtes", href: "/TourismeetLoisir/maisonsdhotes" },
-  ],
-}] : []),
+    ...(maisonsExist ? [{
+      href: "/TourismeetLoisir",
+      label: "Tourisme et Loisir",
+      dropdown: [
+        { label: "Maisons d'hôtes", href: "/TourismeetLoisir/maisonsdhotes" },
+      ],
+    }] : []),
     { href: "/apropos", label: "À propos" },
   ], [maisonsExist]);
 
@@ -186,9 +188,22 @@ const Header = () => {
   useEffect(() => {
     setMenuOpen(false);
     setUserMenuOpen(false);
+    setSearchOpen(false); // ← NEW
     setMegaOpen(false);
     setMobileNavOpen(null);
   }, [pathname]);
+
+  // ── Ctrl/Cmd + K opens search ← NEW ────────────────────────────────────────
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // ── Mega-menu helpers ───────────────────────────────────────────────────────
   const openMega = (cat: Category) => {
@@ -223,6 +238,13 @@ const Header = () => {
   const l3Url  = (l1: Category, l2: Level2, l3: Level3)              => `/boutique/categorie/${l1.slug}/${l2.slug}/${l3.slug}`;
   const l4Url  = (l1: Category, l2: Level2, l3: Level3, l4: Level4)  => `/boutique/categorie/${l1.slug}/${l2.slug}/${l3.slug}/${l4.slug}`;
 
+  const openSearch = () => {
+    setMenuOpen(false);
+    setUserMenuOpen(false);
+    setMegaOpen(false);
+    setSearchOpen(true);
+  };
+
   return (
     <>
       <AnimatePresence>
@@ -251,9 +273,15 @@ const Header = () => {
 
               {/* ── Desktop-only actions (hidden on mobile via CSS) ── */}
               <div className="hdr__actions">
+                {/* Search — now opens the search modal */}
+                <button className="hdr__icon-btn" onClick={openSearch} aria-label="Rechercher">
+                  <Search size={17} strokeWidth={1.8} />
+                </button>
+
                 <Link href="/Rejoigneznous">
                   <button className="hdr__btn hdr__btn--primary">REJOINDRE</button>
                 </Link>
+
                 {!isLoggedIn ? (
                   <Link href="/connexion">
                     <button className="hdr__btn hdr__btn--outline">Connexion</button>
@@ -308,8 +336,15 @@ const Header = () => {
                 </button>
               </div>
 
-              {/* ── Bag + hamburger — always visible on all screen sizes ── */}
+              {/* ── Search + bag + hamburger — always visible on all screen sizes ── */}
               <div className="hdr__end-actions">
+                {/* Mobile search button (hidden on desktop via CSS, see below) */}
+                {/* <button
+                  onClick={openSearch}
+                  className="hdr__icon-btn hdr__search-mobile"
+                  aria-label="Rechercher">
+                  <Search size={17} strokeWidth={1.8} />
+                </button> */}
                 <button
                   onClick={() => router.push("/Panier")}
                   className="hdr__icon-btn"
@@ -452,6 +487,13 @@ const Header = () => {
           </motion.header>
         )}
       </AnimatePresence>
+
+      {/* ══ SEARCH MODAL (outside the header so `position: fixed` isn't affected by its transform) ══ */}
+      <SearchModal
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        categories={categories}
+      />
 
       {/* ══ MOBILE DRAWER ═══════════════════════════════════════════════════════ */}
       <AnimatePresence>

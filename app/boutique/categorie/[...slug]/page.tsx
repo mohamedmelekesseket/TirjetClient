@@ -13,6 +13,8 @@ import {
 import { useApiToken } from "@/lib/useApiToken";
 import { useCart } from "../../../context/CartContext";
 import { showSuccessToast, showErrorToast } from "@/lib/toast";
+import { getProductPrice, hasProductDiscount } from "@/lib/productPricing";
+import ProductPrice from "@/components/ProductPrice";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -89,7 +91,7 @@ function ConfirmModal({
             <div className="confirm-modal__details">
               <h4 className="confirm-modal__product-title">{product.title}</h4>
               <p className="confirm-modal__product-price">
-                {product.price.toLocaleString("fr-TN")} TND
+                <ProductPrice price={product.price} solde={product.solde} />
               </p>
             </div>
           </div>
@@ -297,11 +299,12 @@ export default function CategoryPage() {
   // ── 5. Filter + sort ──────────────────────────────────────────────────────
   const filtered = products
     .filter((p) => {
-      if (p.price < priceRange[0] || p.price > priceRange[1]) return false;
+      const price = getProductPrice(p);
+      if (price < priceRange[0] || price > priceRange[1]) return false;
       if (filters.color.length && !filters.color.some((c: string) => p.colors?.includes(c))) return false;
       if (filters.tag.length && !filters.tag.some((t: string) => p.tags?.includes(t))) return false;
       if (filters.inStock && p.stock <= 0) return false;
-      if (filters.onSale && !p.solde) return false;
+      if (filters.onSale && !hasProductDiscount(p)) return false;
       if (filters.featured && !p.isHome) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
@@ -310,8 +313,8 @@ export default function CategoryPage() {
       return true;
     })
     .sort((a, b) => {
-      if (sortBy === "price_asc")  return a.price - b.price;
-      if (sortBy === "price_desc") return b.price - a.price;
+      if (sortBy === "price_asc")  return getProductPrice(a) - getProductPrice(b);
+      if (sortBy === "price_desc") return getProductPrice(b) - getProductPrice(a);
       if (sortBy === "popular") return (b.views || 0) - (a.views || 0);
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
@@ -732,7 +735,7 @@ export default function CategoryPage() {
                       </div>
                       <div className="cat__card-foot">
                         <span className="cat__card-price">
-                          {p.price.toLocaleString("fr-TN")} TND
+                          <ProductPrice price={p.price} solde={p.solde} />
                         </span>
                       </div>
                     </div>

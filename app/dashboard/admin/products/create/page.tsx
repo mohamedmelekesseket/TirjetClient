@@ -39,6 +39,7 @@ interface FieldError {
   title?:      string;
   categoryId?: string;
   price?:      string;
+  solde?:      string;
   description?: string;
   vendor?:     string;
   images?:     string;
@@ -54,6 +55,8 @@ function validate(form: FormState, vendorId: string, imageCount: number): FieldE
   if (!form.categoryId)         errors.categoryId  = 'La catégorie est requise.';
   if (!form.price || isNaN(Number(form.price)) || Number(form.price) <= 0)
                                 errors.price       = 'Prix invalide.';
+  if (form.solde && (!Number.isFinite(Number(form.solde)) || Number(form.solde) <= 0 || Number(form.solde) >= Number(form.price)))
+                                errors.solde       = 'Le prix soldé doit être inférieur au prix normal.';
   if (!form.description.trim()) errors.description = 'La description est requise.';
   if (!vendorId)                errors.vendor      = 'Veuillez sélectionner un artisan.';
   if (imageCount < 1)           errors.images      = 'Au moins une image est requise.';
@@ -598,9 +601,13 @@ export default function AdminCreateProductPage() {
                   {errors.price && <span className="form-error">{errors.price}</span>}
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Prix promotionnel (TND)</label>
-                  <input name="solde" type="number" min={0} value={form.solde} onChange={handle}
-                    className="form-input" placeholder="Laisser vide si pas de promotion" />
+                  <label className="form-label">Prix soldé</label>
+                  <div className="input-prefix-wrap">
+                    <span className="input-prefix">TND</span>
+                    <input name="solde" type="number" min={0.01} step="0.01" value={form.solde} onChange={handle}
+                      className={`form-input${errors.solde ? ' input-error' : ''}`} placeholder="Laisser vide sans promotion" />
+                  </div>
+                  {errors.solde && <span className="form-error">{errors.solde}</span>}
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Stock disponible</label>
