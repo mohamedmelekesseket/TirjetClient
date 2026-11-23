@@ -237,6 +237,7 @@ a {
   justify-content: flex-end;
   gap: 10px;
   flex-shrink: 0;
+  
 }
 
 .hdr__icon-btn {
@@ -298,7 +299,7 @@ a {
 }
 /* ── END ACTIONS (bag + hamburger) ── */
 .hdr__end-actions {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
@@ -333,6 +334,7 @@ a {
 }
 @media (max-width: 900px) {
   .hdr__actions { display: none; }
+  .hdr__end-actions  { display: flex; }
   .hdr__hamburger { display: grid; }
   #panierHeader{
   display: grid;
@@ -15804,21 +15806,14 @@ button { cursor: pointer; }
 
 .langue-pub-card {
   display: flex;
-  flex-wrap: wrap;
-  grid-template-columns: 1fr 1fr;
-  
-  border-radius: 20px;
-  overflow: hidden;
-  /* box-shadow: 0 4px 28px rgba(100,60,20,0.09); */
-  /* transition: transform 0.25s, box-shadow 0.25s; */
-  opacity: 0;
-  animation: langue-cardIn 0.75s ease both;
-  min-height: 350px;
-  padding: 10px 10px;
-  min-width: 100%;
+  flex-wrap: nowrap;            /* no wrapping on desktop */
   gap: 5%;
+  box-sizing: border-box;
+  min-width: 100%;
+  padding: 10px;
+  height: 420px;                /* fixed height instead of min/max */
+  overflow: hidden;
 }
-
 .langue-pub-card:hover {
   transform: translateY(-4px);
   /* box-shadow: 0 14px 40px rgba(100,60,20,0.16); */
@@ -15836,13 +15831,13 @@ button { cursor: pointer; }
 
 /* ── Visual panel ── */
 .langue-pub-visual {
-  padding: 44px 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  box-sizing: border-box;
   width: 45%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
   position: relative;
-  min-height: 260px;
   border-radius: 10px;
 }
 
@@ -15888,16 +15883,28 @@ button { cursor: pointer; }
 
 /* ── Body panel ── */
 .langue-pub-body {
-  padding: 28px 22px;
+  box-sizing: border-box;
   width: 50%;
+  height: 100%;
+  min-height: 0;
+  padding: 28px 22px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  /* background: var(--langue-cream); */
+  justify-content: flex-start;   /* was center: this clipped the top */
+  overflow-y: auto;
   background: var(--langue-white);
   border-radius: 10px;
 
+  /* slim scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(164, 91, 49, 0.45) transparent;
 }
+.langue-pub-body::-webkit-scrollbar { width: 6px; }
+.langue-pub-body::-webkit-scrollbar-thumb {
+  background: rgba(164, 91, 49, 0.45);
+  border-radius: 6px;
+}
+.langue-pub-body::-webkit-scrollbar-track { background: transparent; }
 
 .langue-pub-card:nth-child(odd) .langue-pub-body { background: var(--langue-white); }
 
@@ -15961,9 +15968,17 @@ button { cursor: pointer; }
 
 
 @media (max-width: 768px) {
+.langue-publications{
+  width:100%;
+}
 .langue-pub-card {
   display: flex;
   flex-direction: column;
+  min-width:98%;
+  padding:0;
+  gap:2%;
+  height: 620px;                /* fixed height instead of min/max */
+
 }
 .langue-pub-visual {
   width: 100%;

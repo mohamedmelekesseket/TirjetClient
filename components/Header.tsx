@@ -270,13 +270,10 @@ const Header = () => {
                     isActive={pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href + "/"))} />
                 ))}
               </nav>
-
+              
               {/* ── Desktop-only actions (hidden on mobile via CSS) ── */}
               <div className="hdr__actions">
-                {/* Search — now opens the search modal */}
-                <button className="hdr__icon-btn" onClick={openSearch} aria-label="Rechercher">
-                  <Search size={17} strokeWidth={1.8} />
-                </button>
+                
 
                 <Link href="/Rejoigneznous">
                   <button className="hdr__btn hdr__btn--primary">REJOINDRE</button>
@@ -334,6 +331,10 @@ const Header = () => {
                   aria-label="Panier">
                   <ShoppingBag size={17} strokeWidth={1.8} />
                 </button>
+                {/* Search — now opens the search modal */}
+                <button className="hdr__icon-btn" onClick={openSearch} aria-label="Rechercher">
+                  <Search size={17} strokeWidth={1.8} />
+                </button>
               </div>
 
               {/* ── Search + bag + hamburger — always visible on all screen sizes ── */}
@@ -345,6 +346,10 @@ const Header = () => {
                   aria-label="Rechercher">
                   <Search size={17} strokeWidth={1.8} />
                 </button> */}
+                {/* Search — now opens the search modal */}
+                <button className="hdr__icon-btn" onClick={openSearch} aria-label="Rechercher">
+                  <Search size={17} strokeWidth={1.8} />
+                </button>
                 <button
                   onClick={() => router.push("/Panier")}
                   className="hdr__icon-btn"

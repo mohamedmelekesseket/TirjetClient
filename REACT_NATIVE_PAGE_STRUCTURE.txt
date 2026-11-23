@@ -1,0 +1,141 @@
+TIRJET - REACT NATIVE SCREEN STRUCTURE
+======================================
+
+Purpose
+-------
+This is a screen-by-screen map of the current Next.js client to help rebuild
+the app with React Native. The route names below are the existing web routes.
+Suggested React Native names are examples; you can use Expo Router or React
+Navigation and adjust the file layout to match.
+
+
+1. SUGGESTED APP ORGANIZATION
+-----------------------------
+
+src/
+  navigation/                  Navigation stacks, tabs, and route types
+  screens/
+    Home/
+    Shop/
+    ProductDetails/
+    CategoryProducts/
+    Cart/
+    Checkout/
+    Login/
+    Profile/
+    Artisans/
+    ArtisanDetails/
+    AmazighCulture/
+    CultureDetails/
+    Tourism/
+    GuestHouses/
+    About/
+    JoinUs/
+    TrainingForm/
+    Privacy/
+    Products/
+    Dashboard/
+      Admin/
+      Artisan/
+  components/                  Shared buttons, cards, inputs, headers, etc.
+  services/                    Calls to the existing server API
+  context/                     Auth, cart, and other shared app state
+  types/                       Shared TypeScript types
+  assets/                      Images, icons, and fonts
+
+The server/ folder is the backend and is not part of the React Native screens.
+The current app/api/ directory contains web API routes, not page screens.
+
+
+2. CUSTOMER-FACING SCREENS
+--------------------------
+
+Existing route                         Suggested screen            Purpose
+------------------------------------------------------------------------------
+/                                       Home                        Main landing page
+/boutique                               Shop                        Browse the shop
+/boutique/[id]                          ProductDetails              Product details
+/boutique/categorie/[...slug]           CategoryProducts            Products by category
+/produits                               Products                    Product listing
+/Panier                                 Cart                        Shopping cart
+/Commande                               Checkout                    Delivery, payment,
+                                                                    order confirmation
+/connexion                              Login                       Sign in
+/profile                                Profile                     User info and favorites
+/Artisans                               Artisans                    Browse artisans
+/Artisanprofile/[id]                    ArtisanDetails               Artisan profile
+/CultureAmazigh                          AmazighCulture               Culture landing page
+/CultureAmazigh/[type]                  CultureDetails               Culture content by type
+/TourismeetLoisir                        Tourism                     Tourism landing page
+/TourismeetLoisir/maisonsdhotes          GuestHouses                 Guest house listings
+/apropos                                 About                       About Tirjet
+/Rejoigneznous                           JoinUs                      Join the organization
+/formation-Formulaire                    TrainingForm                Training application form
+/privacy                                 Privacy                     Privacy and legal info
+
+
+3. DASHBOARD SCREENS
+--------------------
+
+Existing route                                         Suggested screen
+------------------------------------------------------------------------------
+/dashboard                                             DashboardHome
+/dashboard/admin                                       AdminDashboard
+/dashboard/admin/artisans                              AdminArtisans
+/dashboard/admin/categories                            AdminCategories
+/dashboard/admin/cultureamazigh                        AdminCulture
+/dashboard/admin/cultureamazigh/create                 AdminCultureCreate
+/dashboard/admin/cultureamazigh/[id]                   AdminCultureEdit
+/dashboard/admin/formationFromulaire                   AdminTrainingApplications
+/dashboard/admin/maisonsdhotes                         AdminGuestHouses
+/dashboard/admin/maisonsdhotes/create                  AdminGuestHouseCreate
+/dashboard/admin/maisonsdhotes/[id]                    AdminGuestHouseEdit
+/dashboard/admin/orders                                AdminOrders
+/dashboard/admin/products                              AdminProducts
+/dashboard/admin/products/create                       AdminProductCreate
+/dashboard/admin/products/[id]                         AdminProductEdit
+/dashboard/admin/stats                                 AdminStats
+/dashboard/admin/users                                 AdminUsers
+/dashboard/artisan                                     ArtisanDashboard
+/dashboard/artisan/orders                              ArtisanOrders
+/dashboard/artisan/products                            ArtisanProducts
+/dashboard/artisan/products/create                     ArtisanProductCreate
+/dashboard/artisan/products/[id]                       ArtisanProductDetails
+/dashboard/artisan/products/[id]/edit                  ArtisanProductEdit
+/dashboard/artisan/profile                             ArtisanProfile
+
+Protect dashboard screens using the same role and authentication rules as the
+web app. The existing admin route "formationFromulaire" has that spelling;
+consider giving the native screen a clean name such as AdminTrainingApplications.
+
+
+4. SHARED APP FEATURES TO REBUILD
+---------------------------------
+
+- App navigation: replace web links and the shared Header/footer with native
+  navigation, headers, and (if useful) bottom tabs.
+- Authentication: sign-in and session handling; check which OAuth providers
+  are supported by the backend and native configuration.
+- Cart: shared cart state, item quantities, totals, and checkout navigation.
+- Checkout: shipping form, order review, payment method, and success state.
+- Profile: account details and saved/favorite products.
+- API access: keep using the existing server endpoints where suitable; move
+  web fetch logic into reusable React Native services.
+- Feedback: replace browser toasts/dialogs with native alerts or a native toast
+  component.
+- Media: use React Native image components and verify remote image URLs.
+- Design: adapt the current web layouts to mobile-sized screens rather than
+  trying to reuse HTML, CSS, or browser-only components.
+
+
+5. MIGRATION NOTES
+------------------
+
+- Dynamic route parts in brackets are identifiers: [id], [type], [slug].
+  Pass them as route parameters in React Native navigation.
+- The category route uses a catch-all slug ([...slug]); decide how to represent
+  multi-part category paths in the native route parameters.
+- Existing web routes use mixed capitalization. Use consistent native screen
+  names, and preserve the route/API behavior while migrating.
+- A practical first milestone is Home, Shop, ProductDetails, Cart, Login, and
+  Profile, then add checkout and the informational sections.

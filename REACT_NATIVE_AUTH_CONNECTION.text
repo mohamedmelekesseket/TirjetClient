@@ -1,0 +1,307 @@
+TIRJET - REACT NATIVE AUTHENTICATION CONNECTION
+================================================
+
+Recommended method
+------------------
+Connect the React Native app directly to the existing Express API. The API
+issues a JWT after login, registration, or OAuth sign-in. Store that JWT in
+secure device storage and send it as a Bearer token to protected endpoints.
+
+The current web app uses NextAuth for Google and Facebook sign-in. React Native
+does not use NextAuth: use native Google/Facebook sign-in SDKs to obtain a
+provider token, then exchange it with the API as described below.
+
+
+1. API BASE URL
+--------------
+
+Configure the API's base URL for the environment. Do not hard-code localhost
+for a released app.
+
+- Android emulator: http://10.0.2.2:5000
+- iOS simulator:    http://localhost:5000
+- Physical device:  http://<computer-LAN-IP>:5000 (same network as the API)
+- Production:       the deployed API's HTTPS URL
+
+For an Expo app, expose the URL as EXPO_PUBLIC_API_URL. For example:
+
+EXPO_PUBLIC_API_URL=https://your-api-host
+
+The server mounts authentication routes at /api/auth and defaults to port 5000.
+
+
+2. AUTH ENDPOINTS
+-----------------
+
+Register:
+  POST /api/auth/register
+  JSON: { "name": "...", "email": "...", "password": "..." }
+
+Login:
+  POST /api/auth/login
+  JSON: { "email": "...", "password": "..." }
+
+Both return a JSON response containing:
+  { "token": "<JWT>", "user": { "_id": "...", "name": "...",
+    "email": "...", "role": "...", "status": "...", ... } }
+
+OAuth login or account creation:
+  POST /api/auth/oauth
+  Google JSON:   { "provider": "google", "idToken": "<Google ID token>" }
+  Facebook JSON: { "provider": "facebook", "accessToken": "<Facebook token>" }
+
+The API verifies the provider token and returns { "token", "user" }. Configure
+the provider apps and server credentials; the Google ID token audience must
+match the server's GOOGLE_CLIENT_ID.
+
+Get the signed-in user:
+  GET /api/auth/me
+  Header: Authorization: Bearer <JWT>
+
+Change password:
+  PUT /api/auth/password
+  Header: Authorization: Bearer <JWT>
+  JSON: { "currentPassword": "...", "newPassword": "..." }
+
+Do not call /api/auth/link-nextauth from the mobile app. It is an internal
+Next.js-to-API route that requires INTERNAL_API_KEY; that secret must never be
+included in a mobile application.
+
+
+3. EXPO IMPLEMENTATION EXAMPLE
+------------------------------
+
+Install secure storage:
+
+  npx expo install expo-secure-store
+
+This example shows email/password login, session restoration, protected
+requests, and logout. In a bare React Native app, use a secure-storage library
+such as react-native-keychain instead of AsyncStorage for the JWT.
+
+  import * as SecureStore from "expo-secure-store";
+
+  const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+  if (!API_URL) {
+    throw new Error("EXPO_PUBLIC_API_URL is not configured");
+  }
+
+  type User = {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+    status: string;
+  };
+
+  type AuthResponse = {
+    token: string;
+    user: User;
+  };
+
+  async function readResponse<T>(response: Response): Promise<T> {
+    const body = await response.json();
+    if (!response.ok) {
+      throw new Error(body.message || `Request failed (${response.status})`);
+    }
+    return body as T;
+  }
+
+  export async function login(email: string, password: string): Promise<User> {
+    const response = await fetch(`${API_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const result = await readResponse<AuthResponse>(response);
+    await SecureStore.setItemAsync("authToken", result.token);
+    return result.user;
+  }
+
+  export async function getCurrentUser(): Promise<User> {
+    const token = await SecureStore.getItemAsync("authToken");
+    if (!token) {
+      throw new Error("No saved login session");
+    }
+
+    const response = await fetch(`${API_URL}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return readResponse<User>(response);
+  }
+
+  export async function logout(): Promise<void> {
+    await SecureStore.deleteItemAsync("authToken");
+  }
+
+For registration, POST the name, email, and password to /api/auth/register;
+save the returned token in the same secure store. For OAuth, POST the native
+provider token to /api/auth/oauth and save its returned JWT the same way.
+
+For every protected API request, read the saved JWT and add:
+  Authorization: Bearer <JWT>
+
+Handle non-2xx responses using the API's JSON message. A missing, invalid, or
+expired JWT returns 401; a blocked account may return 403. On logout, delete
+the locally stored JWT. The API does not provide a token-revocation endpoint.
+
+
+4. SECURITY NOTES
+-----------------
+
+- Use HTTPS for production API traffic.
+- Never store passwords or JWTs in source code, app configuration, or
+  AsyncStorage. Use SecureStore/Keychain for the JWT.
+- Never put server secrets such as JWT_SECRET, INTERNAL_API_KEY, OAuth client
+  secrets, or database credentials in the React Native app.
+- Treat the returned user object as profile data; use the API to authorize
+  protected actions. The server checks JWT validity and account status.
+
+
+5. GOOGLE SIGN-IN: SETUP LINKS AND END-TO-END FLOW
+--------------------------------------------------
+
+The mobile app must use Google's native sign-in SDK to obtain a Google ID
+token. Send that ID token to this existing API route:
+
+  POST <API_URL>/api/auth/oauth
+  Content-Type: application/json
+  JSON: { "provider": "google", "idToken": "<Google ID token>" }
+
+The API validates the ID token with GOOGLE_CLIENT_ID, creates or finds the
+Tirjet user, and returns { "token": "<Tirjet JWT>", "user": { ... } }. Save
+the Tirjet JWT in SecureStore and use that JWT for later Tirjet API requests.
+Do not send a Google access token to this route; the backend expects idToken.
+
+Official setup links
+--------------------
+
+Google Cloud credentials:
+  https://console.cloud.google.com/apis/credentials
+
+Google Sign-In package setup for Expo:
+  https://react-native-google-signin.github.io/docs/setting-up/expo
+
+Google Cloud / Firebase client IDs, SHA-1 and URL scheme setup:
+  https://react-native-google-signin.github.io/docs/setting-up/get-config-file
+
+Google Sign-In package API and code examples:
+  https://react-native-google-signin.github.io/docs/original
+
+Expo development builds (required for native sign-in):
+  https://docs.expo.dev/develop/development-builds/introduction/
+
+Expo Google authentication overview:
+  https://docs.expo.dev/guides/google-authentication/
+
+Google Cloud setup steps
+------------------------
+
+1. Open Google Cloud Console and select the same Google Cloud project used by
+   the server's Google configuration. Configure the OAuth consent screen /
+   Google Auth Platform, add the app name and support email, and add test
+   accounts if the app is still in Testing.
+2. Create OAuth client IDs for the native app platforms:
+   - Web application: this is the server/audience client ID. Set the server's
+     GOOGLE_CLIENT_ID to this exact value. Set this same ID as the mobile
+     Google Sign-In webClientId.
+   - Android: register the exact Android package/application ID and SHA-1
+     signing certificate fingerprint(s). Add fingerprints for development
+     builds and release/Play App Signing builds as applicable.
+   - iOS: register the exact iOS bundle identifier. Record the iOS client ID
+     and its reversed client ID (URL scheme).
+3. Keep the Web client ID in server configuration as GOOGLE_CLIENT_ID. Never
+   put a Google client secret, JWT_SECRET, or INTERNAL_API_KEY in the app.
+   OAuth client IDs are identifiers, not client secrets.
+4. If Google Sign-In reports DEVELOPER_ERROR, check the package/bundle ID and
+   the SHA-1 used to sign that exact Android build. For iOS, check the bundle
+   ID and configured reversed-client-ID URL scheme.
+
+Expo installation and native configuration
+-------------------------------------------
+
+Install the native package and secure token storage:
+
+  npx expo install @react-native-google-signin/google-signin
+  npx expo install expo-secure-store
+
+This package uses native code: Google sign-in will not run in Expo Go. Make a
+development build, add the package's Expo config plugin, then rebuild the
+native app whenever native configuration changes. For a project not using
+Firebase, add the iOS URL scheme from the iOS OAuth client to app.json:
+
+  {
+    "expo": {
+      "ios": {
+        "bundleIdentifier": "your.registered.ios.bundle.id"
+      },
+      "android": {
+        "package": "your.registered.android.package"
+      },
+      "plugins": [
+        [
+          "@react-native-google-signin/google-signin",
+          {
+            "iosUrlScheme": "com.googleusercontent.apps.YOUR_REVERSED_IOS_CLIENT_ID"
+          }
+        ]
+      ]
+    }
+  }
+
+Replace the example bundle ID, package name, and URL scheme with the values
+registered for your app. Do not copy the example values literally.
+
+Configure client IDs once when the app starts, before calling signIn:
+
+  import { GoogleSignin } from "@react-native-google-signin/google-signin";
+
+  GoogleSignin.configure({
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+  });
+
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID must be the same Web client ID as the API's
+GOOGLE_CLIENT_ID. The iOS client ID is the native iOS OAuth client ID. The
+client IDs are not secrets; never add a client secret to EXPO_PUBLIC_*.
+
+Copyable Google sign-in function
+--------------------------------
+
+Use the following in a React Native auth service. It reuses the API_URL,
+AuthResponse, readResponse, User, and SecureStore from the example above.
+
+  import {
+    GoogleSignin,
+    isSuccessResponse,
+  } from "@react-native-google-signin/google-signin";
+
+  export async function signInWithGoogle(): Promise<User | null> {
+    await GoogleSignin.hasPlayServices();
+    const signInResult = await GoogleSignin.signIn();
+
+    if (!isSuccessResponse(signInResult)) {
+      return null; // The user cancelled Google sign-in.
+    }
+
+    const { idToken } = await GoogleSignin.getTokens();
+    if (!idToken) {
+      throw new Error("Google did not return an ID token");
+    }
+
+    const response = await fetch(`${API_URL}/api/auth/oauth`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider: "google", idToken }),
+    });
+    const result = await readResponse<AuthResponse>(response);
+    await SecureStore.setItemAsync("authToken", result.token);
+    return result.user;
+  }
+
+On sign-out, clear the app's signed-in user state and call logout() from the
+earlier example to delete the Tirjet JWT. You may also call
+GoogleSignin.signOut() to clear the native Google account selection from the
+app. These are separate sessions: clearing the Tirjet JWT is required to log
+out of Tirjet.

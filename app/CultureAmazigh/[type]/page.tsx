@@ -1,10 +1,20 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowDown, Search, X } from "lucide-react";
+import {
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
+  Search,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -209,6 +219,222 @@ function DynamicIllustration({ color, symbol, category }: { color: PubColor; sym
   );
 }
 
+// ── Image lightbox (zoom / pan / pinch / gallery) ──────────────────────────
+
+const MIN_SCALE = 1;
+const MAX_SCALE = 6;
+const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+
+function ImageLightbox({
+  images,
+  startIndex,
+  alt,
+  onClose,
+}: {
+  images: string[];
+  startIndex: number;
+  alt: string;
+  onClose: () => void;
+}) {
+  const [index, setIndex] = useState(startIndex);
+  const [scale, setScale] = useState(1);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const dragStart = useRef({ x: 0, y: 0, px: 0, py: 0 });
+  const pinchStart = useRef({ dist: 0, scale: 1 });
+  const moved = useRef(false);
+
+  const hasMultiple = images.length > 1;
+
+  const resetView = useCallback(() => {
+    setScale(1);
+    setPos({ x: 0, y: 0 });
+  }, []);
+
+  const changeScale = useCallback((next: number) => {
+    const s = clamp(next, MIN_SCALE, MAX_SCALE);
+    setScale(s);
+    if (s === MIN_SCALE) setPos({ x: 0, y: 0 });
+  }, []);
+
+  const go = useCallback(
+    (dir: 1 | -1) => {
+      setIndex((i) => (i + dir + images.length) % images.length);
+      resetView();
+    },
+    [images.length, resetView]
+  );
+
+  // Keyboard + body scroll lock
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      else if (e.key === "ArrowRight" && hasMultiple) go(1);
+      else if (e.key === "ArrowLeft" && hasMultiple) go(-1);
+      else if (e.key === "+" || e.key === "=") setScale((s) => clamp(s * 1.25, MIN_SCALE, MAX_SCALE));
+      else if (e.key === "-") changeScale(scale / 1.25);
+      else if (e.key === "0") resetView();
+    };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose, go, hasMultiple, changeScale, resetView, scale]);
+
+  const onWheel = (e: React.WheelEvent) => {
+    changeScale(scale * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
+  };
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    moved.current = false;
+
+    if (pointers.current.size === 1) {
+      dragStart.current = { x: e.clientX, y: e.clientY, px: pos.x, py: pos.y };
+      if (scale > 1) setDragging(true);
+    } else if (pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()];
+      pinchStart.current = { dist: Math.hypot(a.x - b.x, a.y - b.y), scale };
+      setDragging(false);
+    }
+  };
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!pointers.current.has(e.pointerId)) return;
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()];
+      const dist = Math.hypot(a.x - b.x, a.y - b.y);
+      if (pinchStart.current.dist > 0) {
+        changeScale(pinchStart.current.scale * (dist / pinchStart.current.dist));
+      }
+      moved.current = true;
+      return;
+    }
+
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved.current = true;
+    if (scale > 1) {
+      setPos({ x: dragStart.current.px + dx, y: dragStart.current.py + dy });
+    }
+  };
+
+  const onPointerUp = (e: React.PointerEvent) => {
+    pointers.current.delete(e.pointerId);
+    if (pointers.current.size === 0) setDragging(false);
+  };
+
+  // Click on image toggles zoom (ignored if it was a drag)
+  const onImageClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (moved.current) return;
+    if (scale > 1) resetView();
+    else changeScale(2.5);
+  };
+
+  // Click on the dark backdrop closes (ignored if it was a drag)
+  const onBackdropClick = () => {
+    if (moved.current) return;
+    onClose();
+  };
+
+  return createPortal(
+    <motion.div
+      className="langue-lightbox"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Agrandissement de l'image"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      {/* Toolbar */}
+      <div className="langue-lightbox-toolbar" onClick={(e) => e.stopPropagation()}>
+        <span className="langue-lightbox-counter">
+          {index + 1} / {images.length}
+        </span>
+        <div className="langue-lightbox-actions">
+          <button type="button" onClick={() => changeScale(scale / 1.25)} disabled={scale <= MIN_SCALE} aria-label="Dézoomer">
+            <ZoomOut size={18} />
+          </button>
+          <span className="langue-lightbox-zoom">{Math.round(scale * 100)}%</span>
+          <button type="button" onClick={() => changeScale(scale * 1.25)} disabled={scale >= MAX_SCALE} aria-label="Zoomer">
+            <ZoomIn size={18} />
+          </button>
+          <button type="button" onClick={resetView} disabled={scale === 1} aria-label="Réinitialiser le zoom">
+            <RotateCcw size={17} />
+          </button>
+          <button type="button" onClick={onClose} aria-label="Fermer">
+            <X size={20} />
+          </button>
+        </div>
+      </div>
+
+      {/* Stage */}
+      <div
+        className="langue-lightbox-stage"
+        onWheel={onWheel}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onClick={onBackdropClick}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          key={images[index]}
+          src={images[index]}
+          alt={`${alt} ${index + 1}`}
+          draggable={false}
+          onClick={onImageClick}
+          onDoubleClick={(e) => e.stopPropagation()}
+          className="langue-lightbox-img"
+          style={{
+            transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`,
+            cursor: scale > 1 ? (dragging ? "grabbing" : "grab") : "zoom-in",
+            transition: dragging ? "none" : "transform 0.2s ease",
+          }}
+        />
+      </div>
+
+      {hasMultiple && (
+        <>
+          <button
+            type="button"
+            className="langue-lightbox-nav langue-lightbox-prev"
+            aria-label="Image précédente"
+            onClick={(e) => { e.stopPropagation(); go(-1); }}
+          >
+            <ChevronLeft size={26} />
+          </button>
+          <button
+            type="button"
+            className="langue-lightbox-nav langue-lightbox-next"
+            aria-label="Image suivante"
+            onClick={(e) => { e.stopPropagation(); go(1); }}
+          >
+            <ChevronRight size={26} />
+          </button>
+        </>
+      )}
+
+      <p className="langue-lightbox-hint">
+        Molette ou pincer pour zoomer · Glisser pour déplacer · Échap pour fermer
+      </p>
+    </motion.div>,
+    document.body
+  );
+}
+
 // ── Image carousel ─────────────────────────────────────────────────────────
 
 function ImageCarousel({ images, videos, videoUrls, color, symbol, category, tag }: {
@@ -221,6 +447,7 @@ function ImageCarousel({ images, videos, videoUrls, color, symbol, category, tag
   tag: string;
 }) {
   const [current, setCurrent] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const mediaItems = [
     ...images.map(src => ({ src, kind: "image" as const })),
     ...(videos || []).map(src => ({ src, kind: "video" as const })),
@@ -251,6 +478,12 @@ function ImageCarousel({ images, videos, videoUrls, color, symbol, category, tag
   const currentMedia = mediaItems[current];
   const embedUrl = currentMedia.kind === "link" ? getVideoEmbedUrl(currentMedia.src) : null;
   const externalUrl = currentMedia.kind === "link" ? getSafeExternalUrl(currentMedia.src) : null;
+  const isImage = currentMedia.kind === "image";
+
+  // Images come first in mediaItems, so `current` is also the index in `images`
+  const openLightbox = () => {
+    if (isImage) setLightboxOpen(true);
+  };
 
   return (
     <>
@@ -298,14 +531,17 @@ function ImageCarousel({ images, videos, videoUrls, color, symbol, category, tag
             Lien vidéo indisponible
           </div>
         ) : (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={currentMedia.src}
             alt={`${category} ${current + 1}`}
+            onClick={openLightbox}
             style={{
               width: "100%",
               height: "100%",
               objectFit: "cover",
               display: "block",
+              cursor: "zoom-in",
               transition: "opacity 0.25s ease",
             }}
           />
@@ -317,6 +553,18 @@ function ImageCarousel({ images, videos, videoUrls, color, symbol, category, tag
           background: "linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 55%)",
           pointerEvents: "none",
         }} />
+
+        {/* Zoom button — only for images */}
+        {isImage && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); openLightbox(); }}
+            aria-label="Agrandir l'image"
+            className="langue-zoom-btn"
+          >
+            <ZoomIn size={16} />
+          </button>
+        )}
 
         {/* Arrows — only when multiple media */}
         {hasMultiple && (
@@ -384,6 +632,17 @@ function ImageCarousel({ images, videos, videoUrls, color, symbol, category, tag
           </>
         )}
       </div>
+
+      <AnimatePresence>
+        {lightboxOpen && images.length > 0 && (
+          <ImageLightbox
+            images={images}
+            startIndex={Math.min(current, images.length - 1)}
+            alt={category}
+            onClose={() => setLightboxOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }
@@ -495,9 +754,9 @@ function PublicationCard({ pub }: { pub: Publication }) {
       </div>
       <div className="langue-pub-body">
         <p className="langue-pub-cat">{pub.category}</p>
-        <h2 className="langue-pub-title">{pub.title}</h2>
-        <p className="langue-pub-subtitle">{pub.subtitle}</p>
-        <p className="langue-pub-text">{pub.body}</p>
+        <h2 className="langue-pub-title" dir="auto">{pub.title}</h2>
+        <p className="langue-pub-subtitle" dir="auto">{pub.subtitle}</p>
+        <p className="langue-pub-text" dir="auto">{pub.body}</p>
         {!pub._placeholder && (
           <div className="langue-pub-more">
             <div className="langue-pub-more-bar" />
@@ -625,7 +884,7 @@ function StatusBanner({ status, onRetry, show }: { status: LoadStatus; onRetry: 
         background: "rgba(45,80,22,0.06)", borderBottom: "1px solid rgba(45,80,22,0.12)",
         fontSize: 12, color: "#2D5016", letterSpacing: "0.05em", fontFamily: "serif",
       }}>
-        ✦ &nbsp; Publications chargées depuis la base de données Tirjet &nbsp; ✦
+        ✦ &nbsp; &nbsp; ✦
       </div>
     );
   }
@@ -886,6 +1145,129 @@ export default function CultureAmazighPage() {
         @keyframes pulse {
           0%, 100% { opacity: 0.55; }
           50%       { opacity: 0.75; }
+        }
+
+        /* ── Zoom button on card images ── */
+        .langue-zoom-btn {
+          position: absolute;
+          top: 8px;
+          left: 8px;
+          z-index: 2;
+          display: grid;
+          width: 32px;
+          height: 32px;
+          place-items: center;
+          border: 0;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.85);
+          color: #4a3728;
+          cursor: pointer;
+          box-shadow: 0 1px 6px rgba(0, 0, 0, 0.22);
+          opacity: 0;
+          transform: scale(0.9);
+          transition: opacity 0.2s ease, transform 0.2s ease, background 0.15s ease;
+        }
+        .langue-pub-visual:hover .langue-zoom-btn,
+        .langue-zoom-btn:focus-visible { opacity: 1; transform: scale(1); }
+        .langue-zoom-btn:hover { background: #fff; }
+        @media (hover: none) {
+          .langue-zoom-btn { opacity: 1; transform: none; }
+        }
+
+        /* ── Lightbox ── */
+        .langue-lightbox {
+          position: fixed;
+          inset: 0;
+          z-index: 9999;
+          display: flex;
+          flex-direction: column;
+          background: rgba(20, 14, 8, 0.94);
+          backdrop-filter: blur(6px);
+          user-select: none;
+        }
+        .langue-lightbox-toolbar {
+          position: absolute;
+          top: 0;
+          right: 0;
+          left: 0;
+          z-index: 3;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 14px 18px;
+          background: linear-gradient(to bottom, rgba(0,0,0,0.55), transparent);
+          color: #fff;
+        }
+        .langue-lightbox-counter {
+          font: 600 12px/1 ui-monospace, monospace;
+          letter-spacing: 0.1em;
+          opacity: 0.85;
+        }
+        .langue-lightbox-actions { display: flex; align-items: center; gap: 6px; }
+        .langue-lightbox-actions button,
+        .langue-lightbox-nav {
+          display: grid;
+          width: 38px;
+          height: 38px;
+          place-items: center;
+          border: 0;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.12);
+          color: #fff;
+          cursor: pointer;
+          transition: background 0.15s ease, opacity 0.15s ease;
+        }
+        .langue-lightbox-actions button:hover:not(:disabled),
+        .langue-lightbox-nav:hover { background: rgba(255, 255, 255, 0.26); }
+        .langue-lightbox-actions button:disabled { opacity: 0.35; cursor: default; }
+        .langue-lightbox-zoom {
+          min-width: 48px;
+          text-align: center;
+          font: 600 12px/1 ui-monospace, monospace;
+        }
+        .langue-lightbox-stage {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          touch-action: none;
+        }
+        .langue-lightbox-img {
+          max-width: 92vw;
+          max-height: 86vh;
+          object-fit: contain;
+          border-radius: 6px;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+          will-change: transform;
+        }
+        .langue-lightbox-nav {
+          position: absolute;
+          top: 50%;
+          z-index: 3;
+          width: 46px;
+          height: 46px;
+          transform: translateY(-50%);
+        }
+        .langue-lightbox-prev { left: 16px; }
+        .langue-lightbox-next { right: 16px; }
+        .langue-lightbox-hint {
+          position: absolute;
+          right: 0;
+          bottom: 14px;
+          left: 0;
+          z-index: 3;
+          margin: 0;
+          color: rgba(255, 255, 255, 0.55);
+          font-size: 12px;
+          text-align: center;
+          pointer-events: none;
+        }
+        @media (max-width: 600px) {
+          .langue-lightbox-hint { display: none; }
+          .langue-lightbox-prev { left: 8px; }
+          .langue-lightbox-next { right: 8px; }
         }
 
         .langue-article-explorer {
