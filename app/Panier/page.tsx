@@ -879,14 +879,14 @@ export default function PanierPage() {
                           exit={{ opacity: 0, x: 40, height: 0, margin: 0, padding: 0 }}
                           transition={{ duration: 0.38, delay: idx * 0.06, ease: [0.22, 1, 0.36, 1] }}
                         >
-                          <Link href={`/boutique/${p.product.slug || p.product._id}`} className="cart-item__img-wrap">
+                          <Link href={`/boutique/${p.slug || p._id}`} className="cart-item__img-wrap">
                             {p.images?.[0]
                               ? <img src={p.images[0]} alt={p.title} className="cart-item__img" />
                               : <div className="cart-item__img-placeholder"><Package size={22} /></div>}
                           </Link>
 
                           <div className="cart-item__info">
-                            <Link href={`/boutique/${p.product.slug || p.product._id}`} className="cart-item__name">{p.title}</Link>
+                            <Link href={`/boutique/${p.slug || p._id}`} className="cart-item__name">{p.title}</Link>
                             {(p as any).artisan && (
                               <span className="cart-item__artisan">
                                 par {typeof (p as any).artisan === "object" ? (p as any).artisan.name : (p as any).artisan}
