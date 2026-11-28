@@ -26,6 +26,7 @@ interface User {
 
 interface ArtisanProfile {
  _id: string;
+ slug?: string;
   user: User;
   profilePhoto?: string;  // ← add this
   phone?: string;
@@ -42,6 +43,7 @@ interface ArtisanProfile {
 
 interface Product {
   _id: string;
+  slug?: string;
   title: string;
   description: string;
   price: number;
@@ -250,7 +252,7 @@ function ProductCard({
   return (
     <motion.article
       className="artp-prod-card"
-      onClick={() => router.push(`/boutique/${p._id}`)}
+      onClick={() => router.push(`/boutique/${p.slug || p._id}`)}
       style={{ cursor: "pointer" }}
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
@@ -297,9 +299,9 @@ function ProductCard({
         </div>
         <p className="artp-prod-card__desc">{p.description}</p>
         <div className="artp-prod-card__foot">
-          <Link href={`/boutique/${p._id}`} className="artp-prod-card__cta"
+          <Link href={`/boutique/${p.slug || p._id}`} className="artp-prod-card__cta"
             onClick={(e) => e.stopPropagation()}>
-            Voir la pièce 
+            Voir la pièce
             <ArrowRight size={14}/>
           </Link>
           <motion.button
@@ -474,10 +476,18 @@ function InfoCard({ artisan, joinDate, totalProducts }: {
 export default function ArtisanProfilePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = use(params);
+  const { slug } = use(params);
   const { apiToken } = useApiToken();
+  const router = useRouter();
+
+  // Guard against invalid slugs (e.g., "undefined")
+  useEffect(() => {
+    if (!slug || slug === "undefined" || slug === "null") {
+      router.replace("/Artisans");
+    }
+  }, [slug, router]);
 
   const [artisan, setArtisan] = useState<ArtisanProfile | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -499,7 +509,7 @@ export default function ArtisanProfilePage({
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`${API}/api/artisans/${id}`);
+        const res = await fetch(`${API}/api/artisans/${slug}`);
         if (res.status === 404) throw new Error("Artisan introuvable.");
         if (!res.ok) throw new Error(`Erreur serveur (${res.status})`);
 
@@ -527,7 +537,7 @@ export default function ArtisanProfilePage({
     };
 
     fetchArtisan();
-  }, [id]);
+  }, [slug]);
 
   // ── Wishlist ───────────────────────────────────────────────────────────────
   useEffect(() => {

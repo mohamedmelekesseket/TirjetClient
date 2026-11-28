@@ -13,7 +13,7 @@ const MIN_CHARS = 2;
 const PRODUCT_LIMIT = 8;
 const MAX_BODY_HEIGHT = 340;
 
-const productUrl = (p: Product) => `/boutique/${encodeURIComponent(p._id)}`;
+const productUrl = (p: Product) => `/boutique/${encodeURIComponent(p.slug || p._id)}`;
 const allResultsUrl = (q: string) => `/boutique?${SEARCH_PARAM}=${encodeURIComponent(q)}`;
 
 /* ─── Types ────────────────────────────────────────────────────────────────── */

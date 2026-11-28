@@ -10,6 +10,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 interface CartItem {
   product: {
     _id: string;
+    slug?: string;
     title: string;
     images: string[];
     price: number;

@@ -20,6 +20,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Product {
   _id: string;
+  slug?: string;
   title: string;
   price: number;
   solde?: number;
@@ -517,6 +518,7 @@ function PremiumArtisans({ allProducts }: { allProducts: Product[] }) {
           {artisans.map((a) => {
             const name = a.user?.name ?? a.name ?? "Artisan";
             const userId = a.user?._id ?? a._id;
+            const slug = a.slug ?? userId;
             const photo = a.profilePhoto ?? a.user?.image ?? null;
             const products = getProductsForArtisan(a);
 
@@ -524,7 +526,7 @@ function PremiumArtisans({ allProducts }: { allProducts: Product[] }) {
               <article
                 key={a._id}
                 className="pg-artisan-card2"
-                onClick={() => router.push(`/Artisanprofile/${userId}`)}
+                onClick={() => router.push(`/Artisanprofile/${slug}`)}
               >
                 <div className="pg-artisan-card2__top">
                   <span className="pg-premium-badge">PREMIUM</span>
@@ -579,7 +581,7 @@ function PremiumArtisans({ allProducts }: { allProducts: Product[] }) {
                         className="pg-artisan-prod"
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/boutique/${prod._id}`);
+                          router.push(`/boutique/${prod.slug || prod._id}`);
                         }}
                       >
                         <div className="pg-artisan-prod__img-wrap">
@@ -607,7 +609,7 @@ function PremiumArtisans({ allProducts }: { allProducts: Product[] }) {
 
                 <div className="pg-artisan-card2__cta">
                   <Link
-                    href={`/Artisanprofile/${userId}`}
+                    href={`/Artisanprofile/${slug}`}
                     className="pg-artisan-card2__btn"
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -693,7 +695,7 @@ function PremiumProducts({
             <article
               key={p._id}
               className="pg-prod-card-h"
-              onClick={() => router.push(`/boutique/${p._id}`)}
+              onClick={() => router.push(`/boutique/${p.slug || p._id}`)}
             >
               <div className="pg-prod-card-h__img-wrap">
                 {p.images?.[0] ? (

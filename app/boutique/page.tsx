@@ -30,6 +30,7 @@ interface Category {
 
 interface Product {
   _id: string;
+  slug?: string;
   title: string;
   description: string;
   price: number;
@@ -542,7 +543,7 @@ export default function Boutique({
                 <motion.div
                   key={p._id}
                   className="boutique__card"
-                  onClick={() => router.push(`/boutique/${p._id}`)}
+                  onClick={() => router.push(`/boutique/${p.slug || p._id}`)}
                   style={{ cursor: "pointer" }}
                   initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.7, delay: 0.8 + index * 0.1, ease: [0.16, 1, 0.3, 1] as any }}
@@ -602,7 +603,7 @@ export default function Boutique({
                     <span className="boutique__card-loc">{p.location ?? catName}</span>
                     {/* Only <a> inside the card — no nesting issue */}
                     <Link
-                      href={`/boutique/${p._id}`}
+                      href={`/boutique/${p.slug || p._id}`}
                       className="boutique__card-cta"
                       onClick={e => e.stopPropagation()}
                     >

@@ -19,7 +19,7 @@ interface ArtisanProfile {
   specialty?: string; availability?: string;
 }
 interface Product {
-  _id: string; title: string; description: string; price: number; solde?: number;
+  _id: string; slug?: string; title: string; description: string; price: number; solde?: number;
   images: string[]; category: "margoum" | "fokhar" | "bijoux" | "tissage"; stock: number;
 }
 
@@ -44,12 +44,12 @@ const DEMO_ARTISAN: ArtisanProfile = {
 };
 
 const DEMO_PRODUCTS: Product[] = [
-  { _id: "p1", title: "Margoum Gafsa Heritage", description: "Tissage ancestral aux motifs géométriques berbères.", price: 850, images: ["https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=700&q=80"], category: "margoum", stock: 2 },
-  { _id: "p2", title: "Tapis Berbère Rouge", description: "Laine naturelle teinte à la grenade, motifs de Gafsa.", price: 620, images: ["https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=700&q=80"], category: "tissage", stock: 1 },
-  { _id: "p3", title: "Coussin Tissé Main", description: "Laine mérinos, motifs traditionnels amazighs.", price: 180, images: ["https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=700&q=80"], category: "tissage", stock: 5 },
-  { _id: "p4", title: "Margoum Contemporain", description: "Fusion moderne et tradition, palette naturelle.", price: 1100, images: ["https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=700&q=80"], category: "margoum", stock: 1 },
-  { _id: "p5", title: "Nappe Brodée Gafsa", description: "Coton naturel, broderie main à l'aiguille d'or.", price: 290, images: ["https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=700&q=80"], category: "tissage", stock: 3 },
-  { _id: "p6", title: "Kilim Ancestral", description: "Technique kilim, motifs rhombiques berbères.", price: 740, images: ["https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=700&q=80"], category: "margoum", stock: 2 },
+  { _id: "p1", slug: "margoum-gafsa-heritage", title: "Margoum Gafsa Heritage", description: "Tissage ancestral aux motifs géométriques berbères.", price: 850, images: ["https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=700&q=80"], category: "margoum", stock: 2 },
+  { _id: "p2", slug: "tapis-berbere-rouge", title: "Tapis Berbère Rouge", description: "Laine naturelle teinte à la grenade, motifs de Gafsa.", price: 620, images: ["https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=700&q=80"], category: "tissage", stock: 1 },
+  { _id: "p3", slug: "coussin-tisse-main", title: "Coussin Tissé Main", description: "Laine mérinos, motifs traditionnels amazighs.", price: 180, images: ["https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=700&q=80"], category: "tissage", stock: 5 },
+  { _id: "p4", slug: "margoum-contemporain", title: "Margoum Contemporain", description: "Fusion moderne et tradition, palette naturelle.", price: 1100, images: ["https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=700&q=80"], category: "margoum", stock: 1 },
+  { _id: "p5", slug: "nappe-brodee-gafsa", title: "Nappe Brodée Gafsa", description: "Coton naturel, broderie main à l'aiguille d'or.", price: 290, images: ["https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=700&q=80"], category: "tissage", stock: 3 },
+  { _id: "p6", slug: "kilim-ancestral", title: "Kilim Ancestral", description: "Technique kilim, motifs rhombiques berbères.", price: 740, images: ["https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=700&q=80"], category: "margoum", stock: 2 },
 ];
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -147,7 +147,7 @@ function ProductCard({ p, index, wishlist, cartAdded, onWishToggle, onCart }:
         </div>
         <p className="artp-prod-card__desc">{p.description}</p>
         <div className="artp-prod-card__foot">
-          <a href={`/boutique/${p._id}`} className="artp-prod-card__cta">Voir la pièce →</a>
+          <a href={`/boutique/${p.slug || p._id}`} className="artp-prod-card__cta">Voir la pièce →</a>
           <motion.button
             className={`artp-prod-card__cart${isAdded ? " artp-prod-card__cart--added" : ""}`}
             onClick={() => onCart(p._id)} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.94 }}>

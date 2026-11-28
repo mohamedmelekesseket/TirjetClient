@@ -33,6 +33,7 @@ type ApiUser = {
 
 type FavProduct = {
   _id: string;
+  slug?: string;
   favouriteId: string;
   title: string;
   description: string;
@@ -136,7 +137,7 @@ function FavCard({
   };
 
   return (
-    <Link href={`/boutique/${item._id}`}>
+    <Link href={`/boutique/${item.slug || item._id}`}>
       <motion.article
         className="profile-fav-card"
         initial={{ opacity: 0, y: 30 }}

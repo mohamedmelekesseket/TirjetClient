@@ -26,7 +26,7 @@ interface Category {
   mainCategory: string; subcategories: Level2[]; isActive: boolean; slug: string;
 }
 interface Product {
-  _id: string; title: string; description: string; price: number; solde?: number;
+  _id: string; slug?: string; title: string; description: string; price: number; solde?: number;
   images: string[]; stock: number; isApproved: boolean; createdAt: string;
   subcategoryL2?: { slug: string; name: string };
   subcategoryL3?: { slug: string; name: string };
@@ -699,7 +699,7 @@ export default function CategoryPage() {
                     key={p._id}
                     layout
                     className="cat__card"
-                    onClick={() => window.location.href = `/boutique/${p._id}`}
+                    onClick={() => window.location.href = `/boutique/${p.slug || p._id}`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                   >

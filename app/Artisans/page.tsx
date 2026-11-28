@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 
 interface Artisan {
   _id: string;
+  slug?: string;
   user: {
     _id: string;
     name: string;
@@ -87,7 +88,7 @@ function ArtisanRow({ a, index }: { a: Artisan; index: number }) {
   });
   const parallaxY = useTransform(scrollYProgress, [0, 1], [28, -28]);
 
-  const go = () => router.push(`/Artisanprofile/${a.user._id}`);
+  const go = () => router.push(`/Artisanprofile/${a.slug || a._id}`);
 
   return (
     <motion.article
@@ -147,7 +148,7 @@ function ArtisanRow({ a, index }: { a: Artisan; index: number }) {
 
         <motion.div variants={fadeUp}>
           <Link
-            href={`/Artisanprofile/${a.user._id}`}
+            href={`/Artisanprofile/${a.slug || a._id}`}
             onClick={(e) => e.stopPropagation()}
             className="artisan-btn"
           >

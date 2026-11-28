@@ -23,6 +23,7 @@ interface Category {
 
 interface Product {
   _id: string;
+  slug?: string;
   title: string;
   description: string;
   price: number;
@@ -32,6 +33,7 @@ interface Product {
   category: { _id: string; name: string } | string;
   artisan: {
     _id: string;
+    slug?: string;
     name: string;
     city?: string;
     image?: string;
@@ -582,15 +584,22 @@ function Gallery({ images }: { images: string[] }) {
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
-export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
   const { apiToken, session } = useApiToken();
   const router = useRouter();
+
+  // Guard against invalid slugs (e.g., "undefined")
+  useEffect(() => {
+    if (!slug || slug === "undefined" || slug === "null") {
+      router.replace("/boutique");
+    }
+  }, [slug, router]);
 
   const cartCtx = useCart() as any;
   const { cart, addToCart, removeItem } = cartCtx;
 
-  const [currentId, setCurrentId] = useState(id);
+  const [currentSlug, setCurrentSlug] = useState(slug);
   const [categoriesMap, setCategoriesMap] = useState<Map<string, string>>(new Map());
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -681,10 +690,10 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         setLoading(true);
         setError(null);
 
-        const viewedKey = `viewed_product_${currentId}`;
+        const viewedKey = `viewed_product_${currentSlug}`;
         const alreadyViewed = localStorage.getItem(viewedKey) === "1";
 
-        const url = `${API}/api/products/${currentId}${alreadyViewed ? "?viewed=1" : ""}`;
+        const url = `${API}/api/products/${currentSlug}${alreadyViewed ? "?viewed=1" : ""}`;
         const res = await fetch(url, { credentials: "include" });
 
         if (!res.ok) throw new Error(`Erreur ${res.status}`);
@@ -726,22 +735,22 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       }
     };
     fetchProduct();
-  }, [currentId]);
+  }, [currentSlug]);
 
   // ── Comments ───────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!currentId) return;
+    if (!currentSlug) return;
     const fetchComments = async () => {
       setCommentsLoading(true);
       try {
-        const res = await fetch(`${API}/api/products/${currentId}/comments`);
+        const res = await fetch(`${API}/api/products/${currentSlug}/comments`);
         if (res.ok) setComments(await res.json());
       } finally {
         setCommentsLoading(false);
       }
     };
     fetchComments();
-  }, [currentId]);
+  }, [currentSlug]);
 
   // ── Wishlist ───────────────────────────────────────────────────────────────
   const [wishlist, setWishlist] = useState<string[]>([]);
@@ -755,8 +764,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   }, [apiToken]);
 
   useEffect(() => {
-    if (currentId) setWish(wishlist.includes(currentId));
-  }, [currentId, wishlist]);
+    if (product) setWish(wishlist.includes(product._id));
+  }, [product, wishlist]);
 
   const toggleWish = useCallback(async (pid: string) => {
     if (!apiToken || wishPending.has(pid)) return;
@@ -800,8 +809,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   }
 
   // ── Handlers ───────────────────────────────────────────────────────────────
-  function handleRelatedClick(productId: string) {
-    setCurrentId(productId);
+  function handleRelatedClick(productSlug: string) {
+    setCurrentSlug(productSlug);
     setComments([]);
     setReviewPage(1);
     setShowAllReviews(false);
@@ -854,12 +863,12 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   }
 
   async function handleSubmitComment() {
-    if (!newContent.trim()) return;
+    if (!newContent.trim() || !product) return;
     setSubmitting(true);
     setSubmitError(null);
     try {
       if (!apiToken) { setSubmitError("Vous devez être connecté pour laisser un avis."); return; }
-      const res = await fetch(`${API}/api/products/${currentId}/comments`, {
+      const res = await fetch(`${API}/api/products/${product._id}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiToken}` },
         body: JSON.stringify({ rating: newRating, content: newContent }),
@@ -878,11 +887,11 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   }
 
   async function handleUpdateComment() {
-    if (!newContent.trim() || !editingId) return;
+    if (!newContent.trim() || !editingId || !product) return;
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const res = await fetch(`${API}/api/products/${currentId}/comments/${editingId}`, {
+      const res = await fetch(`${API}/api/products/${product._id}/comments/${editingId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiToken}` },
         body: JSON.stringify({ rating: newRating, content: newContent }),
@@ -905,11 +914,11 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   }
 
   async function confirmDeleteComment() {
-    if (!deleteTarget) return;
+    if (!deleteTarget || !product) return;
     setDeleting(true);
     setDeleteError(null);
     try {
-      const res = await fetch(`${API}/api/products/${currentId}/comments/${deleteTarget}`, {
+      const res = await fetch(`${API}/api/products/${product._id}/comments/${deleteTarget}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${apiToken}` },
       });
@@ -1085,9 +1094,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
                 <motion.button
                   className={`pd-wish-btn${wish ? " pd-wish-btn--on" : ""}`}
-                  onClick={() => toggleWish(currentId)}
+                  onClick={() => product && toggleWish(product._id)}
                   style={{backgroundColor:"transparent"}}
-                  disabled={wishPending.has(currentId)}
+                  disabled={wishPending.has(product?._id)}
                   whileTap={{ scale: 0.96 }}
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                   transition={{ delay: 0.85, duration: 0.6 }}>
@@ -1122,7 +1131,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     </p>
                   )}
                 </div>
-                <Link href={`/Artisanprofile/${artisan._id}`} className="pd-artisan__cta">
+                <Link href={`/Artisanprofile/${artisan.slug || artisan._id}`} className="pd-artisan__cta">
                   Boutique
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1342,7 +1351,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                   viewport={{ once: true, margin: "-60px" }}
                   transition={{ duration: 0.8, delay: i * 0.12, ease: EASE }}
                   whileHover={{ y: -8 }}
-                  onClick={() => handleRelatedClick(p._id)}>
+                  onClick={() => handleRelatedClick(p.slug || p._id)}>
                   <div className="pd-rel-card__media">
                     {p.images?.[0]
                       ? <img src={p.images[0]} alt={p.title} loading="lazy" />
